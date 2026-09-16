@@ -2,11 +2,13 @@
 //!
 //! This module intentionally contains no parser or language-adapter dependencies.
 
+pub mod fixtures;
 pub mod ir;
 pub mod model;
 pub mod snapshots;
 pub mod solver;
 
+pub use fixtures::*;
 pub use ir::*;
 pub use model::*;
 pub use snapshots::*;

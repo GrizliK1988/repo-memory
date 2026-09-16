@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "labels": {
+    "origin": {
+      "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 34, "byte_end": 48, "start_line": 2, "end_line": 2}},
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 34, "byte_end": 52, "start_line": 2, "end_line": 2}}
+    },
+    "first_consumer": {
+      "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 51, "byte_end": 67, "start_line": 3, "end_line": 3}},
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 55, "byte_end": 71, "start_line": 3, "end_line": 3}}
+    },
+    "final_consumer": {
+      "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 70, "byte_end": 83, "start_line": 4, "end_line": 4}},
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 74, "byte_end": 87, "start_line": 4, "end_line": 4}}
+    }
+  },
+  "required": [],
+  "forbidden": [],
+  "retained_relations": [
+    {"source": "origin", "consumer": "first_consumer", "relation": "value_dependency", "projection": null},
+    {"source": "first_consumer", "consumer": "final_consumer", "relation": "value_dependency", "projection": null}
+  ],
+  "required_relations": [],
+  "forbidden_relations": [],
+  "required_endings": [
+    {"side": "before", "kind": "execution_exit", "location": {"path": "main.ts", "byte_start": 70, "byte_end": 83, "start_line": 4, "end_line": 4}, "condition": null, "diagnostic": null},
+    {"side": "after", "kind": "execution_exit", "location": {"path": "main.ts", "byte_start": 74, "byte_end": 87, "start_line": 4, "end_line": 4}, "condition": null, "diagnostic": null}
+  ],
+  "witness_assertions": [],
+  "coverage": {
+    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true},
+    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true}
+  },
+  "completeness": "complete_for_query"
+}

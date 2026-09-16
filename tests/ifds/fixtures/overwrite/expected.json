@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "labels": {
+    "initial_write": {
+      "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 23, "byte_end": 33, "start_line": 2, "end_line": 2}},
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 23, "byte_end": 33, "start_line": 2, "end_line": 2}}
+    },
+    "overwrite": {
+      "before": null,
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 36, "byte_end": 42, "start_line": 3, "end_line": 3}}
+    },
+    "return_read": {
+      "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 36, "byte_end": 45, "start_line": 3, "end_line": 3}},
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 45, "byte_end": 54, "start_line": 4, "end_line": 4}}
+    }
+  },
+  "required": [
+    {"kind": "write_added", "node": "overwrite"},
+    {"kind": "flow_added", "relation": {"source": "overwrite", "consumer": "return_read", "relation": "reaches", "projection": null}}
+  ],
+  "forbidden": [
+    {"kind": "flow_added", "relation": {"source": "initial_write", "consumer": "return_read", "relation": "reaches", "projection": null}}
+  ],
+  "retained_relations": [],
+  "required_relations": [],
+  "forbidden_relations": [],
+  "required_endings": [],
+  "witness_assertions": [],
+  "coverage": {
+    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true},
+    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true}
+  },
+  "completeness": "complete_for_query"
+}

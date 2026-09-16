@@ -1,0 +1,8 @@
+--- a/main.ts
++++ b/main.ts
+@@ -1,4 +1,5 @@
+ function example() {
+   let x = 1;
++  x = 2;
+   return x;
+ }
