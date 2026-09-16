@@ -1,6 +1,6 @@
 # K002 — Immutable snapshots and query validation
 
-Status: planned. Roadmap stage: 0.
+Status: done. Roadmap stage: 0.
 
 Dependencies: [K001](001-contracts.md).
 

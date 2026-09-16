@@ -125,12 +125,31 @@ pub struct SnapshotHandle {
     pub repository_id: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FileChangeKind {
+    Added,
+    Deleted,
+    Modified,
+    Renamed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FileChange {
+    pub kind: FileChangeKind,
+    pub before_path: Option<String>,
+    pub after_path: Option<String>,
+    pub before_content_id: Option<String>,
+    pub after_content_id: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RepositoryDiff {
-    pub content_id: String,
-    pub changed_files: BTreeSet<String>,
-    pub renames: BTreeMap<String, String>,
+    pub before_content_id: String,
+    pub after_content_id: String,
+    pub changes: BTreeSet<FileChange>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

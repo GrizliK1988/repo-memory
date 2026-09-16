@@ -192,9 +192,15 @@ fn report(reverse: bool) -> VariableFlowReport {
             repository_id: "repo".into(),
         },
         diff: RepositoryDiff {
-            content_id: "diff-id".into(),
-            changed_files: set(["src/é.ts".into()]),
-            renames: BTreeMap::new(),
+            before_content_id: before.content_id.clone(),
+            after_content_id: after.content_id.clone(),
+            changes: set([FileChange {
+                kind: FileChangeKind::Modified,
+                before_path: Some("src/é.ts".into()),
+                after_path: Some("src/é.ts".into()),
+                before_content_id: Some("blob-before".into()),
+                after_content_id: Some("blob-after".into()),
+            }]),
         },
         selected_binding: BindingSelector {
             snapshot: before.clone(),
