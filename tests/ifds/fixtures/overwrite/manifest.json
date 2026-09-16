@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "case_id": "overwrite",
+  "category_id": "initial_values_and_writes",
+  "promoted": true,
+  "partition": "development",
+  "project_configuration": {"language": "typescript"},
+  "snapshots": {
+    "before": {"revision": "overwrite-before", "content_id": "overwrite-before-content", "directory": "before"},
+    "after": {"revision": "overwrite-after", "content_id": "overwrite-after-content", "directory": "after"}
+  },
+  "change_file": "change.diff",
+  "selector": {
+    "snapshot": {"side": "before", "revision": "overwrite-before", "content_id": "overwrite-before-content"},
+    "declaration": {"path": "main.ts", "byte_start": 27, "byte_end": 28, "start_line": 2, "end_line": 2},
+    "expected_name": "x",
+    "expected_enclosing_symbol": "example"
+  },
+  "counterpart": {
+    "snapshot": {"side": "after", "revision": "overwrite-after", "content_id": "overwrite-after-content"},
+    "declaration": {"path": "main.ts", "byte_start": 27, "byte_end": 28, "start_line": 2, "end_line": 2},
+    "expected_name": "x",
+    "expected_enclosing_symbol": "example"
+  },
+  "entry_assumptions": [],
+  "capabilities": {"stage": 0, "capabilities": ["fixture_harness"], "version": "stage-0"},
+  "model_versions": [{"name": "no-external-models", "version": "1", "digest": "reviewed:none:v1"}],
+  "limits": {"time_ms": 1000, "memory_bytes": 67108864, "processed_path_edges": 1000, "witnesses_per_relation": 2, "output_nodes": 1000},
+  "expected_file": "expected.json"
+}

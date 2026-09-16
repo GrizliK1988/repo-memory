@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "case_id": "full_downstream_chain",
+  "category_id": "full_downstream_extent",
+  "promoted": true,
+  "partition": "development",
+  "project_configuration": {"language": "typescript"},
+  "snapshots": {
+    "before": {"revision": "chain-before", "content_id": "chain-before-content", "directory": "before"},
+    "after": {"revision": "chain-after", "content_id": "chain-after-content", "directory": "after"}
+  },
+  "change_file": "change.diff",
+  "selector": {
+    "snapshot": {"side": "before", "revision": "chain-before", "content_id": "chain-before-content"},
+    "declaration": {"path": "main.ts", "byte_start": 38, "byte_end": 39, "start_line": 2, "end_line": 2},
+    "expected_name": "x",
+    "expected_enclosing_symbol": "chain"
+  },
+  "counterpart": {
+    "snapshot": {"side": "after", "revision": "chain-after", "content_id": "chain-after-content"},
+    "declaration": {"path": "main.ts", "byte_start": 38, "byte_end": 39, "start_line": 2, "end_line": 2},
+    "expected_name": "x",
+    "expected_enclosing_symbol": "chain"
+  },
+  "entry_assumptions": [],
+  "capabilities": {"stage": 0, "capabilities": ["fixture_harness"], "version": "stage-0"},
+  "model_versions": [{"name": "no-external-models", "version": "1", "digest": "reviewed:none:v1"}],
+  "limits": {"time_ms": 1000, "memory_bytes": 67108864, "processed_path_edges": 1000, "witnesses_per_relation": 2, "output_nodes": 1000},
+  "expected_file": "expected.json"
+}
