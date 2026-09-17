@@ -2,6 +2,7 @@
 //!
 //! This module intentionally contains no parser or language-adapter dependencies.
 
+pub mod adapters;
 pub mod fixtures;
 pub mod ir;
 pub mod model;

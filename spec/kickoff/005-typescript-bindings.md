@@ -1,6 +1,6 @@
 # K005 — TypeScript parsing and lexical bindings
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K001](001-contracts.md), [K002](002-snapshots-and-queries.md).
 
