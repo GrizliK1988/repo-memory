@@ -988,12 +988,8 @@ fn reference_transfer(
     let mut outgoing = incoming.clone();
     match operation {
         Operation::Read { source, result } => {
-            let (writes, origins) = facts_for_place(incoming, source);
+            let (_, origins) = facts_for_place(incoming, source);
             kill_place(&mut outgoing, result);
-            outgoing.extend(writes.into_iter().map(|write| Fact::LastWrite {
-                place: result.clone(),
-                write,
-            }));
             outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
                 place: result.clone(),
                 source,
@@ -1009,37 +1005,63 @@ fn reference_transfer(
                 .flat_map(|source| facts_for_place(incoming, source).1)
                 .collect();
             kill_place(&mut outgoing, target);
-            outgoing.insert(Fact::LastWrite {
-                place: target.clone(),
-                write: definition.clone(),
-            });
-            if origins.is_empty() {
+            if incoming.contains(&Fact::Zero) {
+                outgoing.insert(Fact::LastWrite {
+                    place: target.clone(),
+                    write: definition.clone(),
+                });
                 outgoing.insert(Fact::Origin {
                     place: target.clone(),
                     source: Source::Write(definition.clone()),
                 });
-            } else {
-                outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
-                    place: target.clone(),
-                    source,
-                }));
             }
+            outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
+                place: target.clone(),
+                source,
+            }));
         }
-        Operation::Compute { inputs, result, .. } => {
+        Operation::Compute {
+            definition,
+            inputs,
+            result,
+            ..
+        } => {
             let origins: BTreeSet<_> = inputs
                 .iter()
                 .flat_map(|input| facts_for_place(incoming, &input.place).1)
                 .collect();
             kill_place(&mut outgoing, result);
+            if incoming.contains(&Fact::Zero) {
+                outgoing.insert(Fact::LastWrite {
+                    place: result.clone(),
+                    write: definition.clone(),
+                });
+                outgoing.insert(Fact::Origin {
+                    place: result.clone(),
+                    source: Source::Write(definition.clone()),
+                });
+            }
             outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
                 place: result.clone(),
                 source,
             }));
         }
-        Operation::Literal { .. }
-        | Operation::Call { .. }
-        | Operation::ReturnSite { .. }
-        | Operation::UnknownEffect { .. } => {
+        Operation::Literal {
+            definition, result, ..
+        } => {
+            kill_place(&mut outgoing, result);
+            if incoming.contains(&Fact::Zero) {
+                outgoing.insert(Fact::LastWrite {
+                    place: result.clone(),
+                    write: definition.clone(),
+                });
+                outgoing.insert(Fact::Origin {
+                    place: result.clone(),
+                    source: Source::Write(definition.clone()),
+                });
+            }
+        }
+        Operation::Call { .. } | Operation::UnknownEffect { .. } => {
             return Err(FixtureError::Invalid(
                 "the tiny reference evaluator cannot prove effects for calls or unknown operations"
                     .into(),
@@ -1048,6 +1070,7 @@ fn reference_transfer(
         Operation::Entry
         | Operation::Branch { .. }
         | Operation::Join
+        | Operation::ReturnSite { .. }
         | Operation::Return { .. }
         | Operation::Exit => {}
     }
@@ -1237,6 +1260,7 @@ mod tests {
             .collect();
         ProcedureIr {
             id: ProcedureId::new(snapshot(), 1),
+            parameters: Vec::new(),
             entry: node(1),
             exits: BTreeSet::from([node(5)]),
             nodes,
@@ -1686,7 +1710,7 @@ mod tests {
         let result = evaluate_reference(&tiny_ir(), &[BTreeSet::from([Fact::Zero])], 100).unwrap();
         assert!(result.complete);
         let at_read_successor = &result.facts_at[&node(4)];
-        assert!(at_read_successor.contains(&Fact::LastWrite {
+        assert!(!at_read_successor.contains(&Fact::LastWrite {
             place: Place::Temporary(node(3)),
             write: definition(1)
         }));
