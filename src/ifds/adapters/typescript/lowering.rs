@@ -1,7 +1,7 @@
 use super::*;
 use crate::ifds::ir::{
     ComputeInput, ComputeInputRole, EdgeKind, IrEdge, IrNode, LiteralKind, Operation,
-    PrimitiveOperator, ProcedureIr, UnknownEffectKind,
+    PrimitiveOperator, ProcedureIr, ProcedureParameter, UnknownEffectKind,
 };
 use crate::ifds::model::{DefinitionId, NodeId, Place, ProcedureId};
 
@@ -744,6 +744,11 @@ impl<'a> Lowerer<'a> {
         }
         let procedure = ProcedureIr {
             id: ProcedureId::new(self.index.snapshot.clone(), self.procedure_ordinal),
+            parameters: procedure_parameters(
+                self.index,
+                self.procedure_scope,
+                self.procedure_ordinal,
+            ),
             entry: self.entry,
             exits: BTreeSet::from([exit]),
             nodes: self.nodes,
@@ -759,6 +764,29 @@ impl<'a> Lowerer<'a> {
             diagnostics: self.diagnostics,
         })
     }
+}
+
+fn procedure_parameters(
+    index: &TypeScriptBindingIndex,
+    procedure_scope: ScopeId,
+    procedure_ordinal: u64,
+) -> Vec<ProcedureParameter> {
+    index
+        .bindings
+        .iter()
+        .filter(|binding| {
+            binding.scope == procedure_scope && binding.kind == BindingKind::Parameter
+        })
+        .enumerate()
+        .map(|(position, binding)| ProcedureParameter {
+            index: position as u32,
+            binding: binding.id.clone(),
+            entry_definition: DefinitionId::new(
+                index.snapshot.clone(),
+                (procedure_ordinal << 32) | (1_u64 << 31) | position as u64,
+            ),
+        })
+        .collect()
 }
 
 fn normal_edge(source: NodeId, target: NodeId) -> IrEdge {

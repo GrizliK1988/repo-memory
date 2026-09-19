@@ -433,6 +433,7 @@ fn ifds_k001_ir_without_language_adapter() {
     ];
     let ir = ProcedureIr {
         id: ProcedureId::new(snap.clone(), 1),
+        parameters: Vec::new(),
         entry: node(0),
         exits: set([node(3)]),
         nodes: nodes

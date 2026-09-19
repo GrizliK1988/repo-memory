@@ -1,6 +1,8 @@
 //! Language-independent control-flow graph contracts.
 
-use crate::ifds::model::{CallSiteId, DefinitionId, NodeId, Place, ProcedureId, SourceSpan};
+use crate::ifds::model::{
+    BindingId, CallSiteId, DefinitionId, NodeId, Place, ProcedureId, SourceSpan,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -141,10 +143,19 @@ pub struct IrEdge {
     pub assumption: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProcedureParameter {
+    pub index: u32,
+    pub binding: BindingId,
+    pub entry_definition: DefinitionId,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProcedureIr {
     pub id: ProcedureId,
+    pub parameters: Vec<ProcedureParameter>,
     pub entry: NodeId,
     pub exits: BTreeSet<NodeId>,
     pub nodes: BTreeMap<NodeId, IrNode>,
@@ -153,6 +164,33 @@ pub struct ProcedureIr {
 
 impl ProcedureIr {
     pub fn validate(&self) -> Result<(), IrValidationError> {
+        let mut parameter_bindings = BTreeSet::new();
+        let mut definitions = BTreeSet::new();
+        for (expected_index, parameter) in self.parameters.iter().enumerate() {
+            if parameter.index as usize != expected_index {
+                return Err(IrValidationError::ParameterIndex {
+                    expected: expected_index as u32,
+                    actual: parameter.index,
+                });
+            }
+            if parameter.binding.snapshot != self.id.snapshot
+                || parameter.entry_definition.snapshot != self.id.snapshot
+            {
+                return Err(IrValidationError::ParameterSnapshotMismatch(
+                    parameter.index,
+                ));
+            }
+            if !parameter_bindings.insert(parameter.binding.clone()) {
+                return Err(IrValidationError::DuplicateParameterBinding(
+                    parameter.binding.clone(),
+                ));
+            }
+            if !definitions.insert(parameter.entry_definition.clone()) {
+                return Err(IrValidationError::DuplicateDefinition(
+                    parameter.entry_definition.clone(),
+                ));
+            }
+        }
         let entry = self
             .nodes
             .get(&self.entry)
@@ -206,6 +244,16 @@ impl ProcedureIr {
         }
         let mut produced = BTreeSet::new();
         for node in self.nodes.values() {
+            if let Some(definition) = operation_definition(&node.operation) {
+                if definition.snapshot != self.id.snapshot {
+                    return Err(IrValidationError::DefinitionSnapshotMismatch(Box::new(
+                        definition.clone(),
+                    )));
+                }
+                if !definitions.insert(definition.clone()) {
+                    return Err(IrValidationError::DuplicateDefinition(definition.clone()));
+                }
+            }
             if let Some(result) = operation_result(&node.operation) {
                 let Place::Temporary(producer) = result else {
                     return Err(IrValidationError::InvalidResultPlace(Box::new(
@@ -231,6 +279,16 @@ impl ProcedureIr {
             }
         }
         Ok(())
+    }
+}
+
+fn operation_definition(operation: &Operation) -> Option<&DefinitionId> {
+    match operation {
+        Operation::Write { definition, .. }
+        | Operation::Literal { definition, .. }
+        | Operation::Compute { definition, .. } => Some(definition),
+        Operation::UnknownEffect { definition, .. } => definition.as_ref(),
+        _ => None,
     }
 }
 
@@ -260,6 +318,14 @@ fn operation_inputs(operation: &Operation) -> Vec<&Place> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IrValidationError {
+    ParameterIndex {
+        expected: u32,
+        actual: u32,
+    },
+    ParameterSnapshotMismatch(u32),
+    DuplicateParameterBinding(BindingId),
+    DuplicateDefinition(DefinitionId),
+    DefinitionSnapshotMismatch(Box<DefinitionId>),
     MissingNode(Box<NodeId>),
     EntryOperation(Box<NodeId>),
     ExitOperation(Box<NodeId>),

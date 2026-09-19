@@ -2,6 +2,7 @@
 
 use crate::ifds::ir::ProcedureIr;
 use crate::ifds::model::{AnalysisLimits, AnalysisStats, Diagnostic, Fact, NodeId};
+use crate::ifds::provenance::TransferOutcome;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
@@ -24,7 +25,7 @@ pub trait Solver {
 }
 
 pub trait FlowFunction {
-    fn transfer(&self, node: &NodeId, fact: &Fact) -> BTreeSet<Fact>;
+    fn transfer(&self, node: &NodeId, fact: &Fact) -> TransferOutcome;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

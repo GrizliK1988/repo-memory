@@ -92,6 +92,8 @@ fn ifds_k006_initializer_order() {
     assert!(matches!(operations[4], Operation::Write { .. }));
     assert!(matches!(operations[5], Operation::Read { .. }));
     assert!(matches!(operations[6], Operation::Return { .. }));
+    assert_eq!(result.procedure.parameters.len(), 1);
+    assert_eq!(result.procedure.parameters[0].index, 0);
     result.procedure.validate().unwrap();
 }
 
