@@ -8,6 +8,9 @@ use std::fmt;
 use std::path::Path;
 use tree_sitter::{Node, Parser, Point};
 
+mod lowering;
+pub use lowering::*;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TypeScriptGrammar {
     TypeScript,

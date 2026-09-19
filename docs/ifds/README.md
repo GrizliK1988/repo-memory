@@ -25,8 +25,8 @@ Documents:
   dependencies, unit-test acceptance cases, and additional integration gates.
 - [Analysis specification](SPEC.md): semantics, architecture, API, graph comparison,
   evidence, uncertainty, and resource limits.
-- [Benchmark specification](BENCHMARKS.md): automated fixtures, correctness oracles,
-  precision, coverage, and acceptance gates.
+- [Benchmark specification](BENCHMARKS.md): exact fixture rules plus the late-stage
+  reviewed-suite precision, coverage, and release gates.
 - [PR #5816 case study](PR-5816.md): the selected `contentLangs` variable and the
   expected before/after analysis at successive milestones.
 
@@ -53,8 +53,10 @@ The full repository may be indexed before the entire language can be analyzed.
 | 11. Broader coverage and scale | Add syntax/library families according to benchmark misses; demand-driven refinement, cached summaries and invalidation; bounded output; parallel independent snapshot analysis. | Maintained precision and coverage gates, deterministic results, cold/warm performance measurements on a pinned medium-sized repository, explicit partial results under limits. |
 
 Stages 9 and 11 are continuing refinement work, not permission to defer basic
-correctness, measurement, or uncertainty reporting. Basic call/return precision is
-required in stage 4. Unknown behavior must never be silently treated as identity.
+semantic correctness or uncertainty reporting. Basic call/return precision is
+required in stage 4 and is enforced by exact tests. Aggregate benchmark measurement
+is deliberately deferred to stage 11, when a frozen reviewed real-repository suite
+exists. Unknown behavior must never be silently treated as identity.
 Limited read-only projection support in stage 5 does not imply mutation/alias support.
 
 ## First deliverable: stage 1
@@ -108,7 +110,10 @@ a previous bug has recurred; those require a separate later implementation.
 - Promoted exact fixtures match all expected nodes, relations, and diagnostics.
 - Full upstream/downstream context, unchanged consumers, and path endings match
   the oracle; a short prefix cannot pass as a complete value lifecycle.
-- Reported-flow precision is at least 90% on the applicable reviewed benchmark;
-  recall, abstentions, and unsupported coverage are published alongside it.
+- Before the late-stage benchmark gate exists, independently authored exact fixtures
+  pass for every promoted supported case, including forbidden-flow assertions.
+- At stage 11 and release, reported-flow precision is at least 90% on the frozen
+  reviewed integration/held-out benchmark; recall, abstentions, and unsupported
+  coverage are published alongside it.
 - Analysis budgets, assumptions, and witness truncation are visible in output.
 - No roadmap entry is described as implemented before its gate passes.

@@ -18,10 +18,18 @@ pub enum Operation {
         sources: BTreeSet<Place>,
         definition: DefinitionId,
     },
-    Compute {
-        inputs: BTreeSet<Place>,
+    Literal {
+        definition: DefinitionId,
+        literal_kind: LiteralKind,
+        raw: String,
+        cooked: Option<String>,
         result: Place,
-        operator: String,
+    },
+    Compute {
+        definition: DefinitionId,
+        inputs: Vec<ComputeInput>,
+        result: Place,
+        operator: PrimitiveOperator,
     },
     Branch {
         condition: Place,
@@ -40,9 +48,66 @@ pub enum Operation {
     },
     Exit,
     UnknownEffect {
+        effect_kind: UnknownEffectKind,
         description: String,
+        inputs: Vec<ComputeInput>,
+        result: Option<Place>,
+        definition: Option<DefinitionId>,
         affected_places: BTreeSet<Place>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LiteralKind {
+    Number,
+    String,
+    Boolean,
+    Null,
+    BigInt,
+    Undefined,
+    TemplateChunk,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ComputeInputRole {
+    Operand { index: u32 },
+    TemplateChunk { index: u32 },
+    TemplateInterpolation { index: u32 },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ComputeInput {
+    pub place: Place,
+    pub role: ComputeInputRole,
+    pub span: SourceSpan,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum PrimitiveOperator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Remainder,
+    UnaryPlus,
+    UnaryMinus,
+    LogicalNot,
+    StrictEqual,
+    StrictNotEqual,
+    PropertyRead { property: String },
+    IndexRead,
+    Template,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnknownEffectKind {
+    Value,
+    Control,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -139,7 +204,57 @@ impl ProcedureIr {
                     .map_err(|error| IrValidationError::InvalidSpan(error.to_string()))?;
             }
         }
+        let mut produced = BTreeSet::new();
+        for node in self.nodes.values() {
+            if let Some(result) = operation_result(&node.operation) {
+                let Place::Temporary(producer) = result else {
+                    return Err(IrValidationError::InvalidResultPlace(Box::new(
+                        node.id.clone(),
+                    )));
+                };
+                if producer != &node.id {
+                    return Err(IrValidationError::ResultProducerMismatch {
+                        node: Box::new(node.id.clone()),
+                        producer: Box::new(producer.clone()),
+                    });
+                }
+                if !produced.insert(result.clone()) {
+                    return Err(IrValidationError::DuplicateTemporary(result.clone()));
+                }
+            }
+        }
+        for node in self.nodes.values() {
+            for place in operation_inputs(&node.operation) {
+                if matches!(place, Place::Temporary(_)) && !produced.contains(place) {
+                    return Err(IrValidationError::MissingTemporary(place.clone()));
+                }
+            }
+        }
         Ok(())
+    }
+}
+
+fn operation_result(operation: &Operation) -> Option<&Place> {
+    match operation {
+        Operation::Read { result, .. }
+        | Operation::Literal { result, .. }
+        | Operation::Compute { result, .. } => Some(result),
+        Operation::Call { result, .. } | Operation::UnknownEffect { result, .. } => result.as_ref(),
+        _ => None,
+    }
+}
+
+fn operation_inputs(operation: &Operation) -> Vec<&Place> {
+    match operation {
+        Operation::Read { source, .. } => vec![source],
+        Operation::Write { sources, .. } => sources.iter().collect(),
+        Operation::Compute { inputs, .. } | Operation::UnknownEffect { inputs, .. } => {
+            inputs.iter().map(|input| &input.place).collect()
+        }
+        Operation::Branch { condition } => vec![condition],
+        Operation::Call { arguments, .. } => arguments.iter().collect(),
+        Operation::Return { value } => value.iter().collect(),
+        _ => Vec::new(),
     }
 }
 
@@ -154,6 +269,13 @@ pub enum IrValidationError {
     },
     SnapshotMismatch(Box<NodeId>),
     InvalidSpan(String),
+    InvalidResultPlace(Box<NodeId>),
+    ResultProducerMismatch {
+        node: Box<NodeId>,
+        producer: Box<NodeId>,
+    },
+    DuplicateTemporary(Place),
+    MissingTemporary(Place),
 }
 
 impl fmt::Display for IrValidationError {

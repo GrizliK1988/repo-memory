@@ -1,4 +1,7 @@
 use super::*;
+use crate::ifds::ir::{
+    ComputeInputRole, LiteralKind, Operation, PrimitiveOperator, UnknownEffectKind,
+};
 use crate::ifds::model::{SnapshotSide, SourceSpan};
 
 fn snapshot() -> SnapshotId {
@@ -42,6 +45,303 @@ fn binding_named<'a>(
         .iter()
         .find(|binding| binding.name == name && binding.declaration.byte_start == start)
         .expect("binding must exist")
+}
+
+fn lower_named(source: &str, name: &str) -> TypeScriptLoweringResult {
+    let index = index_bindings(snapshot(), "main.ts", source).unwrap();
+    let binding = index
+        .bindings
+        .iter()
+        .find(|binding| binding.name == name)
+        .unwrap();
+    lower_containing_procedure(source, &index, &binding.id).unwrap()
+}
+
+fn operations(result: &TypeScriptLoweringResult) -> Vec<&Operation> {
+    result
+        .procedure
+        .nodes
+        .values()
+        .map(|node| &node.operation)
+        .collect()
+}
+
+#[test]
+fn ifds_k006_initializer_order() {
+    let result = lower_named(
+        "function f(input: number) { let x = input + 1; return x; }",
+        "x",
+    );
+    let operations = operations(&result);
+    assert!(matches!(operations[0], Operation::Entry));
+    assert!(matches!(operations[1], Operation::Read { .. }));
+    assert!(matches!(
+        operations[2],
+        Operation::Literal {
+            literal_kind: LiteralKind::Number,
+            ..
+        }
+    ));
+    assert!(matches!(
+        operations[3],
+        Operation::Compute {
+            operator: PrimitiveOperator::Add,
+            ..
+        }
+    ));
+    assert!(matches!(operations[4], Operation::Write { .. }));
+    assert!(matches!(operations[5], Operation::Read { .. }));
+    assert!(matches!(operations[6], Operation::Return { .. }));
+    result.procedure.validate().unwrap();
+}
+
+#[test]
+fn ifds_k006_self_assignment_order() {
+    let result = lower_named("function f() { let x = 0; x = x + 1; return x; }", "x");
+    let operations = operations(&result);
+    let writes: Vec<_> = operations
+        .iter()
+        .enumerate()
+        .filter(|(_, op)| matches!(op, Operation::Write { .. }))
+        .collect();
+    assert_eq!(writes.len(), 2);
+    let second_write = writes[1].0;
+    assert!(matches!(
+        operations[second_write - 3],
+        Operation::Read { .. }
+    ));
+    assert!(matches!(
+        operations[second_write - 1],
+        Operation::Compute {
+            operator: PrimitiveOperator::Add,
+            ..
+        }
+    ));
+}
+
+#[test]
+fn ifds_k006_multiple_operands() {
+    let result = lower_named(
+        "function f(a: number, b: number) { let y = a + b; return `${a}-${b}`; }",
+        "y",
+    );
+    let operations = operations(&result);
+    let add = operations
+        .iter()
+        .find_map(|operation| match operation {
+            Operation::Compute {
+                operator: PrimitiveOperator::Add,
+                inputs,
+                ..
+            } => Some(inputs),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(add.len(), 2);
+    assert_eq!(add[0].role, ComputeInputRole::Operand { index: 0 });
+    assert_eq!(add[1].role, ComputeInputRole::Operand { index: 1 });
+    let template = operations
+        .iter()
+        .find_map(|operation| match operation {
+            Operation::Compute {
+                operator: PrimitiveOperator::Template,
+                inputs,
+                ..
+            } => Some(inputs),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(
+        template
+            .iter()
+            .filter(|input| matches!(input.role, ComputeInputRole::TemplateInterpolation { .. }))
+            .count(),
+        2
+    );
+    assert!(
+        template
+            .iter()
+            .any(|input| matches!(input.role, ComputeInputRole::TemplateChunk { .. }))
+    );
+}
+
+#[test]
+fn ifds_k006_return_ends_path() {
+    let result = lower_named("function f() { let x = 1; return x; x = 2; }", "x");
+    let return_id = result
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::Return { .. }))
+        .unwrap()
+        .id
+        .clone();
+    let later_write = result
+        .procedure
+        .nodes
+        .values()
+        .filter(|node| matches!(node.operation, Operation::Write { .. }))
+        .next_back()
+        .unwrap()
+        .id
+        .clone();
+    assert!(
+        !result
+            .procedure
+            .edges
+            .iter()
+            .any(|edge| edge.source == return_id && edge.target == later_write)
+    );
+    let mut reachable = BTreeSet::from([result.procedure.entry.clone()]);
+    loop {
+        let next: BTreeSet<_> = result
+            .procedure
+            .edges
+            .iter()
+            .filter(|edge| reachable.contains(&edge.source))
+            .map(|edge| edge.target.clone())
+            .collect();
+        let old_len = reachable.len();
+        reachable.extend(next);
+        if reachable.len() == old_len {
+            break;
+        }
+    }
+    assert!(!reachable.contains(&later_write));
+}
+
+#[test]
+fn ifds_k006_source_mapping() {
+    let source = "function f(a: number) { let x = a + 1; return x; }";
+    let result = lower_named(source, "x");
+    let nodes: Vec<_> = result.procedure.nodes.values().collect();
+    let read_a = nodes
+        .iter()
+        .find(|node| {
+            matches!(node.operation, Operation::Read { .. })
+                && node.span.as_ref().is_some_and(|span| {
+                    &source[span.byte_start as usize..span.byte_end as usize] == "a"
+                })
+        })
+        .unwrap();
+    assert_eq!(
+        read_a.span.as_ref().unwrap(),
+        &span_of("main.ts", source, "a", 1)
+    );
+    let compute = nodes
+        .iter()
+        .find(|node| {
+            matches!(
+                node.operation,
+                Operation::Compute {
+                    operator: PrimitiveOperator::Add,
+                    ..
+                }
+            )
+        })
+        .unwrap();
+    assert_eq!(
+        &source[compute.span.as_ref().unwrap().byte_start as usize
+            ..compute.span.as_ref().unwrap().byte_end as usize],
+        "a + 1"
+    );
+    let write = nodes
+        .iter()
+        .find(|node| matches!(node.operation, Operation::Write { .. }))
+        .unwrap();
+    assert_eq!(
+        &source[write.span.as_ref().unwrap().byte_start as usize
+            ..write.span.as_ref().unwrap().byte_end as usize],
+        "x = a + 1"
+    );
+}
+
+#[test]
+fn ifds_k006_unsupported_effect() {
+    let result = lower_named(
+        "function f(input: number, callback: unknown) { let x = callback(input); return x; }",
+        "x",
+    );
+    let unknown = result
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::UnknownEffect { .. }))
+        .unwrap();
+    assert!(matches!(
+        unknown.operation,
+        Operation::UnknownEffect {
+            effect_kind: UnknownEffectKind::Value,
+            result: Some(_),
+            ..
+        }
+    ));
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.frontier.as_ref() == Some(&unknown.id))
+    );
+    assert!(
+        result
+            .procedure
+            .edges
+            .iter()
+            .any(|edge| edge.source == unknown.id)
+    );
+}
+
+#[test]
+fn ifds_k006_control_frontier() {
+    let result = lower_named(
+        "function f(flag: boolean) { let x = 1; if (flag) { return x; } x = 2; }",
+        "x",
+    );
+    let frontier = result
+        .procedure
+        .nodes
+        .values()
+        .find(|node| {
+            matches!(
+                node.operation,
+                Operation::UnknownEffect {
+                    effect_kind: UnknownEffectKind::Control,
+                    ..
+                }
+            )
+        })
+        .unwrap();
+    assert!(
+        !result
+            .procedure
+            .edges
+            .iter()
+            .any(|edge| edge.source == frontier.id)
+    );
+}
+
+#[test]
+fn ifds_k006_module_export_boundary() {
+    let result = lower_named("const result = 1; export { result };", "result");
+    let operations = operations(&result);
+    assert!(
+        operations
+            .iter()
+            .any(|operation| matches!(operation, Operation::Write { .. }))
+    );
+    assert!(
+        operations
+            .iter()
+            .any(|operation| matches!(operation, Operation::Read { .. }))
+    );
+    assert!(operations.iter().any(|operation| matches!(
+        operation,
+        Operation::UnknownEffect {
+            effect_kind: UnknownEffectKind::Value,
+            result: None,
+            ..
+        }
+    )));
 }
 
 #[test]
