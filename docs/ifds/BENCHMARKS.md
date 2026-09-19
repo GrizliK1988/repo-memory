@@ -4,6 +4,12 @@ Status: planned test system and acceptance criteria. No fixtures, runner, or
 precision measurements for IFDS exist yet. Existing `tsx_diff` regression tests
 exercise syntax-level changes and are not evidence of IFDS correctness.
 
+Early implementation stages use independently authored exact unit and integration
+fixtures only. Aggregate TP/FP/FN scoring, precision/recall measurement, and the
+90% gate are intentionally deferred to roadmap stage 11, after a mature analyzer
+and a frozen reviewed sample of pinned real repositories exist. Small synthetic
+development fixtures must not be presented as a representative precision result.
+
 ## 1. Test contract and independent expectations
 
 Each case supplies a small repository before and after an edit, its diff, one

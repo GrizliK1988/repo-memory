@@ -2,8 +2,8 @@
 
 Status: planned. Roadmap stage: 1.
 
-Dependencies: [K003](003-test-harness.md), [K004](004-benchmark-scoring.md),
-[K009](009-uncertainty-and-limits.md), [K012](012-flow-comparison.md).
+Dependencies: [K003](003-test-harness.md), [K009](009-uncertainty-and-limits.md),
+[K012](012-flow-comparison.md).
 
 Source: [SPEC sections 1, 3, 6.4 and 7](../../docs/ifds/SPEC.md).
 
@@ -37,4 +37,5 @@ Excludes branches/calls as supported semantics; relevant occurrences stay explic
 Run `cargo test --locked --offline --lib ifds_k013_` and the
 [shared completion gate](README.md#unit-test-convention-and-completion-gate).
 Promote stage-1 exact fixtures through `cargo test --locked --offline --test ifds`;
-all K001–K013 tests must be implemented, discovered, and passing before stage 1 closes.
+all non-deferred K001–K013 tests must be implemented, discovered, and passing before
+stage 1 closes. K004 is deliberately deferred to stage 11.

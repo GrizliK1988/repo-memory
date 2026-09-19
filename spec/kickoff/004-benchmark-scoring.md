@@ -1,13 +1,18 @@
-# K004 — Benchmark scoring and acceptance gates
+# K004 — Late benchmark scoring and acceptance gates
 
-Status: planned. Roadmap stage: 0.
+Status: deferred. Roadmap stage: 11.
 
-Dependencies: [K003](003-test-harness.md).
+Dependencies: [K003](003-test-harness.md), [K025](025-bluesky-pr-5816.md),
+[K039](039-scale-and-measurement.md).
 
 Source: [BENCHMARKS sections 2–3](../../docs/ifds/BENCHMARKS.md).
 
 ## Scope
 
+- Implement this task only after the analyzer, promoted semantic fixtures, pinned
+  real-repository cases, and an independently reviewed integration/held-out sample
+  are available. Earlier stages rely on exact unit and integration assertions, not
+  precision estimates over their small synthetic fixture sets.
 - Canonicalize claims by the specified query, delta, relation, source, consumer,
   input projection, changed condition/origin, and before/after presence tuple.
 - Compute TP/FP/FN, precision, recall, category results, abstentions, and coverage;
@@ -16,6 +21,12 @@ Source: [BENCHMARKS sections 2–3](../../docs/ifds/BENCHMARKS.md).
   Freeze model/capability manifests; never hide missed cases by reclassification.
 
 Excludes claiming that a scoring implementation proves actual analyzer precision.
+Also excludes using early synthetic fixtures to publish or enforce a representative
+precision percentage before the frozen reviewed suite exists.
+
+Until this task begins, additions/removals/condition changes/source changes,
+forbidden flows, full context, endings, and uncertainty are ordinary exact test
+assertions owned by their implementation tasks and the K003 fixture harness.
 
 ## Required unit tests
 

@@ -421,7 +421,7 @@ fn ifds_k001_ir_without_language_adapter() {
             id: node(2),
             operation: Operation::Read {
                 source: binding.clone(),
-                result: Place::Temporary(node(20)),
+                result: Place::Temporary(node(2)),
             },
             span: Some(span("src/a.ts", 10, 18, 2)),
         },

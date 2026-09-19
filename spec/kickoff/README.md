@@ -8,8 +8,9 @@ They cover the [specification](../../docs/ifds/SPEC.md), the complete
 ## How to use these tasks
 
 Implement in dependency order. Independent tasks can proceed in parallel; the
-numeric order is a convenient default. A roadmap stage is complete only when all
-its tasks and the earlier stage gates pass. Later refinements do not excuse
+numeric order is a convenient default except for K004, which is intentionally
+deferred to stage 11. A roadmap stage is complete only when all its non-deferred
+tasks and the earlier applicable gates pass. Later refinements do not excuse
 incorrect supported flows or missing uncertainty handling in earlier stages.
 
 Each file defines scope, explicit exclusions, dependencies, named unit tests,
@@ -41,9 +42,11 @@ selection of multiple variables are not part of this kickoff implementation.
   minimum gate, not a replacement for real provider/PR integration tests or measured
   repository-wide precision/performance. Those extra gates are identified below.
 
-The first usable deliverable is K001–K013: one scalar variable, supported
-straight-line code, full supported upstream/downstream context, precise deltas,
-and explicit boundaries. Do not wait for later language features to deliver it.
+The first usable deliverable is K001–K003 plus K005–K013: one scalar variable,
+supported straight-line code, full supported upstream/downstream context, precise
+deltas, and explicit boundaries. K004 is deliberately deferred until a mature
+analyzer and a frozen reviewed real-repository suite exist. Do not wait for later
+language features or benchmark percentages to deliver the first milestone.
 
 ## Task index
 
@@ -52,7 +55,7 @@ and explicit boundaries. Do not wait for later language features to deliver it.
 | K001 | [Module contracts and report model](001-contracts.md) | 0 |
 | K002 | [Immutable snapshots and query validation](002-snapshots-and-queries.md) | 0 |
 | K003 | [Fixture harness and independent oracles](003-test-harness.md) | 0 |
-| K004 | [Benchmark scoring and acceptance gates](004-benchmark-scoring.md) | 0 |
+| K004 | [Late benchmark scoring and acceptance gates](004-benchmark-scoring.md) | 11 |
 | K005 | [TypeScript parsing and lexical bindings](005-typescript-bindings.md) | 1 |
 | K006 | [Straight-line IR lowering](006-straight-line-ir.md) | 1 |
 | K007 | [Reaching definitions and origin transfers](007-transfer-functions.md) | 1 |

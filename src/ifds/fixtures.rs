@@ -1028,7 +1028,7 @@ fn reference_transfer(
         Operation::Compute { inputs, result, .. } => {
             let origins: BTreeSet<_> = inputs
                 .iter()
-                .flat_map(|input| facts_for_place(incoming, input).1)
+                .flat_map(|input| facts_for_place(incoming, &input.place).1)
                 .collect();
             kill_place(&mut outgoing, result);
             outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
@@ -1036,7 +1036,10 @@ fn reference_transfer(
                 source,
             }));
         }
-        Operation::Call { .. } | Operation::ReturnSite { .. } | Operation::UnknownEffect { .. } => {
+        Operation::Literal { .. }
+        | Operation::Call { .. }
+        | Operation::ReturnSite { .. }
+        | Operation::UnknownEffect { .. } => {
             return Err(FixtureError::Invalid(
                 "the tiny reference evaluator cannot prove effects for calls or unknown operations"
                     .into(),
@@ -1198,7 +1201,7 @@ mod tests {
                 3,
                 Operation::Read {
                     source: place(1),
-                    result: place(2),
+                    result: Place::Temporary(node(3)),
                 },
             ),
             (
@@ -1684,11 +1687,11 @@ mod tests {
         assert!(result.complete);
         let at_read_successor = &result.facts_at[&node(4)];
         assert!(at_read_successor.contains(&Fact::LastWrite {
-            place: place(2),
+            place: Place::Temporary(node(3)),
             write: definition(1)
         }));
         assert!(at_read_successor.contains(&Fact::Origin {
-            place: place(2),
+            place: Place::Temporary(node(3)),
             source: Source::Write(definition(1))
         }));
         let at_exit = &result.facts_at[&node(5)];
