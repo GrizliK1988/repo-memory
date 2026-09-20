@@ -87,6 +87,10 @@ impl FlowFunction for ProcedureFlowFunctions<'_> {
     fn transfer(&self, node: &NodeId, fact: &Fact) -> TransferOutcome {
         transfer_operation(&self.procedure.nodes[node].operation, fact)
     }
+
+    fn evidence(&self, node: &NodeId, fact: &Fact) -> BTreeSet<TransferEvidence> {
+        ProcedureFlowFunctions::evidence(self, node, fact)
+    }
 }
 
 pub fn seed_entry_facts(procedure: &ProcedureIr) -> BTreeSet<Fact> {

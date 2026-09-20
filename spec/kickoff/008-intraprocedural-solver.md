@@ -1,6 +1,6 @@
 # K008 — Single-procedure fixed-point solver
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K003](003-test-harness.md), [K006](006-straight-line-ir.md),
 [K007](007-transfer-functions.md).
