@@ -240,6 +240,18 @@ pub enum EvidenceKind {
     Unresolved { diagnostic: DiagnosticCode },
 }
 
+/// Whether the available evidence decides the presence of a particular relation.
+///
+/// `Absent` is deliberately stronger than an empty result: it is valid only when
+/// every relevant alternative was analyzed completely.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RelationPresence {
+    Present,
+    Absent,
+    Unknown,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FlowNode {
@@ -412,6 +424,43 @@ pub enum Coverage {
     Complete,
     Partial,
     Unsupported,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AnalysisRegion {
+    pub name: String,
+    pub direction: Direction,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AnalysisLimitKind {
+    Time,
+    Memory,
+    ProcessedPathEdges,
+    OutputNodes,
+    WitnessesPerRelation,
+}
+
+impl AnalysisLimitKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Time => "time",
+            Self::Memory => "memory",
+            Self::ProcessedPathEdges => "processed_path_edges",
+            Self::OutputNodes => "output_nodes",
+            Self::WitnessesPerRelation => "witnesses_per_relation",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LimitReason {
+    pub kind: AnalysisLimitKind,
+    pub limit: u64,
+    pub observed: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
