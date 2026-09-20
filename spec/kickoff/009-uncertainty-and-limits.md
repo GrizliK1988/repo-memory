@@ -1,6 +1,6 @@
 # K009 — Unknown effects and deterministic limits
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K002](002-snapshots-and-queries.md), [K008](008-intraprocedural-solver.md).
 

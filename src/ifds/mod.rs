@@ -9,6 +9,7 @@ pub mod model;
 pub mod provenance;
 pub mod snapshots;
 pub mod solver;
+pub mod uncertainty;
 
 pub use fixtures::*;
 pub use ir::*;
@@ -16,6 +17,7 @@ pub use model::*;
 pub use provenance::*;
 pub use snapshots::*;
 pub use solver::*;
+pub use uncertainty::*;
 
 #[cfg(test)]
 mod tests;
