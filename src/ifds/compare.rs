@@ -209,6 +209,19 @@ pub fn align_procedures(
 
     let mut node_pairs = BTreeSet::<(NodeId, NodeId, String)>::new();
     align_synthetic_nodes(before, after, &mut node_pairs);
+    for binding in &bindings {
+        let (Some(before_id), Some(after_id)) = (&binding.before, &binding.after) else {
+            continue;
+        };
+        let before_declaration = &before_by_id[before_id].declaration;
+        let after_declaration = &after_by_id[after_id].declaration;
+        if let (Some(old), Some(new)) = (
+            declaration_write(before, before_id, before_declaration),
+            declaration_write(after, after_id, after_declaration),
+        ) {
+            node_pairs.insert((old, new, "aligned declaration write".into()));
+        }
+    }
     align_source_nodes(
         before,
         after,
@@ -282,6 +295,28 @@ pub fn align_procedures(
         diagnostics,
         before_fingerprints,
         after_fingerprints,
+    })
+}
+
+fn declaration_write(
+    procedure: &ProcedureIr,
+    binding: &BindingId,
+    declaration: &SourceSpan,
+) -> Option<NodeId> {
+    procedure.nodes.values().find_map(|node| {
+        let Operation::Write {
+            target: Place::Binding(target),
+            ..
+        } = &node.operation
+        else {
+            return None;
+        };
+        let span = node.span.as_ref()?;
+        (target == binding
+            && span.path == declaration.path
+            && span.byte_start == declaration.byte_start
+            && span.byte_end >= declaration.byte_end)
+            .then(|| node.id.clone())
     })
 }
 

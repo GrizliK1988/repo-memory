@@ -900,4 +900,54 @@ mod tests {
         assert!(z.human_summary.contains("z = 1"));
         assert!(!z.human_summary.contains("no longer reaches write"));
     }
+
+    #[test]
+    fn ifds_k013_new_input_propagates() {
+        let report = run(
+            "function example() {\n  let x = 1;\n  let y = x + 2;\n  let z = y + x + 4;\n  return z;\n}\n",
+            "function example() {\n  let a = 5;\n  let x = a / 6;\n  let y = x + 2;\n  let z = y + x + 4;\n  return z;\n}\n",
+            "x",
+        );
+        assert_eq!(report.completeness, Completeness::CompleteForQuery);
+        assert!(report.unknown_frontiers.is_empty());
+        assert!(report.deltas.iter().any(|record| {
+            matches!(record.delta, FlowDelta::OperationChanged { .. })
+                && record
+                    .before_span
+                    .as_ref()
+                    .is_some_and(|span| span.start_line == 2)
+                && record
+                    .after_span
+                    .as_ref()
+                    .is_some_and(|span| span.start_line == 3)
+        }));
+        assert!(!report.deltas.iter().any(|record| matches!(
+            record.delta,
+            FlowDelta::WriteAdded { .. } | FlowDelta::WriteRemoved { .. }
+        )));
+        for line in [4, 5, 6] {
+            assert!(
+                report
+                    .after_graph
+                    .nodes
+                    .iter()
+                    .any(|node| node.span.start_line == line)
+            );
+        }
+        assert!(report.after_graph.edges.iter().any(|edge| {
+            report
+                .after_graph
+                .nodes
+                .iter()
+                .any(|node| node.id == edge.source && node.operation.contains("a = 5"))
+                && report
+                    .after_graph
+                    .nodes
+                    .iter()
+                    .any(|node| node.id == edge.target && node.operation.contains("x = a / 6"))
+        }));
+        assert!(report.human_summary.contains("x = a / 6"));
+        assert!(report.human_summary.contains("z = y + x + 4"));
+        assert!(report.human_summary.contains("return z"));
+    }
 }
