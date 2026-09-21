@@ -113,6 +113,8 @@ fn report(reverse: bool) -> VariableFlowReport {
         FlowDelta::FlowConditionChanged {
             source: LogicalNodeId(1),
             target: LogicalNodeId(2),
+            relation: RelationKind::Reaches,
+            projection: None,
             before: "ready".into(),
             after: "ready && enabled".into(),
         },
@@ -121,6 +123,9 @@ fn report(reverse: bool) -> VariableFlowReport {
             projection: "return".into(),
             before_sources: set([LogicalNodeId(1)]),
             after_sources: set([LogicalNodeId(3)]),
+            before_bindings: BTreeSet::new(),
+            after_bindings: BTreeSet::new(),
+            changed_operations: BTreeSet::new(),
         },
         FlowDelta::AnalysisUnknown {
             subject: "call target".into(),

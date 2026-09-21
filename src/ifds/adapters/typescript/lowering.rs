@@ -209,7 +209,7 @@ impl<'a> Lowerer<'a> {
             "import_statement" => {
                 self.emit_unknown(node, UnknownEffectKind::Value, Vec::new(), false);
             }
-            "empty_statement" => {}
+            "empty_statement" | "comment" => {}
             "statement_block" => self.lower_children(node),
             _ => {
                 self.emit_unknown(node, UnknownEffectKind::Control, Vec::new(), false);

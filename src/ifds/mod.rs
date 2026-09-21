@@ -4,6 +4,7 @@
 
 pub mod adapters;
 pub mod compare;
+pub mod comparison;
 pub mod fixtures;
 pub mod ir;
 pub mod model;
@@ -14,6 +15,7 @@ pub mod solver;
 pub mod uncertainty;
 
 pub use compare::*;
+pub use comparison::*;
 pub use fixtures::*;
 pub use ir::*;
 pub use model::*;

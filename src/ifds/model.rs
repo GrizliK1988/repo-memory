@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// The only report schema currently accepted by this crate.
-pub const REPORT_SCHEMA_VERSION: u32 = 1;
+pub const REPORT_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -366,6 +366,8 @@ pub enum FlowDelta {
     FlowConditionChanged {
         source: LogicalNodeId,
         target: LogicalNodeId,
+        relation: RelationKind,
+        projection: Option<String>,
         before: String,
         after: String,
     },
@@ -374,6 +376,9 @@ pub enum FlowDelta {
         projection: String,
         before_sources: BTreeSet<LogicalNodeId>,
         after_sources: BTreeSet<LogicalNodeId>,
+        before_bindings: BTreeSet<LogicalBindingId>,
+        after_bindings: BTreeSet<LogicalBindingId>,
+        changed_operations: BTreeSet<LogicalNodeId>,
     },
     AnalysisUnknown {
         subject: String,

@@ -1,6 +1,6 @@
 # K012 — Precise before/after deltas
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K010](010-full-flow-slices.md), [K011](011-node-alignment.md).
 
