@@ -16,10 +16,10 @@
   },
   "required": [
     {"kind": "write_added", "node": "overwrite"},
-    {"kind": "flow_added", "relation": {"source": "overwrite", "consumer": "return_read", "relation": "reaches", "projection": null}}
+    {"kind": "flow_added", "relation": {"source": "overwrite", "consumer": "return_read", "relation": "reaches", "projection": "value"}}
   ],
   "forbidden": [
-    {"kind": "flow_added", "relation": {"source": "initial_write", "consumer": "return_read", "relation": "reaches", "projection": null}}
+    {"kind": "flow_added", "relation": {"source": "initial_write", "consumer": "return_read", "relation": "reaches", "projection": "value"}}
   ],
   "retained_relations": [],
   "required_relations": [],
@@ -27,8 +27,8 @@
   "required_endings": [],
   "witness_assertions": [],
   "coverage": {
-    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true},
-    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true}
+    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false},
+    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false}
   },
   "completeness": "complete_for_query"
 }

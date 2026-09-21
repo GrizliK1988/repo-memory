@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// The only report schema currently accepted by this crate.
-pub const REPORT_SCHEMA_VERSION: u32 = 2;
+pub const REPORT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -592,6 +592,8 @@ pub struct VariableFlowReport {
     pub after_graph: FlowGraph,
     pub alignment: BTreeSet<Alignment>,
     pub deltas: BTreeSet<DeltaRecord>,
+    /// A concise rendering of the structured changes and uncertainty boundaries.
+    pub human_summary: String,
     pub witnesses: BTreeSet<Witness>,
     pub diagnostics: BTreeSet<Diagnostic>,
     pub unknown_frontiers: BTreeSet<UnknownFrontier>,

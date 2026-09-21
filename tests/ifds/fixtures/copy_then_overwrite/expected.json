@@ -9,6 +9,10 @@
       "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 36, "byte_end": 46, "start_line": 3, "end_line": 3}},
       "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 36, "byte_end": 46, "start_line": 3, "end_line": 3}}
     },
+    "overwrite": {
+      "before": null,
+      "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 49, "byte_end": 54, "start_line": 4, "end_line": 4}}
+    },
     "return_copy": {
       "before": {"kind": "node", "span": {"path": "main.ts", "byte_start": 49, "byte_end": 58, "start_line": 4, "end_line": 4}},
       "after": {"kind": "node", "span": {"path": "main.ts", "byte_start": 58, "byte_end": 67, "start_line": 5, "end_line": 5}}
@@ -17,16 +21,16 @@
   "required": [],
   "forbidden": [],
   "retained_relations": [
-    {"source": "source_write", "consumer": "copy", "relation": "value_dependency", "projection": null},
-    {"source": "copy", "consumer": "return_copy", "relation": "reaches", "projection": null}
+    {"source": "source_write", "consumer": "copy", "relation": "value_dependency", "projection": "value"},
+    {"source": "copy", "consumer": "return_copy", "relation": "reaches", "projection": "value"}
   ],
   "required_relations": [],
   "forbidden_relations": [],
   "required_endings": [],
   "witness_assertions": [],
   "coverage": {
-    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true},
-    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": true}
+    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false},
+    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function example", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false}
   },
   "completeness": "complete_for_query"
 }

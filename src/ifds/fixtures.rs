@@ -607,9 +607,40 @@ fn reviewed_label(
                 .is_some_and(|location| location.span() == span)
         })
         .map(|(name, _)| name.clone());
-    let first = matches.next().ok_or_else(|| {
-        FixtureError::Invalid(format!("no reviewed label for {side:?} span {span:?}"))
-    })?;
+    let first = if let Some(first) = matches.next() {
+        first
+    } else {
+        let containing: Vec<_> = expected
+            .labels
+            .iter()
+            .filter_map(|(name, label)| {
+                let location = match side {
+                    SnapshotSide::Before => &label.before,
+                    SnapshotSide::After => &label.after,
+                };
+                let outer = location.as_ref()?.span();
+                (outer.path == span.path
+                    && outer.byte_start <= span.byte_start
+                    && span.byte_end <= outer.byte_end)
+                    .then_some((outer.byte_end - outer.byte_start, name.clone()))
+            })
+            .collect();
+        let shortest = containing
+            .iter()
+            .map(|(size, _)| *size)
+            .min()
+            .ok_or_else(|| {
+                FixtureError::Invalid(format!("no reviewed label for {side:?} span {span:?}"))
+            })?;
+        let mut nearest = containing.into_iter().filter(|(size, _)| *size == shortest);
+        let (_, first) = nearest.next().expect("a shortest containing label exists");
+        if nearest.next().is_some() {
+            return Err(FixtureError::Invalid(format!(
+                "ambiguous reviewed containing label for {side:?} span {span:?}"
+            )));
+        }
+        return Ok(first);
+    };
     if matches.next().is_some() {
         return Err(FixtureError::Invalid(format!(
             "ambiguous reviewed label for {side:?} span {span:?}"
@@ -1379,6 +1410,7 @@ mod tests {
                 })
                 .collect(),
             deltas: BTreeSet::new(),
+            human_summary: "No established flow changes within the analyzed scope.".into(),
             witnesses: BTreeSet::new(),
             diagnostics: BTreeSet::new(),
             unknown_frontiers: BTreeSet::new(),

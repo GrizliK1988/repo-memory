@@ -1,6 +1,6 @@
 # K013 — Public API, reports, and first milestone
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K003](003-test-harness.md), [K009](009-uncertainty-and-limits.md),
 [K012](012-flow-comparison.md).
