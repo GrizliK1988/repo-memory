@@ -482,7 +482,7 @@ fn render_human_summary(
             FlowDelta::WriteAdded { after: id } => {
                 if let Some(node) = after_nodes.get(id) {
                     parts.insert(format!(
-                        "Added selected-binding write {} at {}:{}.",
+                        "Added selected-binding {} at {}:{}.",
                         node.operation, node.span.path, node.span.start_line
                     ));
                 }
@@ -490,7 +490,7 @@ fn render_human_summary(
             FlowDelta::WriteRemoved { before: id } => {
                 if let Some(node) = before_nodes.get(id) {
                     parts.insert(format!(
-                        "Removed selected-binding write {} at {}:{}.",
+                        "Removed selected-binding {} at {}:{}.",
                         node.operation, node.span.path, node.span.start_line
                     ));
                 }
@@ -545,7 +545,8 @@ fn render_human_summary(
                             .and_then(|id| before_nodes.get(id))
                             .is_some_and(|node| node.operation.starts_with("write"))
                     {
-                        parts.insert(format!("Earlier writer {} remains in the code but no longer reaches this input.", label(source, SnapshotSide::Before)));
+                        parts.insert(format!("Earlier writer {} remains in the code but no longer reaches this input.",
+                            label(source, SnapshotSide::Before).replacen("write ", "", 1)));
                     }
                 }
             }
