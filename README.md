@@ -2,11 +2,25 @@
 
 Rust utilities for analyzing repository changes.
 
-The planned IFDS variable-flow analyzer has a separate
+The IFDS variable-flow analyzer has a separate
 [specification and staged roadmap](docs/ifds/README.md), including automated
-benchmark criteria and the Bluesky PR #5816 reference case. It is not implemented yet.
+benchmark criteria and the Bluesky PR #5816 reference case. Stage 1 supports
+straight-line scalar variable flow; later language features remain planned.
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
+
+To inspect a real stage-1 report from two local TypeScript files, run:
+
+```sh
+cargo run --locked --offline --example ifds_compare -- \
+  tests/ifds/fixtures/overwrite/before/main.ts \
+  tests/ifds/fixtures/overwrite/after/main.ts x > report.json
+```
+
+The example prints the full JSON report, including `human_summary`, flow graphs,
+precise deltas, witnesses, coverage, and unknown boundaries. Replace the two paths
+with your own `.ts` or `.tsx` files and `x` with a declaration name that occurs once
+in each file. The example analyzes the selected binding's containing procedure.
 
 `tsx_diff::analyze_tsx_diff(git_diff, original, modified)` returns added, removed,
 and changed declarations using the [Tree-sitter TSX grammar](https://docs.rs/tree-sitter-typescript/0.23.2/tree_sitter_typescript/constant.LANGUAGE_TSX.html).
