@@ -107,6 +107,38 @@ fn paired_node<'a>(result: &'a AlignmentResult, before: &NodeId) -> &'a Alignmen
 }
 
 #[test]
+fn ifds_k011_declaration_write_with_inserted_input() {
+    let path = "src/a.ts";
+    let (before_index, before) = lower(
+        SnapshotSide::Before,
+        path,
+        "function f() { let x = 1; let y = x + 2; return y; }",
+        "x",
+        None,
+    );
+    let (after_index, after) = lower(
+        SnapshotSide::After,
+        path,
+        "function f() { let a = 5; let x = a / 6; let y = x + 2; return y; }",
+        "x",
+        None,
+    );
+    let result = align(
+        &before_index,
+        &before,
+        &after_index,
+        &after,
+        &modified_diff(path),
+        Some(&after.selected_binding),
+    )
+    .unwrap();
+    assert_eq!(
+        paired_node(&result, &writes(&before)[0]).after,
+        Some(writes(&after)[1].clone())
+    );
+}
+
+#[test]
 fn ifds_k011_initializer_identity() {
     let path = "src/a.ts";
     let (before_index, before) = lower(
