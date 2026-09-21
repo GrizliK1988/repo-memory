@@ -555,10 +555,14 @@ fn render_human_summary(
                 logical,
                 change: MembershipChange::Left,
             } => {
-                parts.insert(format!(
-                    "Selected binding no longer reaches {}.",
-                    label(logical, SnapshotSide::Before)
-                ));
+                let operation = label(logical, SnapshotSide::Before);
+                if operation.starts_with("return ") {
+                    parts.insert(format!("Selected binding no longer reaches {operation}."));
+                } else {
+                    parts.insert(format!(
+                        "{operation} left the selected binding's flow slice."
+                    ));
+                }
             }
             FlowDelta::ValueSourceChanged {
                 consumer,
@@ -888,5 +892,12 @@ mod tests {
         assert!(detached.human_summary.contains("z = 1"));
         assert!(detached.human_summary.contains("no longer reaches return"));
         assert!(!detached.human_summary.contains("operation 8"));
+        let z = run(
+            "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 2;\n  return z;\n}\n",
+            "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = 1;\n  return z;\n}\n",
+            "z",
+        );
+        assert!(z.human_summary.contains("z = 1"));
+        assert!(!z.human_summary.contains("no longer reaches write"));
     }
 }
