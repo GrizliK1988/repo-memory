@@ -498,6 +498,76 @@ fn align_source_nodes(
             ));
         }
     }
+    align_nested_sources(before, after, pairs, ambiguities);
+}
+
+fn align_nested_sources(
+    before: &ProcedureIr,
+    after: &ProcedureIr,
+    pairs: &mut BTreeSet<(NodeId, NodeId, String)>,
+    ambiguities: &mut BTreeSet<AlignmentAmbiguity>,
+) {
+    loop {
+        let mut additions = BTreeSet::new();
+        let occupied_before: BTreeSet<_> = pairs.iter().map(|pair| pair.0.clone()).collect();
+        let occupied_after: BTreeSet<_> = pairs.iter().map(|pair| pair.1.clone()).collect();
+        for (old, new, _) in pairs.iter() {
+            let (Some(old_node), Some(new_node)) = (before.nodes.get(old), after.nodes.get(new))
+            else {
+                continue;
+            };
+            let (old_inputs, new_inputs) = match (&old_node.operation, &new_node.operation) {
+                (Operation::Write { sources: old, .. }, Operation::Write { sources: new, .. }) => (
+                    old.iter().collect::<Vec<_>>(),
+                    new.iter().collect::<Vec<_>>(),
+                ),
+                (
+                    Operation::Compute { inputs: old, .. },
+                    Operation::Compute { inputs: new, .. },
+                ) => (
+                    old.iter().map(|i| &i.place).collect::<Vec<_>>(),
+                    new.iter().map(|i| &i.place).collect::<Vec<_>>(),
+                ),
+                _ => continue,
+            };
+            if old_inputs.len() != new_inputs.len() {
+                continue;
+            }
+            for (old_place, new_place) in old_inputs.into_iter().zip(new_inputs) {
+                let (Place::Temporary(old_source), Place::Temporary(new_source)) =
+                    (old_place, new_place)
+                else {
+                    continue;
+                };
+                if occupied_before.contains(old_source) || occupied_after.contains(new_source) {
+                    continue;
+                }
+                let (Some(old_source_node), Some(new_source_node)) =
+                    (before.nodes.get(old_source), after.nodes.get(new_source))
+                else {
+                    continue;
+                };
+                if operation_kind(&old_source_node.operation)
+                    == operation_kind(&new_source_node.operation)
+                {
+                    additions.insert((
+                        old_source.clone(),
+                        new_source.clone(),
+                        "matched producer of aligned input".into(),
+                    ));
+                }
+            }
+        }
+        if additions.is_empty() {
+            break;
+        }
+        pairs.extend(additions);
+    }
+    let paired_before: BTreeSet<_> = pairs.iter().map(|pair| pair.0.clone()).collect();
+    let paired_after: BTreeSet<_> = pairs.iter().map(|pair| pair.1.clone()).collect();
+    ambiguities.retain(|ambiguity| !ambiguity.candidates.iter().all(|candidate| {
+        matches!((&candidate.before, &candidate.after), (AlignmentEntity::Node(old), AlignmentEntity::Node(new)) if paired_before.contains(old) && paired_after.contains(new))
+    }));
 }
 
 fn ambiguous_entities(ambiguities: &BTreeSet<AlignmentAmbiguity>) -> BTreeSet<AlignmentEntity> {

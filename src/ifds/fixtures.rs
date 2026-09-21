@@ -584,26 +584,6 @@ impl Labels<'_> {
         }
     }
 
-    fn aligned_node(
-        &self,
-        id: crate::ifds::model::LogicalNodeId,
-        side: SnapshotSide,
-    ) -> Result<&NodeId, FixtureError> {
-        let alignment = self
-            .report
-            .alignment
-            .iter()
-            .find(|item| item.logical == id)
-            .ok_or_else(|| {
-                FixtureError::Invalid(format!("report references unaligned logical node {id:?}"))
-            })?;
-        match side {
-            SnapshotSide::Before => alignment.before.as_ref(),
-            SnapshotSide::After => alignment.after.as_ref(),
-        }
-        .ok_or_else(|| FixtureError::Invalid(format!("logical node {id:?} has no {side:?} node")))
-    }
-
     fn by_span(&self, side: SnapshotSide, span: &SourceSpan) -> Result<String, FixtureError> {
         reviewed_label(self.expected, side, span)
     }
@@ -695,49 +675,21 @@ fn normalize_delta(labels: &Labels<'_>, delta: &FlowDelta) -> Result<ExpectedDel
         FlowDelta::FlowConditionChanged {
             source,
             target,
+            relation,
+            projection,
             before,
             after,
-        } => {
-            let before_source = labels.aligned_node(*source, SnapshotSide::Before)?;
-            let before_target = labels.aligned_node(*target, SnapshotSide::Before)?;
-            let after_source = labels.aligned_node(*source, SnapshotSide::After)?;
-            let after_target = labels.aligned_node(*target, SnapshotSide::After)?;
-            let before_kinds: BTreeSet<_> = labels
-                .report
-                .before_graph
-                .edges
-                .iter()
-                .filter(|edge| &edge.source == before_source && &edge.target == before_target)
-                .map(|edge| (edge.relation.clone(), edge.projection.clone()))
-                .collect();
-            let after_kinds: BTreeSet<_> = labels
-                .report
-                .after_graph
-                .edges
-                .iter()
-                .filter(|edge| &edge.source == after_source && &edge.target == after_target)
-                .map(|edge| (edge.relation.clone(), edge.projection.clone()))
-                .collect();
-            let mut retained = before_kinds.intersection(&after_kinds);
-            let (relation, projection) = retained.next().cloned().ok_or_else(|| {
-                FixtureError::Invalid("condition delta has no retained typed relation".into())
-            })?;
-            if retained.next().is_some() {
-                return Err(FixtureError::Invalid(
-                    "condition delta has multiple retained typed relations".into(),
-                ));
-            }
-            ExpectedDelta::FlowConditionChanged {
-                relation: normalize_relation(labels, *source, *target, &relation, &projection)?,
-                before: before.clone(),
-                after: after.clone(),
-            }
-        }
+        } => ExpectedDelta::FlowConditionChanged {
+            relation: normalize_relation(labels, *source, *target, relation, projection)?,
+            before: before.clone(),
+            after: after.clone(),
+        },
         FlowDelta::ValueSourceChanged {
             consumer,
             projection,
             before_sources,
             after_sources,
+            ..
         } => ExpectedDelta::ValueSourceChanged {
             consumer: labels.logical(*consumer)?,
             projection: projection.clone(),
