@@ -291,6 +291,36 @@ pub struct Alignment {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BindingAlignment {
+    pub logical: LogicalBindingId,
+    pub before: Option<BindingId>,
+    pub after: Option<BindingId>,
+    pub evidence: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "id", rename_all = "snake_case")]
+pub enum AlignmentEntity {
+    Binding(BindingId),
+    Node(NodeId),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AlignmentCandidate {
+    pub before: AlignmentEntity,
+    pub after: AlignmentEntity,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AlignmentAmbiguity {
+    pub candidates: BTreeSet<AlignmentCandidate>,
+    pub evidence: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MembershipChange {
     Entered,

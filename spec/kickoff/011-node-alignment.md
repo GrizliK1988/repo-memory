@@ -1,6 +1,6 @@
 # K011 — Cross-revision identity alignment
 
-Status: planned. Roadmap stage: 1.
+Status: done. Roadmap stage: 1.
 
 Dependencies: [K002](002-snapshots-and-queries.md), [K005](005-typescript-bindings.md).
 

@@ -1,7 +1,11 @@
 //! TypeScript parsing and lexical binding for the stage-one scalar subset.
 
 use crate::ifds::model::{
-    BindingId, BindingSelector, Diagnostic, DiagnosticCode, InputError, SnapshotId, SourceSpan,
+    BindingId, BindingSelector, Diagnostic, DiagnosticCode, InputError, Place, SnapshotId,
+    SourceSpan,
+};
+use crate::ifds::{
+    AlignableBinding, AlignableBindingRole, AlignableScopeRole, Operation, ProcedureIr,
 };
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
@@ -127,6 +131,101 @@ impl TypeScriptBindingIndex {
             )));
         }
         Ok(binding)
+    }
+}
+
+/// Describe the lexical bindings referenced by a lowered procedure without
+/// exposing Tree-sitter nodes to the language-independent alignment core.
+pub fn alignable_bindings(
+    index: &TypeScriptBindingIndex,
+    procedure: &ProcedureIr,
+) -> Vec<AlignableBinding> {
+    let mut used = BTreeSet::new();
+    for parameter in &procedure.parameters {
+        used.insert(parameter.binding.clone());
+    }
+    for node in procedure.nodes.values() {
+        collect_operation_bindings(&node.operation, &mut used);
+    }
+    index
+        .bindings
+        .iter()
+        .filter(|binding| used.contains(&binding.id))
+        .map(|binding| AlignableBinding {
+            id: binding.id.clone(),
+            name: binding.name.clone(),
+            role: match binding.kind {
+                BindingKind::Let | BindingKind::Const => AlignableBindingRole::Local,
+                BindingKind::Parameter => AlignableBindingRole::Parameter,
+            },
+            declaration: binding.declaration.clone(),
+            enclosing_symbol: binding.enclosing_symbol.clone(),
+            scope_path: scope_path(index, binding.scope),
+        })
+        .collect()
+}
+
+fn scope_path(index: &TypeScriptBindingIndex, scope: ScopeId) -> Vec<AlignableScopeRole> {
+    let mut path = Vec::new();
+    let mut current = Some(scope);
+    while let Some(id) = current {
+        let scope = &index.scopes[id.0 as usize];
+        path.push(match scope.kind {
+            ScopeKind::Program => AlignableScopeRole::Program,
+            ScopeKind::Function => AlignableScopeRole::Function,
+            ScopeKind::Block => AlignableScopeRole::Block,
+        });
+        current = scope.parent;
+    }
+    path.reverse();
+    path
+}
+
+fn collect_operation_bindings(operation: &Operation, bindings: &mut BTreeSet<BindingId>) {
+    let mut collect_place = |place: &Place| {
+        if let Place::Binding(binding) = place {
+            bindings.insert(binding.clone());
+        }
+    };
+    match operation {
+        Operation::Read { source, .. } => collect_place(source),
+        Operation::Write {
+            target, sources, ..
+        } => {
+            collect_place(target);
+            for source in sources {
+                collect_place(source);
+            }
+        }
+        Operation::Compute { inputs, .. } | Operation::UnknownEffect { inputs, .. } => {
+            for input in inputs {
+                collect_place(&input.place);
+            }
+            if let Operation::UnknownEffect {
+                affected_places, ..
+            } = operation
+            {
+                for place in affected_places {
+                    collect_place(place);
+                }
+            }
+        }
+        Operation::Branch { condition } => collect_place(condition),
+        Operation::Call { arguments, .. } => {
+            for argument in arguments {
+                collect_place(argument);
+            }
+        }
+        Operation::Return { value } => {
+            if let Some(value) = value {
+                collect_place(value);
+            }
+        }
+        Operation::Entry
+        | Operation::Literal { .. }
+        | Operation::Join
+        | Operation::ReturnSite { .. }
+        | Operation::Exit => {}
     }
 }
 
