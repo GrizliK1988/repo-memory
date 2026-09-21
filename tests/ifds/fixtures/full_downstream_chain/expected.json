@@ -17,8 +17,8 @@
   "required": [],
   "forbidden": [],
   "retained_relations": [
-    {"source": "origin", "consumer": "first_consumer", "relation": "value_dependency", "projection": null},
-    {"source": "first_consumer", "consumer": "final_consumer", "relation": "value_dependency", "projection": null}
+    {"source": "origin", "consumer": "first_consumer", "relation": "value_dependency", "projection": "value.operands[0]"},
+    {"source": "first_consumer", "consumer": "final_consumer", "relation": "value_dependency", "projection": "value.operands[0]"}
   ],
   "required_relations": [],
   "forbidden_relations": [],
@@ -28,8 +28,8 @@
   ],
   "witness_assertions": [],
   "coverage": {
-    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": false},
-    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": [], "value_lifecycle_closed": false}
+    "before": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false},
+    "after": {"upstream": "complete", "downstream": "complete", "declared_scope": "function chain", "source_boundaries": [], "sink_boundaries": ["caller_scope"], "value_lifecycle_closed": false}
   },
   "completeness": "complete_for_query"
 }

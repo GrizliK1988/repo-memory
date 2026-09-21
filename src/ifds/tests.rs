@@ -287,6 +287,7 @@ fn report(reverse: bool) -> VariableFlowReport {
             evidence: "explicit declaration counterpart".into(),
         }]),
         deltas: set(deltas),
+        human_summary: "Selected binding flow changed; unresolved call boundary.".into(),
         witnesses: set([
             Witness {
                 id: WitnessId(0),
