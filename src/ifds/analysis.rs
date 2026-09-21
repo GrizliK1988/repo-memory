@@ -251,6 +251,8 @@ pub fn analyze_variable_flow<P: SnapshotProvider>(
         comparison.deltas,
         &before.procedure,
         &after.procedure,
+        &before_source,
+        &after_source,
     )
 }
 
@@ -299,6 +301,8 @@ fn assemble_report(
     deltas: BTreeSet<DeltaRecord>,
     before_ir: &super::ir::ProcedureIr,
     after_ir: &super::ir::ProcedureIr,
+    before_source: &str,
+    after_source: &str,
 ) -> Result<VariableFlowReport, AnalysisError> {
     let mut diagnostics: BTreeSet<_> = before
         .diagnostics
@@ -409,6 +413,10 @@ fn assemble_report(
         &alignment.nodes,
         &diagnostics,
         &unknown_frontiers,
+        before_ir,
+        after_ir,
+        before_source,
+        after_source,
     );
     let entry_assumptions = before_ir
         .parameters
@@ -450,6 +458,7 @@ fn assemble_report(
     Ok(report)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_human_summary(
     deltas: &BTreeSet<DeltaRecord>,
     before: &FlowGraph,
@@ -457,6 +466,10 @@ fn render_human_summary(
     alignment: &BTreeSet<Alignment>,
     diagnostics: &BTreeSet<Diagnostic>,
     frontiers: &BTreeSet<UnknownFrontier>,
+    before_ir: &super::ir::ProcedureIr,
+    after_ir: &super::ir::ProcedureIr,
+    before_source: &str,
+    after_source: &str,
 ) -> String {
     let before_nodes: BTreeMap<_, _> = before.nodes.iter().map(|node| (&node.id, node)).collect();
     let after_nodes: BTreeMap<_, _> = after.nodes.iter().map(|node| (&node.id, node)).collect();
@@ -464,15 +477,37 @@ fn render_human_summary(
     let label = |logical: &LogicalNodeId, side: SnapshotSide| -> String {
         by_logical
             .get(logical)
-            .and_then(|item| match side {
-                SnapshotSide::Before => item.before.as_ref().and_then(|id| before_nodes.get(id)),
-                SnapshotSide::After => item.after.as_ref().and_then(|id| after_nodes.get(id)),
-            })
-            .map(|node| {
-                format!(
-                    "{} at {}:{}",
-                    node.operation, node.span.path, node.span.start_line
-                )
+            .and_then(|item| {
+                let id = match side {
+                    SnapshotSide::Before => item.before.as_ref(),
+                    SnapshotSide::After => item.after.as_ref(),
+                }?;
+                let graph_node = match side {
+                    SnapshotSide::Before => before_nodes.get(id),
+                    SnapshotSide::After => after_nodes.get(id),
+                };
+                graph_node
+                    .map(|node| {
+                        format!(
+                            "{} at {}:{}",
+                            node.operation, node.span.path, node.span.start_line
+                        )
+                    })
+                    .or_else(|| {
+                        let (ir, source) = match side {
+                            SnapshotSide::Before => (before_ir, before_source),
+                            SnapshotSide::After => (after_ir, after_source),
+                        };
+                        let node = ir.nodes.get(id)?;
+                        let span = node.span.as_ref()?;
+                        let snippet = source
+                            .get(span.byte_start as usize..span.byte_end as usize)?
+                            .trim();
+                        Some(format!(
+                            "operation `{snippet}` at {}:{}",
+                            span.path, span.start_line
+                        ))
+                    })
             })
             .unwrap_or_else(|| format!("operation {}", logical.0))
     };
@@ -515,6 +550,15 @@ fn render_human_summary(
                 {
                     parts.insert("Its selected-binding write was retained.".into());
                 }
+            }
+            FlowDelta::SliceMembershipChanged {
+                logical,
+                change: MembershipChange::Left,
+            } => {
+                parts.insert(format!(
+                    "Selected binding no longer reaches {}.",
+                    label(logical, SnapshotSide::Before)
+                ));
             }
             FlowDelta::ValueSourceChanged {
                 consumer,
@@ -587,7 +631,12 @@ fn render_human_summary(
                     | DiagnosticCode::AnalysisBudgetExceeded
             )
         {
-            parts.insert(format!("Unknown boundary: {}.", diagnostic.message));
+            let prefix = if diagnostic.code == DiagnosticCode::AmbiguousMatch {
+                "Alignment uncertain"
+            } else {
+                "Unknown boundary"
+            };
+            parts.insert(format!("{prefix}: {}.", diagnostic.message));
         }
     }
     if parts.is_empty() {
@@ -831,5 +880,13 @@ mod tests {
         assert!(report.human_summary.contains("x = 2"));
         assert!(report.human_summary.contains("Earlier writer"));
         assert!(!report.human_summary.contains("no further impact"));
+        let detached = run(
+            "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 2;\n  return z;\n}\n",
+            "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = 1;\n  return z;\n}\n",
+            "x",
+        );
+        assert!(detached.human_summary.contains("z = 1"));
+        assert!(detached.human_summary.contains("no longer reaches return"));
+        assert!(!detached.human_summary.contains("operation 8"));
     }
 }
