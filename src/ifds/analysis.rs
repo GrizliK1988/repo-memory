@@ -986,6 +986,28 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k013_does_not_report_unrelated_declarations_as_changed() {
+        let report = run(
+            "function example() {\n  let x = 1;\n  let y = 2;\n  let z = x - y - 2;\n  return z;\n}\n",
+            "function example() {\n  let a = 4;\n  let x = a - 1;\n  let z = x + a - 6;\n  return z;\n}\n",
+            "x",
+        );
+        assert!(
+            !report
+                .human_summary
+                .contains("Changed operation write `y = 2`")
+        );
+        assert!(report.human_summary.contains("write `a = 4`"));
+        assert!(report.deltas.iter().all(|record| {
+            !matches!(record.delta, FlowDelta::OperationChanged { .. })
+                || record
+                    .before_span
+                    .as_ref()
+                    .is_none_or(|span| span.start_line != 3)
+        }));
+    }
+
+    #[test]
     fn ifds_k013_retargeted_consumer_chain() {
         let report = run(
             "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 4;\n  return z;\n}\n",

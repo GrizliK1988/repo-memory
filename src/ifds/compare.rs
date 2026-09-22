@@ -209,6 +209,14 @@ pub fn align_procedures(
 
     let mut node_pairs = BTreeSet::<(NodeId, NodeId, String)>::new();
     align_synthetic_nodes(before, after, &mut node_pairs);
+    let before_declaration_writes: BTreeSet<_> = before_bindings
+        .iter()
+        .filter_map(|binding| declaration_write(before, &binding.id, &binding.declaration))
+        .collect();
+    let after_declaration_writes: BTreeSet<_> = after_bindings
+        .iter()
+        .filter_map(|binding| declaration_write(after, &binding.id, &binding.declaration))
+        .collect();
     for binding in &bindings {
         let (Some(before_id), Some(after_id)) = (&binding.before, &binding.after) else {
             continue;
@@ -228,6 +236,7 @@ pub fn align_procedures(
         after,
         &before_fingerprints,
         &after_fingerprints,
+        (&before_declaration_writes, &after_declaration_writes),
         &mut node_pairs,
         &mut ambiguities,
     );
@@ -452,6 +461,7 @@ fn align_source_nodes(
     after: &ProcedureIr,
     before_fingerprints: &BTreeMap<NodeId, String>,
     after_fingerprints: &BTreeMap<NodeId, String>,
+    declaration_writes: (&BTreeSet<NodeId>, &BTreeSet<NodeId>),
     pairs: &mut BTreeSet<(NodeId, NodeId, String)>,
     ambiguities: &mut BTreeSet<AlignmentAmbiguity>,
 ) {
@@ -544,7 +554,10 @@ fn align_source_nodes(
     let paired_after: BTreeSet<_> = pairs.iter().map(|pair| pair.1.clone()).collect();
     let mut relaxed = BTreeMap::<&'static str, (Vec<NodeId>, Vec<NodeId>)>::new();
     for node in before.nodes.values().filter(|node| node.span.is_some()) {
-        if !paired_before.contains(&node.id) && !ambiguous.contains(&node.id) {
+        if !paired_before.contains(&node.id)
+            && !ambiguous.contains(&node.id)
+            && !declaration_writes.0.contains(&node.id)
+        {
             relaxed
                 .entry(operation_kind(&node.operation))
                 .or_default()
@@ -553,7 +566,10 @@ fn align_source_nodes(
         }
     }
     for node in after.nodes.values().filter(|node| node.span.is_some()) {
-        if !paired_after.contains(&node.id) && !ambiguous.contains(&node.id) {
+        if !paired_after.contains(&node.id)
+            && !ambiguous.contains(&node.id)
+            && !declaration_writes.1.contains(&node.id)
+        {
             relaxed
                 .entry(operation_kind(&node.operation))
                 .or_default()
