@@ -1026,4 +1026,48 @@ mod tests {
                 .contains("Its selected-binding write was retained")
         );
     }
+
+    #[test]
+    fn ifds_k013_reordered_sources_keep_direct_flow() {
+        let report = run(
+            "function example() {\n  let x = 1;\n  let y = x + 2;\n  let z = x + y;\n  return z;\n}\n",
+            "function example() {\n  let y = 1;\n  let x = 2;\n  let z = x + y;\n  return z;\n}\n",
+            "x",
+        );
+        let reaches = |graph: &FlowGraph, source: &str, target: &str| {
+            graph.edges.iter().any(|edge| {
+                graph
+                    .nodes
+                    .iter()
+                    .any(|node| node.id == edge.source && node.operation.contains(source))
+                    && graph
+                        .nodes
+                        .iter()
+                        .any(|node| node.id == edge.target && node.operation.contains(target))
+            })
+        };
+        assert!(reaches(&report.before_graph, "x = 1", "y = x + 2"));
+        assert!(reaches(&report.before_graph, "x = 1", "z = x + y"));
+        assert!(reaches(&report.before_graph, "y = x + 2", "z = x + y"));
+        assert!(reaches(&report.after_graph, "x = 2", "z = x + y"));
+        assert!(!reaches(&report.after_graph, "x = 2", "y = 1"));
+        assert!(!report.deltas.iter().any(|record| matches!(
+            record.delta,
+            FlowDelta::WriteAdded { .. } | FlowDelta::WriteRemoved { .. }
+        )));
+        assert!(report.deltas.iter().any(|record| matches!(
+            record.delta,
+            FlowDelta::FlowRemoved {
+                relation: RelationKind::ValueDependency,
+                ..
+            }
+        )));
+        assert_eq!(report.completeness, Completeness::CompleteForQuery);
+        assert!(report.diagnostics.is_empty());
+        assert!(
+            report
+                .human_summary
+                .contains("no longer carries the selected binding's value")
+        );
+    }
 }
