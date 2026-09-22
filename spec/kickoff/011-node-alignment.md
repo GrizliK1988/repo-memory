@@ -10,6 +10,12 @@ Source: [SPEC sections 3 and 6.1](../../docs/ifds/SPEC.md).
 
 - Align declarations and operations using explicit counterparts, file/rename
   mapping, lexical roles, structure, and local edit evidence.
+- A local declaration may correspond to a parameter of the same containing
+  function, and vice versa. Accept an explicit counterpart when the file and
+  containing lexical scope correspond. Infer this role change only when no
+  same-role match exists and the name, scope, and file identify one candidate.
+  Keep the binding's logical identity, but represent its initializer write and
+  parameter-entry source separately; their value origins are not equivalent.
 - Separate logical identity from expression fingerprints and source locations.
   A new RHS must not manufacture a new binding/write identity. Preserve the
   identity and fingerprint of a uniquely aligned operation that only moves, while
@@ -31,6 +37,7 @@ Excludes probabilistic matching or silently selecting among credible counterpart
 | `repeated_call_ambiguity` | An indistinguishable extra call leaves competing correspondences unresolved; no forced index-based match or deletion claim. |
 | `explicit_counterpart` | A valid counterpart disambiguates; a stale or incompatible counterpart is rejected. |
 | `one_sided_binding` | A confirmed inserted/deleted selected binding is represented one-sidedly without aliasing a same-named neighbor. |
+| `local_parameter_transition` | `function f() { let x=1; return x }` to `function f(x) { return x }` aligns `x` with and without an explicit counterpart. The local initializer write is one-sided and the parameter input is visible in the after flow. The reverse transition also aligns. A different containing function remains incompatible. |
 
 ## Verification
 

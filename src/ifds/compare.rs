@@ -340,11 +340,6 @@ fn validate_explicit_counterpart(
             "declarations are not in the same or validated-renamed file".into(),
         ));
     }
-    if before.role != after.role {
-        return Err(AlignmentError::IncompatibleCounterpart(
-            "a parameter cannot correspond to a local declaration".into(),
-        ));
-    }
     if before.scope_path != after.scope_path || before.enclosing_symbol != after.enclosing_symbol {
         return Err(AlignmentError::IncompatibleCounterpart(
             "declarations have incompatible containing procedures or lexical roles".into(),
@@ -419,12 +414,59 @@ fn align_automatic_bindings(
             });
         }
     }
+    let paired_before: BTreeSet<_> = pairs.iter().map(|pair| pair.0.clone()).collect();
+    let paired_after: BTreeSet<_> = pairs.iter().map(|pair| pair.1.clone()).collect();
+    let ambiguous = ambiguous_entities(ambiguities);
+    let mut role_changes =
+        BTreeMap::<String, (Vec<&AlignableBinding>, Vec<&AlignableBinding>)>::new();
+    for binding in before {
+        if !paired_before.contains(&binding.id)
+            && !ambiguous.contains(&AlignmentEntity::Binding(binding.id.clone()))
+        {
+            role_changes
+                .entry(binding_location_key(binding))
+                .or_default()
+                .0
+                .push(binding);
+        }
+    }
+    for binding in after {
+        if !paired_after.contains(&binding.id)
+            && !ambiguous.contains(&AlignmentEntity::Binding(binding.id.clone()))
+        {
+            role_changes
+                .entry(binding_location_key(binding))
+                .or_default()
+                .1
+                .push(binding);
+        }
+    }
+    for (_, (left, right)) in role_changes {
+        if left.len() == 1
+            && right.len() == 1
+            && left[0].role != right[0].role
+            && paths_correspond(&left[0].declaration.path, &right[0].declaration.path, diff)
+        {
+            pairs.insert((
+                left[0].id.clone(),
+                right[0].id.clone(),
+                "unique local/parameter role change".into(),
+            ));
+        }
+    }
 }
 
 fn binding_key(binding: &AlignableBinding) -> String {
     format!(
         "{:?}|{:?}|{:?}|{}",
         binding.role, binding.scope_path, binding.enclosing_symbol, binding.name
+    )
+}
+
+fn binding_location_key(binding: &AlignableBinding) -> String {
+    format!(
+        "{:?}|{:?}|{}",
+        binding.scope_path, binding.enclosing_symbol, binding.name
     )
 }
 

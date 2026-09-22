@@ -99,11 +99,26 @@ fn inferred_counterpart<'a>(
     index: &'a TypeScriptBindingIndex,
     selected: &super::adapters::typescript::LexicalBinding,
 ) -> Result<&'a super::adapters::typescript::LexicalBinding, AnalysisError> {
-    let mut matches = index.bindings.iter().filter(|binding| {
-        binding.name == selected.name
-            && binding.enclosing_symbol == selected.enclosing_symbol
-            && binding.kind == selected.kind
-    });
+    let candidates: Vec<_> = index
+        .bindings
+        .iter()
+        .filter(|binding| {
+            binding.name == selected.name && binding.enclosing_symbol == selected.enclosing_symbol
+        })
+        .collect();
+    let same_role: Vec<_> = candidates
+        .iter()
+        .copied()
+        .filter(|binding| {
+            (binding.kind == super::adapters::typescript::BindingKind::Parameter)
+                == (selected.kind == super::adapters::typescript::BindingKind::Parameter)
+        })
+        .collect();
+    let mut matches = if same_role.is_empty() {
+        candidates.into_iter()
+    } else {
+        same_role.into_iter()
+    };
     let first = matches.next().ok_or_else(|| {
         InputError::InvalidSelector(
             "selected binding has no supported counterpart in the other snapshot".into(),
@@ -741,7 +756,11 @@ mod tests {
 
     fn selector(snapshot: SnapshotId, source: &str, name: &str) -> BindingSelector {
         let needle = format!("let {name}");
-        let start = source.find(&needle).unwrap() + 4;
+        let start = source
+            .find(&needle)
+            .map(|offset| offset + 4)
+            .or_else(|| source.find(&format!("{name}:")))
+            .unwrap();
         let line = 1 + source[..start]
             .bytes()
             .filter(|byte| *byte == b'\n')
@@ -761,6 +780,15 @@ mod tests {
     }
 
     fn run(before: &str, after: &str, name: &str) -> VariableFlowReport {
+        run_with_counterpart(before, after, name, true)
+    }
+
+    fn run_with_counterpart(
+        before: &str,
+        after: &str,
+        name: &str,
+        explicit_counterpart: bool,
+    ) -> VariableFlowReport {
         let before_id = SnapshotId {
             side: SnapshotSide::Before,
             revision: "before".into(),
@@ -819,7 +847,7 @@ mod tests {
                 }]),
             },
             selected_binding: selector(before_id, before, name),
-            counterpart: Some(selector(after_id, after, name)),
+            counterpart: explicit_counterpart.then(|| selector(after_id, after, name)),
             entry: EntryPoint::ContainingFunction,
             capabilities,
             summaries: BTreeSet::new(),
@@ -1055,6 +1083,33 @@ mod tests {
                     .as_ref()
                     .is_none_or(|span| span.start_line != 3)
         }));
+    }
+
+    #[test]
+    fn ifds_k013_local_parameter_transition_changes_value_origin() {
+        let local = "function f() {\n  let x = 1;\n  let y = 2;\n  return x + y;\n}\n";
+        let parameter = "function f(x: number) {\n  let y = 2;\n  return x + y;\n}\n";
+        for explicit in [false, true] {
+            let report = run_with_counterpart(local, parameter, "x", explicit);
+            assert_eq!(report.completeness, Completeness::CompleteForQuery);
+            assert!(
+                report
+                    .human_summary
+                    .contains("Removed selected-binding write `x = 1`")
+            );
+            assert!(report.human_summary.contains("function_input `x`"));
+            assert!(report.diagnostics.is_empty());
+
+            let reverse = run_with_counterpart(parameter, local, "x", explicit);
+            assert_eq!(reverse.completeness, Completeness::CompleteForQuery);
+            assert!(
+                reverse
+                    .human_summary
+                    .contains("Added selected-binding write `x = 1`")
+            );
+            assert!(reverse.human_summary.contains("function_input `x`"));
+            assert!(reverse.diagnostics.is_empty());
+        }
     }
 
     #[test]

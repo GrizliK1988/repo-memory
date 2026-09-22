@@ -526,6 +526,44 @@ fn ifds_k011_explicit_counterpart() {
 }
 
 #[test]
+fn ifds_k011_local_parameter_transition() {
+    let path = "src/a.ts";
+    let old = "function f() { let x = 1; return x; }";
+    let new = "function f(x: number) { return x; }";
+    for (before_source, after_source) in [(old, new), (new, old)] {
+        let (before_index, before) = lower(SnapshotSide::Before, path, before_source, "x", None);
+        let (after_index, after) = lower(SnapshotSide::After, path, after_source, "x", None);
+        for counterpart in [None, Some(&after.selected_binding)] {
+            let result = align(
+                &before_index,
+                &before,
+                &after_index,
+                &after,
+                &modified_diff(path),
+                counterpart,
+            )
+            .unwrap();
+            assert!(result.bindings.iter().any(|binding| {
+                binding.before.as_ref() == Some(&before.selected_binding)
+                    && binding.after.as_ref() == Some(&after.selected_binding)
+            }));
+            let local_write = if before_source == old {
+                writes(&before)[0].clone()
+            } else {
+                writes(&after)[0].clone()
+            };
+            assert!(result.nodes.iter().any(|node| {
+                if before_source == old {
+                    node.before.as_ref() == Some(&local_write) && node.after.is_none()
+                } else {
+                    node.before.is_none() && node.after.as_ref() == Some(&local_write)
+                }
+            }));
+        }
+    }
+}
+
+#[test]
 fn ifds_k011_one_sided_binding() {
     let path = "src/a.ts";
     let (before_index, before) = lower(
@@ -538,8 +576,8 @@ fn ifds_k011_one_sided_binding() {
     let (after_index, after) = lower(
         SnapshotSide::After,
         path,
-        "function f(x: number) { return x; }",
-        "x",
+        "function f(y: number) { return y; }",
+        "y",
         Some(BindingKind::Parameter),
     );
     let result = align(
