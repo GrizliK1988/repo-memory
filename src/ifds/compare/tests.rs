@@ -139,6 +139,57 @@ fn ifds_k011_declaration_write_with_inserted_input() {
 }
 
 #[test]
+fn ifds_k011_repeated_literal_keeps_unchanged_span() {
+    let path = "src/a.ts";
+    let (before_index, before) = lower(
+        SnapshotSide::Before,
+        path,
+        "function f() { let x = 1; let y = x + 1; return y; }",
+        "x",
+        None,
+    );
+    let (after_index, after) = lower(
+        SnapshotSide::After,
+        path,
+        "function f() { let x = 1; let y = x; return y; }",
+        "x",
+        None,
+    );
+    let result = align(
+        &before_index,
+        &before,
+        &after_index,
+        &after,
+        &modified_diff(path),
+        Some(&after.selected_binding),
+    )
+    .unwrap();
+    let before_literal = before
+        .procedure
+        .nodes
+        .values()
+        .find(|node| {
+            matches!(node.operation, Operation::Literal { .. })
+                && node.span.as_ref().is_some_and(|span| span.byte_start == 23)
+        })
+        .unwrap();
+    let after_literal = after
+        .procedure
+        .nodes
+        .values()
+        .find(|node| {
+            matches!(node.operation, Operation::Literal { .. })
+                && node.span.as_ref().is_some_and(|span| span.byte_start == 23)
+        })
+        .unwrap();
+    assert_eq!(
+        paired_node(&result, &before_literal.id).after,
+        Some(after_literal.id.clone())
+    );
+    assert!(result.ambiguities.is_empty());
+}
+
+#[test]
 fn ifds_k011_initializer_identity() {
     let path = "src/a.ts";
     let (before_index, before) = lower(

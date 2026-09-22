@@ -477,7 +477,43 @@ fn align_source_nodes(
     }
 
     let mut ambiguous = BTreeSet::new();
-    for (fingerprint, (left, right)) in exact {
+    for (fingerprint, (mut left, mut right)) in exact {
+        if left.len() != right.len() {
+            let mut stable_before = BTreeSet::new();
+            let mut stable_after = BTreeSet::new();
+            for old in &left {
+                let old_node = &before.nodes[old];
+                if !matches!(old_node.operation, Operation::Literal { .. }) {
+                    continue;
+                }
+                let Some(span) = &old_node.span else { continue };
+                if left
+                    .iter()
+                    .filter(|id| before.nodes[*id].span.as_ref() == Some(span))
+                    .count()
+                    != 1
+                {
+                    continue;
+                }
+                let mut candidates = right
+                    .iter()
+                    .filter(|id| after.nodes[*id].span.as_ref() == Some(span));
+                let Some(new) = candidates.next() else {
+                    continue;
+                };
+                if candidates.next().is_none() {
+                    pairs.insert((
+                        old.clone(),
+                        new.clone(),
+                        "unchanged literal at identical source span".into(),
+                    ));
+                    stable_before.insert(old.clone());
+                    stable_after.insert(new.clone());
+                }
+            }
+            left.retain(|id| !stable_before.contains(id));
+            right.retain(|id| !stable_after.contains(id));
+        }
         if left.len() == right.len() {
             for (before, after) in left.into_iter().zip(right) {
                 pairs.insert((before, after, "identical semantic fingerprint".into()));

@@ -417,6 +417,8 @@ fn assemble_report(
         after_ir,
         before_source,
         after_source,
+        &before_binding,
+        &after_binding,
     );
     let entry_assumptions = before_ir
         .parameters
@@ -470,6 +472,8 @@ fn render_human_summary(
     after_ir: &super::ir::ProcedureIr,
     before_source: &str,
     after_source: &str,
+    before_binding: &BindingId,
+    after_binding: &BindingId,
 ) -> String {
     let before_nodes: BTreeMap<_, _> = before.nodes.iter().map(|node| (&node.id, node)).collect();
     let after_nodes: BTreeMap<_, _> = after.nodes.iter().map(|node| (&node.id, node)).collect();
@@ -503,8 +507,14 @@ fn render_human_summary(
                         let snippet = source
                             .get(span.byte_start as usize..span.byte_end as usize)?
                             .trim();
+                        let kind = match node.operation {
+                            super::ir::Operation::Write { .. } => "write",
+                            super::ir::Operation::Return { .. } => "return",
+                            super::ir::Operation::Literal { .. } => "literal",
+                            _ => "operation",
+                        };
                         Some(format!(
-                            "operation `{snippet}` at {}:{}",
+                            "{kind} `{snippet}` at {}:{}",
                             span.path, span.start_line
                         ))
                     })
@@ -540,13 +550,21 @@ fn render_human_summary(
                     && item
                         .before
                         .as_ref()
-                        .and_then(|id| before_nodes.get(id))
-                        .is_some_and(|node| node.operation.starts_with("write"))
+                        .and_then(|id| before_ir.nodes.get(id))
+                        .is_some_and(|node| {
+                            matches!(&node.operation,
+                            super::ir::Operation::Write { target: Place::Binding(binding), .. }
+                            if binding == before_binding)
+                        })
                     && item
                         .after
                         .as_ref()
-                        .and_then(|id| after_nodes.get(id))
-                        .is_some_and(|node| node.operation.starts_with("write"))
+                        .and_then(|id| after_ir.nodes.get(id))
+                        .is_some_and(|node| {
+                            matches!(&node.operation,
+                            super::ir::Operation::Write { target: Place::Binding(binding), .. }
+                            if binding == after_binding)
+                        })
                 {
                     parts.insert("Its selected-binding write was retained.".into());
                 }
@@ -593,8 +611,24 @@ fn render_human_summary(
                             .and_then(|id| before_nodes.get(id))
                             .is_some_and(|node| node.operation.starts_with("write"))
                     {
-                        parts.insert(format!("Earlier writer {} remains in the code but no longer reaches this input.",
-                            label(source, SnapshotSide::Before).replacen("write ", "", 1)));
+                        let selected_writer = item
+                            .before
+                            .as_ref()
+                            .and_then(|id| before_ir.nodes.get(id))
+                            .is_some_and(|node| {
+                                matches!(&node.operation,
+                                super::ir::Operation::Write { target: Place::Binding(binding), .. }
+                                if binding == before_binding)
+                            });
+                        let effect = if selected_writer {
+                            "no longer reaches this input"
+                        } else {
+                            "no longer carries the selected binding's value to this input"
+                        };
+                        parts.insert(format!(
+                            "Earlier writer {} remains in the code but {effect}.",
+                            label(source, SnapshotSide::Before).replacen("write ", "", 1)
+                        ));
                     }
                 }
             }
@@ -949,5 +983,47 @@ mod tests {
         assert!(report.human_summary.contains("x = a / 6"));
         assert!(report.human_summary.contains("z = y + x + 4"));
         assert!(report.human_summary.contains("return z"));
+    }
+
+    #[test]
+    fn ifds_k013_retargeted_consumer_chain() {
+        let report = run(
+            "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 4;\n  return z;\n}\n",
+            "function example() {\n  let x = 1;\n  let y = 2;\n  let z = x - y - 6;\n  return z;\n}\n",
+            "x",
+        );
+        let reaches = |graph: &FlowGraph, source: &str, target: &str| {
+            graph.edges.iter().any(|edge| {
+                graph
+                    .nodes
+                    .iter()
+                    .any(|node| node.id == edge.source && node.operation.contains(source))
+                    && graph
+                        .nodes
+                        .iter()
+                        .any(|node| node.id == edge.target && node.operation.contains(target))
+            })
+        };
+        assert!(reaches(&report.before_graph, "x = 1", "y = x + 1"));
+        assert!(reaches(&report.before_graph, "y = x + 1", "z = y + 4"));
+        assert!(reaches(&report.after_graph, "x = 1", "z = x - y - 6"));
+        assert!(!reaches(&report.after_graph, "y = 2", "z = x - y - 6"));
+        assert_eq!(report.completeness, Completeness::CompleteForQuery);
+        assert!(
+            !report
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.code == DiagnosticCode::AmbiguousMatch)
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("no longer carries the selected binding's value")
+        );
+        assert!(
+            !report
+                .human_summary
+                .contains("Its selected-binding write was retained")
+        );
     }
 }
