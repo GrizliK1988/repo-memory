@@ -596,12 +596,62 @@ fn render_human_summary(
                         .collect::<Vec<_>>()
                         .join(", ")
                 };
-                parts.insert(format!(
-                    "Consumer input {} ({projection}) changed sources from [{}] to [{}].",
-                    label(consumer, SnapshotSide::After),
-                    sources(before_sources, SnapshotSide::Before),
-                    sources(after_sources, SnapshotSide::After)
-                ));
+                let relocated_from = deltas.iter().find_map(|candidate| {
+                    let FlowDelta::ValueSourceChanged {
+                        consumer: parent_consumer,
+                        projection: parent_projection,
+                        before_sources: parent_before,
+                        after_sources: parent_after,
+                        ..
+                    } = &candidate.delta
+                    else {
+                        return None;
+                    };
+                    (parent_consumer == consumer
+                        && projection
+                            .strip_prefix(parent_projection)
+                            .is_some_and(|suffix| suffix.starts_with('.'))
+                        && !parent_before.is_empty()
+                        && parent_after.is_empty()
+                        && before_sources.is_empty()
+                        && !after_sources.is_empty())
+                    .then_some((parent_projection, parent_before))
+                });
+                if let Some((parent_projection, parent_sources)) = relocated_from {
+                    parts.insert(format!(
+                        "Consumer input {} moved sources from ({parent_projection}) [{}] to ({projection}) [{}].",
+                        label(consumer, SnapshotSide::After),
+                        sources(parent_sources, SnapshotSide::Before),
+                        sources(after_sources, SnapshotSide::After)
+                    ));
+                    continue;
+                }
+                let relocates_to_child = after_sources.is_empty()
+                    && deltas.iter().any(|candidate| {
+                        matches!(
+                            &candidate.delta,
+                            FlowDelta::ValueSourceChanged {
+                                consumer: child_consumer,
+                                projection: child_projection,
+                                before_sources: child_before,
+                                after_sources: child_after,
+                                ..
+                            } if child_consumer == consumer
+                                && child_projection
+                                    .strip_prefix(projection)
+                                    .is_some_and(|suffix| suffix.starts_with('.'))
+                                && child_before.is_empty()
+                                && !child_after.is_empty()
+                        )
+                    });
+                if !relocates_to_child {
+                    parts.insert(format!(
+                        "Consumer input {} ({projection}) changed sources from [{}] to [{}].",
+                        label(consumer, SnapshotSide::After),
+                        sources(before_sources, SnapshotSide::Before),
+                        sources(after_sources, SnapshotSide::After)
+                    ));
+                }
                 for source in before_sources.difference(after_sources) {
                     if let Some(item) = by_logical.get(source)
                         && item.after.is_some()
@@ -1005,6 +1055,28 @@ mod tests {
                     .as_ref()
                     .is_none_or(|span| span.start_line != 3)
         }));
+    }
+
+    #[test]
+    fn ifds_k013_reports_sources_moved_into_expression_operand() {
+        let report = run(
+            "function example() {\n  let x = 1;\n  return x;\n}\n",
+            "function example() {\n  let y = 1;\n  let x = 2;\n  return x + y;\n}\n",
+            "x",
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("moved sources from (value) [write `x = 1`")
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("to (value.operands[0]) [write `x = 2`")
+        );
+        assert!(!report
+            .human_summary
+            .contains("return `return x + y;` at snippet.ts:4 (value) changed sources from [write `x = 1`] to []"));
     }
 
     #[test]
