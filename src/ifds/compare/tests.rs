@@ -107,6 +107,53 @@ fn paired_node<'a>(result: &'a AlignmentResult, before: &NodeId) -> &'a Alignmen
 }
 
 #[test]
+fn ifds_k011_added_and_removed_declarations_are_not_changed_operations() {
+    let path = "src/a.ts";
+    let (before_index, before) = lower(
+        SnapshotSide::Before,
+        path,
+        "function example() {\n  let x = 1;\n  let y = 2;\n  let z = x - y - 2;\n  return z;\n}\n",
+        "x",
+        None,
+    );
+    let (after_index, after) = lower(
+        SnapshotSide::After,
+        path,
+        "function example() {\n  let a = 4;\n  let x = a - 1;\n  let z = x + a - 6;\n  return z;\n}\n",
+        "x",
+        None,
+    );
+    let result = align(
+        &before_index,
+        &before,
+        &after_index,
+        &after,
+        &modified_diff(path),
+        Some(&after.selected_binding),
+    )
+    .unwrap();
+    let old_y = before_index
+        .bindings
+        .iter()
+        .find(|binding| binding.name == "y")
+        .unwrap();
+    let new_a = after_index
+        .bindings
+        .iter()
+        .find(|binding| binding.name == "a")
+        .unwrap();
+    let old_write = declaration_write(&before.procedure, &old_y.id, &old_y.declaration).unwrap();
+    let new_write = declaration_write(&after.procedure, &new_a.id, &new_a.declaration).unwrap();
+    assert_eq!(paired_node(&result, &old_write).after, None);
+    assert!(
+        result
+            .nodes
+            .iter()
+            .any(|node| node.before.is_none() && node.after.as_ref() == Some(&new_write))
+    );
+}
+
+#[test]
 fn ifds_k011_declaration_write_with_inserted_input() {
     let path = "src/a.ts";
     let (before_index, before) = lower(
