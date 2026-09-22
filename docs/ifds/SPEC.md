@@ -567,8 +567,10 @@ model or unknown boundary used for either case.
 ## 6. Before/after comparison
 
 Analyze both snapshots independently with identical capabilities and summaries.
-Never propagate facts across revisions. Compare the same selected binding and
-entry assumptions, using their cross-revision counterparts.
+Never propagate facts across revisions. Compare the same selected binding using
+its cross-revision counterpart. Record entry assumptions separately on each
+side: moving a local declaration to a parameter introduces a function input,
+while moving a parameter to a local declaration removes that input.
 
 ### 6.1. Identity and delta kinds
 
@@ -580,6 +582,12 @@ The fingerprint records the operation kind, resolved input and target bindings,
 operators, literals, call target, and input/property projections. Source positions
 and syntax trivia alone do not change that fingerprint. Moving an operation can
 still change execution order and therefore flows, even if its fingerprint is unchanged.
+An explicit counterpart may align a local declaration with a parameter in the
+same containing function. Without an explicit counterpart, infer this role
+change only when the same name, scope, and file identify a unique candidate
+and no same-role candidate exists. Preserve the logical binding identity, but
+do not align its initializer write with a parameter-entry source: the latter is
+an unknown function input, not the old initializer value.
 
 Insertion of a repeated call must not silently shift every later call's identity.
 If multiple correspondences remain credible, report `AmbiguousMatch` and
