@@ -222,6 +222,7 @@ pub fn align_procedures(
             node_pairs.insert((old, new, "aligned declaration write".into()));
         }
     }
+    align_nested_sources(before, after, &mut node_pairs, &mut ambiguities);
     align_source_nodes(
         before,
         after,
@@ -636,9 +637,25 @@ fn align_nested_sources(
     }
     let paired_before: BTreeSet<_> = pairs.iter().map(|pair| pair.0.clone()).collect();
     let paired_after: BTreeSet<_> = pairs.iter().map(|pair| pair.1.clone()).collect();
-    ambiguities.retain(|ambiguity| !ambiguity.candidates.iter().all(|candidate| {
-        matches!((&candidate.before, &candidate.after), (AlignmentEntity::Node(old), AlignmentEntity::Node(new)) if paired_before.contains(old) && paired_after.contains(new))
-    }));
+    *ambiguities = ambiguities
+        .iter()
+        .filter_map(|ambiguity| {
+            let candidates: BTreeSet<_> = ambiguity
+                .candidates
+                .iter()
+                .filter(|candidate| {
+                    !matches!((&candidate.before, &candidate.after),
+                        (AlignmentEntity::Node(old), AlignmentEntity::Node(new))
+                        if paired_before.contains(old) || paired_after.contains(new))
+                })
+                .cloned()
+                .collect();
+            (!candidates.is_empty()).then(|| AlignmentAmbiguity {
+                candidates,
+                evidence: ambiguity.evidence.clone(),
+            })
+        })
+        .collect();
 }
 
 fn ambiguous_entities(ambiguities: &BTreeSet<AlignmentAmbiguity>) -> BTreeSet<AlignmentEntity> {
