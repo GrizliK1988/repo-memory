@@ -4,6 +4,7 @@
 
 pub mod adapters;
 pub mod analysis;
+pub mod branches;
 pub mod compare;
 pub mod comparison;
 pub mod fixtures;

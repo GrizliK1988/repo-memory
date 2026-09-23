@@ -100,6 +100,8 @@ pub enum PrimitiveOperator {
     LogicalNot,
     StrictEqual,
     StrictNotEqual,
+    GreaterThan,
+    LessThan,
     PropertyRead { property: String },
     IndexRead,
     Template,

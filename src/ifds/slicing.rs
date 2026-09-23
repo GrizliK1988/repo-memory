@@ -1,10 +1,11 @@
 //! Construction of a selected binding's complete supported source-level slice.
 
+use crate::ifds::branches::BranchPaths;
 use crate::ifds::ir::{ComputeInputRole, IrNode, Operation, ProcedureIr};
 use crate::ifds::model::{
-    BindingId, Completeness, Coverage, Diagnostic, DiagnosticCode, EvidenceKind, Fact, FlowEdge,
-    FlowGraph, FlowNode, NodeId, PathEnding, PathEndingKind, Place, SnapshotExtent, Source,
-    SourceSpan, UnknownFrontier, Witness, WitnessId,
+    BindingId, Completeness, Coverage, Diagnostic, DiagnosticCode, Direction, EvidenceKind, Fact,
+    FlowEdge, FlowGraph, FlowNode, NodeId, PathEnding, PathEndingKind, Place, SnapshotExtent,
+    Source, SourceSpan, UnknownFrontier, Witness, WitnessId,
 };
 use crate::ifds::solver::{SolverOutput, SolverTermination};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
@@ -65,6 +66,12 @@ struct CarrierLife {
     killed_at: Option<NodeId>,
 }
 
+struct EndingMetadata<'a> {
+    context: &'a str,
+    diagnostic: Option<DiagnosticCode>,
+    condition: Option<String>,
+}
+
 struct SliceBuilder<'a> {
     procedure: &'a ProcedureIr,
     facts_at: &'a BTreeMap<NodeId, BTreeSet<Fact>>,
@@ -86,6 +93,7 @@ struct SliceBuilder<'a> {
     next_witness: u64,
     upstream_partial: bool,
     downstream_partial: bool,
+    branches: Option<BranchPaths>,
 }
 
 pub fn build_flow_slice(request: SliceRequest<'_>) -> Result<SliceOutput, SliceError> {
@@ -152,7 +160,19 @@ impl<'a> SliceBuilder<'a> {
             return Err(SliceError::MissingSelectedBinding);
         }
         let expression_owner = expression_owners(procedure);
-        Ok(Self {
+        let branches = procedure
+            .nodes
+            .values()
+            .any(|node| matches!(node.operation, Operation::Branch { .. }))
+            .then(|| {
+                BranchPaths::build(
+                    procedure,
+                    facts_at.get(&procedure.entry).cloned().unwrap_or_default(),
+                    4096,
+                )
+            });
+        let branch_truncated = branches.as_ref().is_some_and(|paths| paths.truncated);
+        let mut builder = Self {
             procedure,
             facts_at,
             selected_binding,
@@ -173,14 +193,38 @@ impl<'a> SliceBuilder<'a> {
             next_witness: 1,
             upstream_partial: false,
             downstream_partial: false,
-        })
+            branches,
+        };
+        if branch_truncated {
+            builder.downstream_partial = true;
+            builder.relevant_diagnostics.insert(Diagnostic {
+                code: DiagnosticCode::AnalysisBudgetExceeded,
+                message: "branch witness state limit (4096) exceeded".into(),
+                snapshot: Some(procedure.id.snapshot.clone()),
+                frontier: Some(procedure.entry.clone()),
+                span: None,
+                affected_flows: BTreeSet::new(),
+            });
+            builder.relevant_frontiers.insert(UnknownFrontier {
+                node: procedure.entry.clone(),
+                next_operation: "branch path validation".into(),
+                diagnostic: DiagnosticCode::AnalysisBudgetExceeded,
+                affected_direction: Direction::Downstream,
+            });
+        }
+        Ok(builder)
     }
 
     fn build(&mut self) -> Result<(), SliceError> {
         self.relevant_origins = self.selected_origins.clone();
         self.add_selected_writes_and_upstream()?;
         self.add_downstream()?;
-        self.add_endings()?;
+        self.add_controls()?;
+        if self.branches.is_some() {
+            self.add_branch_endings()?;
+        } else {
+            self.add_endings()?;
+        }
         self.retain_relevant_facts();
         Ok(())
     }
@@ -195,6 +239,9 @@ impl<'a> SliceBuilder<'a> {
             .cloned()
             .collect();
         for node in selected {
+            if !self.reachable(&node.id) {
+                continue;
+            }
             self.add_node(&node, None)?;
             let Operation::Write { sources, .. } = &node.operation else {
                 unreachable!()
@@ -242,6 +289,9 @@ impl<'a> SliceBuilder<'a> {
         let nodes: Vec<_> = self.procedure.nodes.values().cloned().collect();
         let origins: Vec<_> = self.selected_origins.iter().cloned().collect();
         for node in nodes {
+            if !self.reachable(&node.id) {
+                continue;
+            }
             match &node.operation {
                 Operation::Write { sources, .. } => {
                     for origin in &origins {
@@ -378,6 +428,309 @@ impl<'a> SliceBuilder<'a> {
                     }
                 }
                 _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    fn add_controls(&mut self) -> Result<(), SliceError> {
+        if self.branches.is_none() {
+            return Ok(());
+        }
+        let branches: Vec<_> = self
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| {
+                matches!(node.operation, Operation::Branch { .. }) && self.reachable(&node.id)
+            })
+            .cloned()
+            .collect();
+        for branch in branches {
+            let Operation::Branch { condition } = &branch.operation else {
+                unreachable!()
+            };
+            let guard_is_selected = self
+                .selected_origins
+                .iter()
+                .any(|origin| self.place_has_origin(&branch.id, condition, origin));
+            let controlled = controlled_nodes(self.procedure, &branch.id);
+            let selected_writes: Vec<_> = controlled.iter().filter(|id| {
+                matches!(&self.procedure.nodes[*id].operation,
+                    Operation::Write { target: Place::Binding(binding), .. } if binding == self.selected_binding)
+            }).cloned().collect();
+            if !guard_is_selected && selected_writes.is_empty() {
+                continue;
+            }
+            if self
+                .branches
+                .as_ref()
+                .is_some_and(|paths| paths.unproven_branches.contains(&branch.id))
+            {
+                self.downstream_partial = true;
+                self.relevant_diagnostics.insert(Diagnostic {
+                    code: DiagnosticCode::UnprovenPathFeasibility,
+                    message: "guard theory is outside the supported Boolean subset".into(),
+                    snapshot: Some(self.procedure.id.snapshot.clone()),
+                    frontier: Some(branch.id.clone()),
+                    span: branch.span.clone(),
+                    affected_flows: BTreeSet::new(),
+                });
+                self.relevant_frontiers.insert(UnknownFrontier {
+                    node: branch.id.clone(),
+                    next_operation: "branch outcome".into(),
+                    diagnostic: DiagnosticCode::UnprovenPathFeasibility,
+                    affected_direction: Direction::Downstream,
+                });
+            }
+            self.add_node(&branch, None)?;
+            if guard_is_selected {
+                for origin in self.selected_origins.clone() {
+                    for item in self.resolve_sources(
+                        condition,
+                        &branch.id,
+                        Some(&origin),
+                        "condition",
+                        false,
+                    ) {
+                        self.add_resolved_node(&item.node)?;
+                        self.add_edge(
+                            item.node,
+                            branch.id.clone(),
+                            crate::ifds::model::RelationKind::ValueDependency,
+                            Some(item.projection),
+                            EvidenceKind::Supported,
+                        );
+                    }
+                }
+            }
+            for id in controlled {
+                let node = self.procedure.nodes[&id].clone();
+                if !self.reachable(&id) {
+                    continue;
+                }
+                if !matches!(node.operation, Operation::Write { .. }) {
+                    continue;
+                }
+                if !guard_is_selected && !selected_writes.contains(&id) {
+                    continue;
+                }
+                self.add_node(&node, None)?;
+                self.add_edge(
+                    branch.id.clone(),
+                    id.clone(),
+                    crate::ifds::model::RelationKind::Controls,
+                    None,
+                    EvidenceKind::Supported,
+                );
+                if selected_writes.contains(&id) {
+                    for condition in self.edge_conditions(
+                        &branch.id,
+                        &id,
+                        &crate::ifds::model::RelationKind::Controls,
+                    ) {
+                        let evidence = if self
+                            .branches
+                            .as_ref()
+                            .is_some_and(|paths| paths.condition_unproven(&id, &condition))
+                        {
+                            EvidenceKind::Unresolved {
+                                diagnostic: DiagnosticCode::UnprovenPathFeasibility,
+                            }
+                        } else {
+                            EvidenceKind::Supported
+                        };
+                        self.graph_edges.insert(FlowEdge {
+                            source: id.clone(),
+                            target: id.clone(),
+                            relation: crate::ifds::model::RelationKind::MayWrite,
+                            projection: None,
+                            condition,
+                            evidence,
+                        });
+                    }
+                }
+                if guard_is_selected {
+                    let Operation::Write {
+                        target, definition, ..
+                    } = &node.operation
+                    else {
+                        unreachable!()
+                    };
+                    let readers: Vec<_> = self
+                        .procedure
+                        .nodes
+                        .values()
+                        .filter(|candidate| {
+                            matches!(&candidate.operation, Operation::Return { value: Some(_) })
+                        })
+                        .cloned()
+                        .collect();
+                    for reader in readers {
+                        if let Operation::Return { value: Some(value) } = &reader.operation {
+                            let conditions = self.branches.as_ref().unwrap().conditions_for(
+                                &reader.id,
+                                |facts| {
+                                    facts.contains(&Fact::LastWrite {
+                                        place: target.clone(),
+                                        write: definition.clone(),
+                                    }) || facts.contains(&Fact::Origin {
+                                        place: value.clone(),
+                                        source: Source::Write(definition.clone()),
+                                    })
+                                },
+                            );
+                            if !conditions.is_empty() {
+                                self.add_node(&reader, None)?;
+                                for condition in conditions {
+                                    self.graph_edges.insert(FlowEdge {
+                                        source: id.clone(),
+                                        target: reader.id.clone(),
+                                        relation: crate::ifds::model::RelationKind::Reaches,
+                                        projection: Some("value".into()),
+                                        condition,
+                                        evidence: EvidenceKind::Supported,
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn add_branch_endings(&mut self) -> Result<(), SliceError> {
+        let paths = self.branches.as_ref().unwrap();
+        let records: Vec<_> = self
+            .procedure
+            .nodes
+            .values()
+            .filter_map(|node| {
+                let value = match &node.operation {
+                    Operation::Return { value } => value.clone(),
+                    _ => return None,
+                };
+                let states = paths.at.get(&node.id)?.clone();
+                Some((node.id.clone(), value, states))
+            })
+            .collect();
+        for (id, value, states) in records {
+            for state in states {
+                for origin in self.selected_origins.clone() {
+                    let Some(carrier) = state.facts.iter().find_map(|fact| match fact {
+                        Fact::Origin { place, source } if source == &origin => Some(place.clone()),
+                        _ => None,
+                    }) else {
+                        continue;
+                    };
+                    let escaped = value.as_ref().is_some_and(|value| {
+                        state.facts.contains(&Fact::Origin {
+                            place: value.clone(),
+                            source: origin.clone(),
+                        })
+                    });
+                    let condition = (!state.labels.is_empty()).then(|| {
+                        state
+                            .labels
+                            .iter()
+                            .cloned()
+                            .collect::<Vec<_>>()
+                            .join(" && ")
+                    });
+                    self.add_ending_with_condition(
+                        if state.unproven {
+                            PathEndingKind::UnknownBoundary
+                        } else if escaped {
+                            PathEndingKind::ScopeBoundary
+                        } else {
+                            PathEndingKind::NoFurtherUse
+                        },
+                        origin,
+                        carrier,
+                        &id,
+                        EndingMetadata {
+                            context: if state.unproven {
+                                "return path depends on an unproven guard"
+                            } else if escaped {
+                                "returned beyond the declared caller scope"
+                            } else {
+                                "no carrier escapes this return"
+                            },
+                            diagnostic: state
+                                .unproven
+                                .then_some(DiagnosticCode::UnprovenPathFeasibility),
+                            condition,
+                        },
+                    )?;
+                }
+            }
+        }
+        let boundaries: Vec<_> = self
+            .procedure
+            .nodes
+            .values()
+            .filter_map(|node| {
+                let (inputs, diagnostic) = match &node.operation {
+                    Operation::UnknownEffect { inputs, .. } => (
+                        inputs
+                            .iter()
+                            .map(|input| input.place.clone())
+                            .collect::<Vec<_>>(),
+                        diagnostic_for_operation(&node.operation),
+                    ),
+                    Operation::Call { arguments, .. } => {
+                        (arguments.clone(), DiagnosticCode::UnresolvedCall)
+                    }
+                    _ => return None,
+                };
+                Some((
+                    node.id.clone(),
+                    inputs,
+                    diagnostic,
+                    self.branches
+                        .as_ref()
+                        .unwrap()
+                        .at
+                        .get(&node.id)
+                        .cloned()
+                        .unwrap_or_default(),
+                ))
+            })
+            .collect();
+        for (id, inputs, diagnostic, states) in boundaries {
+            for state in states {
+                for origin in self.selected_origins.clone() {
+                    for carrier in &inputs {
+                        if !state.facts.contains(&Fact::Origin {
+                            place: carrier.clone(),
+                            source: origin.clone(),
+                        }) {
+                            continue;
+                        }
+                        let condition = (!state.labels.is_empty()).then(|| {
+                            state
+                                .labels
+                                .iter()
+                                .cloned()
+                                .collect::<Vec<_>>()
+                                .join(" && ")
+                        });
+                        self.add_ending_with_condition(
+                            PathEndingKind::UnknownBoundary,
+                            origin.clone(),
+                            carrier.clone(),
+                            &id,
+                            EndingMetadata {
+                                context: "unsupported continuation on this branch",
+                                diagnostic: Some(diagnostic.clone()),
+                                condition,
+                            },
+                        )?;
+                        self.downstream_partial = true;
+                    }
+                }
             }
         }
         Ok(())
@@ -787,6 +1140,9 @@ impl<'a> SliceBuilder<'a> {
     }
 
     fn add_resolved_node(&mut self, id: &NodeId) -> Result<(), SliceError> {
+        if !self.reachable(id) {
+            return Ok(());
+        }
         let node = &self.procedure.nodes[id];
         let override_name =
             matches!(node.operation, Operation::Read { .. }).then_some("function_input");
@@ -804,17 +1160,66 @@ impl<'a> SliceBuilder<'a> {
         if source == target {
             return;
         }
-        self.graph_edges.insert(FlowEdge {
-            source: source.clone(),
-            target: target.clone(),
-            relation,
-            projection,
-            condition: None,
-            evidence: evidence.clone(),
-        });
+        let conditions = self.edge_conditions(&source, &target, &relation);
+        if conditions.is_empty() {
+            return;
+        }
+        for condition in conditions {
+            let evidence = if self.branches.as_ref().is_some_and(|paths| paths.truncated) {
+                EvidenceKind::Unresolved {
+                    diagnostic: DiagnosticCode::AnalysisBudgetExceeded,
+                }
+            } else if self
+                .branches
+                .as_ref()
+                .is_some_and(|paths| paths.condition_unproven(&target, &condition))
+            {
+                EvidenceKind::Unresolved {
+                    diagnostic: DiagnosticCode::UnprovenPathFeasibility,
+                }
+            } else {
+                evidence.clone()
+            };
+            self.graph_edges.insert(FlowEdge {
+                source: source.clone(),
+                target: target.clone(),
+                relation: relation.clone(),
+                projection: projection.clone(),
+                condition,
+                evidence,
+            });
+        }
         let path =
             shortest_path(self.procedure, &source, &target).unwrap_or_else(|| vec![source, target]);
         self.add_witness(path, evidence);
+    }
+
+    fn reachable(&self, node: &NodeId) -> bool {
+        self.branches
+            .as_ref()
+            .is_none_or(|paths| paths.truncated || paths.at.contains_key(node))
+    }
+
+    fn edge_conditions(
+        &self,
+        source: &NodeId,
+        target: &NodeId,
+        relation: &crate::ifds::model::RelationKind,
+    ) -> BTreeSet<Option<String>> {
+        let Some(paths) = &self.branches else {
+            return BTreeSet::from([None]);
+        };
+        if paths.truncated {
+            return BTreeSet::from([None]);
+        }
+        let operation = &self.procedure.nodes[source].operation;
+        match operation {
+            Operation::Write { target: place, definition, .. } if *relation == crate::ifds::model::RelationKind::Reaches =>
+                paths.conditions_for(target, |facts| facts.contains(&Fact::LastWrite { place: place.clone(), write: definition.clone() })),
+            Operation::Write { definition, .. } | Operation::Literal { definition, .. } | Operation::Compute { definition, .. } =>
+                paths.conditions_for(target, |facts| facts.iter().any(|fact| matches!(fact, Fact::Origin { source: Source::Write(candidate), .. } if candidate == definition))),
+            _ => paths.conditions_for(target, |_| true),
+        }
     }
 
     fn add_ending(
@@ -826,6 +1231,27 @@ impl<'a> SliceBuilder<'a> {
         context: &str,
         diagnostic: Option<DiagnosticCode>,
     ) -> Result<(), SliceError> {
+        self.add_ending_with_condition(
+            kind,
+            origin,
+            carrier,
+            location_node,
+            EndingMetadata {
+                context,
+                diagnostic,
+                condition: None,
+            },
+        )
+    }
+
+    fn add_ending_with_condition(
+        &mut self,
+        kind: PathEndingKind,
+        origin: Source,
+        carrier: Place,
+        location_node: &NodeId,
+        metadata: EndingMetadata<'_>,
+    ) -> Result<(), SliceError> {
         let node = &self.procedure.nodes[location_node];
         let location = node
             .span
@@ -836,7 +1262,8 @@ impl<'a> SliceBuilder<'a> {
             .unwrap_or_else(|| self.procedure.entry.clone());
         let path = shortest_path(self.procedure, &start, location_node)
             .unwrap_or_else(|| vec![start, location_node.clone()]);
-        let evidence = diagnostic
+        let evidence = metadata
+            .diagnostic
             .clone()
             .map(|diagnostic| EvidenceKind::Unresolved { diagnostic })
             .unwrap_or(EvidenceKind::Supported);
@@ -846,11 +1273,11 @@ impl<'a> SliceBuilder<'a> {
             origin,
             carrier,
             location,
-            condition: None,
-            context: context.into(),
+            condition: metadata.condition,
+            context: metadata.context.into(),
             witness,
             model: None,
-            diagnostic,
+            diagnostic: metadata.diagnostic,
         });
         Ok(())
     }
@@ -959,11 +1386,27 @@ impl<'a> SliceBuilder<'a> {
             .collect();
         self.relevant_origins
             .extend(visible_definitions.iter().cloned().map(Source::Write));
-        for facts in self.facts_at.values() {
+        let guarded_facts: Vec<&BTreeSet<Fact>> = self
+            .branches
+            .as_ref()
+            .filter(|paths| !paths.truncated)
+            .map(|paths| {
+                paths
+                    .at
+                    .values()
+                    .flat_map(|states| states.iter().map(|state| &state.facts))
+                    .collect()
+            })
+            .unwrap_or_else(|| self.facts_at.values().collect());
+        for facts in guarded_facts {
             self.graph_facts.extend(
                 facts
                     .iter()
                     .filter(|fact| match fact {
+                        Fact::Origin {
+                            source: Source::Write(definition),
+                            ..
+                        } => visible_definitions.contains(definition),
                         Fact::Origin { source, .. } => self.relevant_origins.contains(source),
                         Fact::LastWrite { write, .. } => visible_definitions.contains(write),
                         Fact::Zero => false,
@@ -1129,6 +1572,34 @@ fn diagnostic_for_operation(operation: &Operation) -> DiagnosticCode {
         Operation::UnknownEffect { .. } => DiagnosticCode::UnsupportedSyntax,
         _ => DiagnosticCode::UnknownExternalEffect,
     }
+}
+
+fn controlled_nodes(procedure: &ProcedureIr, branch: &NodeId) -> BTreeSet<NodeId> {
+    fn reachable_from(procedure: &ProcedureIr, start: &NodeId) -> BTreeSet<NodeId> {
+        let mut seen = BTreeSet::new();
+        let mut queue = VecDeque::from([start.clone()]);
+        while let Some(node) = queue.pop_front() {
+            if !seen.insert(node.clone()) {
+                continue;
+            }
+            for edge in procedure.edges.iter().filter(|edge| edge.source == node) {
+                queue.push_back(edge.target.clone());
+            }
+        }
+        seen
+    }
+    let arms: Vec<_> = procedure
+        .edges
+        .iter()
+        .filter(|edge| {
+            &edge.source == branch && matches!(edge.kind, crate::ifds::ir::EdgeKind::Branch { .. })
+        })
+        .map(|edge| reachable_from(procedure, &edge.target))
+        .collect();
+    if arms.len() != 2 {
+        return BTreeSet::new();
+    }
+    arms[0].symmetric_difference(&arms[1]).cloned().collect()
 }
 
 fn shortest_path(procedure: &ProcedureIr, source: &NodeId, target: &NodeId) -> Option<Vec<NodeId>> {

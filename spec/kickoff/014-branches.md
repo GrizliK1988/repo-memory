@@ -1,6 +1,6 @@
 # K014 — Branches, early returns, and control influence
 
-Status: planned. Roadmap stage: 2.
+Status: done. Roadmap stage: 2.
 
 Dependencies: [K013](013-analysis-api.md).
 

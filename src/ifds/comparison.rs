@@ -350,8 +350,9 @@ pub fn compare_flow_slices(
                         .condition_proofs
                         .get(&key)
                         .copied()
-                        .unwrap_or(ConditionComparison::Unknown)
-                    {
+                        .unwrap_or_else(|| {
+                            compare_boolean_conditions(&old.conditions, &new.conditions)
+                        }) {
                         ConditionComparison::Different => insert(
                             &mut records,
                             FlowDelta::FlowConditionChanged {
@@ -440,6 +441,66 @@ pub fn compare_flow_slices(
     Ok(ComparisonOutput {
         deltas: records.into_values().collect(),
     })
+}
+
+fn compare_boolean_conditions(
+    before: &BTreeSet<Option<String>>,
+    after: &BTreeSet<Option<String>>,
+) -> ConditionComparison {
+    fn clauses(conditions: &BTreeSet<Option<String>>) -> Option<Vec<Vec<(String, bool)>>> {
+        conditions
+            .iter()
+            .map(|condition| {
+                condition.as_deref().map_or_else(
+                    || Some(Vec::new()),
+                    |text| {
+                        text.split(" && ")
+                            .map(|term| {
+                                let (name, positive) = term
+                                    .strip_prefix('!')
+                                    .map_or((term, true), |name| (name, false));
+                                (name
+                                    .chars()
+                                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '$')
+                                    && name.chars().next().is_some_and(|ch| {
+                                        ch.is_ascii_alphabetic() || ch == '_' || ch == '$'
+                                    }))
+                                .then(|| (name.to_owned(), positive))
+                            })
+                            .collect::<Option<Vec<_>>>()
+                    },
+                )
+            })
+            .collect()
+    }
+    let (Some(old), Some(new)) = (clauses(before), clauses(after)) else {
+        return ConditionComparison::Unknown;
+    };
+    let variables: BTreeSet<_> = old
+        .iter()
+        .chain(&new)
+        .flat_map(|clause| clause.iter().map(|term| term.0.clone()))
+        .collect();
+    if variables.len() > 8 {
+        return ConditionComparison::Unknown;
+    }
+    let variables: Vec<_> = variables.into_iter().collect();
+    let evaluate = |formula: &Vec<Vec<(String, bool)>>, mask: usize| {
+        formula.iter().any(|clause| {
+            clause.iter().all(|(name, positive)| {
+                let index = variables
+                    .iter()
+                    .position(|variable| variable == name)
+                    .unwrap();
+                ((mask >> index) & 1 == 1) == *positive
+            })
+        })
+    };
+    if (0..(1 << variables.len())).all(|mask| evaluate(&old, mask) == evaluate(&new, mask)) {
+        ConditionComparison::Equivalent
+    } else {
+        ConditionComparison::Different
+    }
 }
 
 fn node_ids(alignment: &AlignmentResult, side: SnapshotSide) -> BTreeMap<NodeId, LogicalNodeId> {
