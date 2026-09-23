@@ -605,9 +605,57 @@ fn render_human_summary(
                 ..
             } => {
                 let sources = |items: &BTreeSet<LogicalNodeId>, side| {
+                    let graph = match side {
+                        SnapshotSide::Before => before,
+                        SnapshotSide::After => after,
+                    };
+                    let consumer_id = by_logical.get(consumer).and_then(|item| match side {
+                        SnapshotSide::Before => item.before.as_ref(),
+                        SnapshotSide::After => item.after.as_ref(),
+                    });
                     items
                         .iter()
-                        .map(|id| label(id, side))
+                        .map(|id| {
+                            let mut description = label(id, side);
+                            let source_id = by_logical.get(id).and_then(|item| match side {
+                                SnapshotSide::Before => item.before.as_ref(),
+                                SnapshotSide::After => item.after.as_ref(),
+                            });
+                            let conditions: BTreeSet<_> = source_id
+                                .zip(consumer_id)
+                                .into_iter()
+                                .flat_map(|(source_id, consumer_id)| {
+                                    graph
+                                        .edges
+                                        .iter()
+                                        .filter(move |edge| {
+                                            edge.source == *source_id
+                                                && edge.target == *consumer_id
+                                                && edge.projection.as_deref() == Some(projection)
+                                                && matches!(
+                                                    edge.relation,
+                                                    RelationKind::Reaches
+                                                        | RelationKind::ValueDependency
+                                                        | RelationKind::Argument
+                                                        | RelationKind::Return
+                                                )
+                                        })
+                                        .map(|edge| edge.condition.clone())
+                                })
+                                .collect();
+                            if conditions.contains(&None) {
+                                description.push_str(" unconditionally");
+                            } else if !conditions.is_empty() {
+                                let conditions = conditions
+                                    .iter()
+                                    .filter_map(|condition| condition.as_deref())
+                                    .map(|condition| format!("`{condition}`"))
+                                    .collect::<Vec<_>>()
+                                    .join(" or ");
+                                description.push_str(&format!(" when {conditions}"));
+                            }
+                            description
+                        })
                         .collect::<Vec<_>>()
                         .join(", ")
                 };
@@ -661,7 +709,7 @@ fn render_human_summary(
                     });
                 if !relocates_to_child {
                     parts.insert(format!(
-                        "Consumer input {} ({projection}) changed sources from [{}] to [{}].",
+                        "Possible value origins reaching {} ({projection}) changed from [{}] to [{}].",
                         label(consumer, SnapshotSide::After),
                         sources(before_sources, SnapshotSide::Before),
                         sources(after_sources, SnapshotSide::After)
@@ -992,7 +1040,11 @@ mod tests {
                 .human_summary
                 .contains("Added selected-binding write")
         );
-        assert!(report.human_summary.contains("Consumer input"));
+        assert!(
+            report
+                .human_summary
+                .contains("Possible value origins reaching")
+        );
         assert!(report.human_summary.contains("x = 2"));
         assert!(report.human_summary.contains("Earlier writer"));
         assert!(!report.human_summary.contains("no further impact"));
@@ -1011,6 +1063,36 @@ mod tests {
         );
         assert!(z.human_summary.contains("z = 1"));
         assert!(!z.human_summary.contains("no longer reaches write"));
+    }
+
+    #[test]
+    fn ifds_k014_added_guard_report_preserves_path_conditions() {
+        let report = run(
+            "function f(flag: boolean) {\n  let x = 0;\n  return x;\n}\n",
+            "function f(flag: boolean) {\n  let x = 0;\n  if (flag) x = 1;\n  return x;\n}\n",
+            "x",
+        );
+        assert!(
+            report.human_summary.contains(
+                "Possible value origins reaching return `return x;` at main.ts:4 (value)"
+            )
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("write `x = 0` at main.ts:2 unconditionally")
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("write `x = 0` at main.ts:2 when `!flag`")
+        );
+        assert!(
+            report
+                .human_summary
+                .contains("write `x = 1` at main.ts:3 when `flag`")
+        );
+        assert!(!report.human_summary.contains("Consumer input"));
     }
 
     #[test]
