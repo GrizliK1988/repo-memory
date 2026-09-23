@@ -4,7 +4,8 @@ use crate::ifds::adapters::typescript::{
     lower_containing_procedure,
 };
 use crate::ifds::model::{
-    AnalysisLimits, FileChange, FileChangeKind, RepositoryDiff, SnapshotId, SnapshotSide,
+    AnalysisLimits, FileChange, FileChangeKind, PathEndingKind, RepositoryDiff, SnapshotId,
+    SnapshotSide,
 };
 use crate::ifds::provenance::seed_entry_facts;
 use crate::ifds::slicing::{SliceRequest, build_flow_slice};
@@ -118,6 +119,255 @@ fn run(pair: &Pair) -> ComparisonOutput {
         condition_proofs: &BTreeMap::new(),
     })
     .unwrap()
+}
+
+#[test]
+fn ifds_k014_one_sided_write() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(flag: boolean) { let x = 0; if (flag) x = 1; return x; }",
+    );
+    let result = slice(&lowered);
+    let return_id = lowered
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::Return { .. }))
+        .unwrap()
+        .id
+        .clone();
+    let reaching: BTreeSet<_> = result
+        .graph
+        .edges
+        .iter()
+        .filter(|edge| edge.target == return_id && edge.relation == RelationKind::Reaches)
+        .map(|edge| edge.condition.clone())
+        .collect();
+    assert_eq!(
+        reaching,
+        BTreeSet::from([Some("flag".into()), Some("!flag".into())])
+    );
+    assert_eq!(
+        lowered
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| matches!(node.operation, Operation::Write { .. }))
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn ifds_k014_two_sided_nested() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(a: boolean, b: boolean) { let x = 0; if (a) { if (b) x = 1; else x = 2; } else x = 3; return x; }",
+    );
+    let result = slice(&lowered);
+    let return_id = lowered
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::Return { .. }))
+        .unwrap()
+        .id
+        .clone();
+    let conditions: BTreeSet<_> = result
+        .graph
+        .edges
+        .iter()
+        .filter(|edge| edge.target == return_id && edge.relation == RelationKind::Reaches)
+        .filter_map(|edge| edge.condition.clone())
+        .collect();
+    assert_eq!(
+        conditions,
+        BTreeSet::from(["a && b".into(), "!b && a".into(), "!a".into()])
+    );
+}
+
+#[test]
+fn ifds_k014_early_return() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(flag: boolean) { let x = 0; if (flag) return x; x = 1; return x; }",
+    );
+    let result = slice(&lowered);
+    let returns: Vec<_> = lowered
+        .procedure
+        .nodes
+        .values()
+        .filter(|node| matches!(node.operation, Operation::Return { .. }))
+        .collect();
+    assert_eq!(returns.len(), 2);
+    let first: BTreeSet<_> = result
+        .graph
+        .edges
+        .iter()
+        .filter(|edge| edge.target == returns[0].id && edge.relation == RelationKind::Reaches)
+        .filter_map(|edge| edge.condition.clone())
+        .collect();
+    let second: BTreeSet<_> = result
+        .graph
+        .edges
+        .iter()
+        .filter(|edge| edge.target == returns[1].id && edge.relation == RelationKind::Reaches)
+        .filter_map(|edge| edge.condition.clone())
+        .collect();
+    assert_eq!(first, BTreeSet::from(["flag".into()]));
+    assert_eq!(second, BTreeSet::from(["!flag".into()]));
+}
+
+#[test]
+fn ifds_k014_guard_only_delta() {
+    let pair = pair(
+        "function f(flag: boolean) { let x = 0; if (flag) x = 1; return x; }",
+        "function f(flag: boolean) { let x = 0; if (!flag) x = 1; return x; }",
+    );
+    let deltas = run(&pair);
+    let changed_conditions: Vec<_> = deltas
+        .deltas
+        .iter()
+        .filter_map(|delta| match &delta.delta {
+            FlowDelta::FlowConditionChanged { relation, .. } => Some(relation.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        changed_conditions
+            .iter()
+            .filter(|relation| **relation == RelationKind::Reaches)
+            .count(),
+        2,
+        "{deltas:?}"
+    );
+    assert!(
+        changed_conditions.contains(&RelationKind::Controls),
+        "{deltas:?}"
+    );
+    assert!(
+        changed_conditions.contains(&RelationKind::MayWrite),
+        "{deltas:?}"
+    );
+    assert!(!deltas.deltas.iter().any(|delta| matches!(
+        delta.delta,
+        FlowDelta::WriteAdded { .. }
+            | FlowDelta::WriteRemoved { .. }
+            | FlowDelta::ValueSourceChanged { .. }
+    )));
+}
+
+#[test]
+fn ifds_k014_control_not_copy() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(input: number) { let x = input; let y = 0; if (x > 0) y = 1; return y; }",
+    );
+    let result = slice(&lowered);
+    assert!(
+        result
+            .graph
+            .edges
+            .iter()
+            .any(|edge| edge.relation == RelationKind::Controls)
+    );
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == DiagnosticCode::UnprovenPathFeasibility)
+    );
+    let y_write = lowered.procedure.nodes.values().filter(|node| matches!(&node.operation,
+        Operation::Write { target: Place::Binding(binding), .. } if binding != &lowered.selected_binding))
+        .next_back().unwrap();
+    assert!(!result.graph.edges.iter().any(|edge| edge.target == y_write.id && edge.relation == RelationKind::ValueDependency
+        && lowered.procedure.nodes.get(&edge.source).is_some_and(|node| matches!(&node.operation,
+            Operation::Write { target: Place::Binding(binding), .. } if binding == &lowered.selected_binding))));
+}
+
+#[test]
+fn ifds_k014_false_and_contradictory() {
+    let (_, false_case) = lower(
+        SnapshotSide::Before,
+        "function f() { let x = 0; if (false) x = 1; return x; }",
+    );
+    let false_slice = slice(&false_case);
+    let unreachable = false_case
+        .procedure
+        .nodes
+        .values()
+        .filter(|node| matches!(node.operation, Operation::Write { .. }))
+        .next_back()
+        .unwrap();
+    assert!(
+        !false_slice
+            .graph
+            .nodes
+            .iter()
+            .any(|node| node.id == unreachable.id)
+    );
+    let (_, contradiction) = lower(
+        SnapshotSide::Before,
+        "function f(flag: boolean) { let x = 0; if (flag) { if (!flag) x = 1; } return x; }",
+    );
+    let contradiction_slice = slice(&contradiction);
+    let impossible = contradiction
+        .procedure
+        .nodes
+        .values()
+        .filter(|node| matches!(node.operation, Operation::Write { .. }))
+        .next_back()
+        .unwrap();
+    assert!(
+        !contradiction_slice
+            .graph
+            .nodes
+            .iter()
+            .any(|node| node.id == impossible.id)
+    );
+    let (_, unsupported) = lower(
+        SnapshotSide::Before,
+        "function f(input: number) { let x = 0; if (input > 0) x = 1; return x; }",
+    );
+    let unsupported_slice = slice(&unsupported);
+    assert!(
+        unsupported_slice
+            .diagnostics
+            .iter()
+            .any(|diagnostic| { diagnostic.code == DiagnosticCode::UnprovenPathFeasibility })
+    );
+    assert!(unsupported_slice.graph.edges.iter().any(|edge| {
+        matches!(
+            edge.evidence,
+            EvidenceKind::Unresolved {
+                diagnostic: DiagnosticCode::UnprovenPathFeasibility
+            }
+        )
+    }));
+}
+
+#[test]
+fn ifds_k014_path_endings_independent() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(flag: boolean) { let x = 0; if (flag) return x; return 1; }",
+    );
+    let result = slice(&lowered);
+    assert!(
+        result
+            .path_endings
+            .iter()
+            .any(|ending| ending.kind == PathEndingKind::ScopeBoundary
+                && ending.condition.as_deref() == Some("flag"))
+    );
+    assert!(
+        result
+            .path_endings
+            .iter()
+            .any(|ending| ending.kind == PathEndingKind::NoFurtherUse
+                && ending.condition.as_deref() == Some("!flag"))
+    );
+    assert!(!result.extent.value_lifecycle_closed);
 }
 
 fn deltas(output: &ComparisonOutput) -> Vec<&FlowDelta> {

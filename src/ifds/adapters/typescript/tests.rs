@@ -299,26 +299,20 @@ fn ifds_k006_control_frontier() {
         "function f(flag: boolean) { let x = 1; if (flag) { return x; } x = 2; }",
         "x",
     );
-    let frontier = result
+    let branch = result
         .procedure
         .nodes
         .values()
-        .find(|node| {
-            matches!(
-                node.operation,
-                Operation::UnknownEffect {
-                    effect_kind: UnknownEffectKind::Control,
-                    ..
-                }
-            )
-        })
+        .find(|node| matches!(node.operation, Operation::Branch { .. }))
         .unwrap();
-    assert!(
-        !result
+    assert_eq!(
+        result
             .procedure
             .edges
             .iter()
-            .any(|edge| edge.source == frontier.id)
+            .filter(|edge| edge.source == branch.id)
+            .count(),
+        2
     );
 }
 

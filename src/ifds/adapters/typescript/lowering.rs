@@ -162,6 +162,7 @@ impl<'a> Lowerer<'a> {
                 }
             }
             "return_statement" => self.lower_return(node),
+            "if_statement" => self.lower_if(node),
             "function_declaration" | "generator_function_declaration" => {
                 if self.contains_procedure_capture(node) {
                     self.emit_unknown(node, UnknownEffectKind::Value, Vec::new(), false);
@@ -297,6 +298,66 @@ impl<'a> Lowerer<'a> {
         );
         self.terminals.push(id);
         self.tail = None;
+    }
+
+    fn lower_if(&mut self, node: Node<'_>) {
+        let Some(condition_node) = node.child_by_field_name("condition") else {
+            self.emit_unknown(node, UnknownEffectKind::Control, Vec::new(), false);
+            self.tail = None;
+            return;
+        };
+        let Some(consequence) = node.child_by_field_name("consequence") else {
+            self.emit_unknown(node, UnknownEffectKind::Control, Vec::new(), false);
+            self.tail = None;
+            return;
+        };
+        let condition = self.lower_expression(condition_node);
+        let branch = self.emit(
+            Operation::Branch { condition },
+            Some(source_span(&self.index.path, condition_node)),
+        );
+        let construct = source_span(&self.index.path, node);
+        let label = node_text(condition_node, self.source).trim().to_owned();
+        let alternative = node
+            .child_by_field_name("alternative")
+            .and_then(|alternative| {
+                if alternative.kind() == "else_clause" {
+                    alternative.named_child(0)
+                } else {
+                    Some(alternative)
+                }
+            });
+        let mut continuing = Vec::new();
+        for (outcome, arm) in [(true, Some(consequence)), (false, alternative)] {
+            self.tail = None;
+            let entry = self.emit(Operation::Join, None);
+            self.edges.insert(IrEdge {
+                source: branch.clone(),
+                target: entry,
+                kind: EdgeKind::Branch { outcome },
+                construct: Some(construct.clone()),
+                assumption: Some(if outcome {
+                    label.clone()
+                } else {
+                    format!("!({label})")
+                }),
+            });
+            if let Some(arm) = arm {
+                self.lower_statement(arm);
+            }
+            if let Some(tail) = self.tail.take() {
+                continuing.push(tail);
+            }
+        }
+        if continuing.is_empty() {
+            self.tail = None;
+        } else {
+            self.tail = None;
+            let join = self.emit(Operation::Join, None);
+            for tail in continuing {
+                self.edges.insert(normal_edge(tail, join.clone()));
+            }
+        }
     }
 
     fn lower_expression(&mut self, node: Node<'_>) -> Place {
@@ -821,6 +882,8 @@ fn primitive_binary(operator: &str) -> Option<PrimitiveOperator> {
         "%" => PrimitiveOperator::Remainder,
         "===" => PrimitiveOperator::StrictEqual,
         "!==" => PrimitiveOperator::StrictNotEqual,
+        ">" => PrimitiveOperator::GreaterThan,
+        "<" => PrimitiveOperator::LessThan,
         _ => return None,
     })
 }
