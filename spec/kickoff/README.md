@@ -1,6 +1,6 @@
 # Kickoff: IFDS implementation tasks
 
-Status: stage 1 complete; later stages planned. These 40 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
+Status: stage 1 complete; later stages planned. These 41 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
 [staged roadmap](../../docs/ifds/README.md), and the
 [benchmark contract](../../docs/ifds/BENCHMARKS.md).
 
@@ -91,6 +91,10 @@ language features or benchmark percentages to deliver the first milestone.
 | K038 | [Summary caching and invalidation](038-caching.md) | 11 |
 | K039 | [Demand slicing, parallelism, and measurement](039-scale-and-measurement.md) | 11 |
 | K040 | [Coverage registry and release acceptance](040-release-gates.md) | 11 |
+| K041 | [Compact source and logic change report](041-compact-source-report.md) | 2 |
+
+K041 is a report extension that can follow K014 directly; it does not depend on
+completion of the intervening task IDs.
 
 ## Design traceability
 
@@ -106,6 +110,7 @@ language features or benchmark percentages to deliver the first milestone.
 | Section 6 case 9: unknown is not removed/added | K009, K012 |
 | Section 6 case 10: unchanged downstream consumer chain | K010, K012, K013, K020 |
 | Report evidence, per-direction coverage, grouping, history-ready metadata | K001, K009, K010, K012, K013 |
+| Compact source/guard/precedence explanation for humans and agents | K041 |
 | Additional TypeScript syntax and execution paths | K014–K037 |
 | Independent fixtures, 90% precision, recall/abstention reporting | K003, K004, K025, K040 |
 | Budgets, slicing equivalence, cache correctness, measured scale | K009, K038, K039 |

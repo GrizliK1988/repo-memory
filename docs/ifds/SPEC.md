@@ -931,6 +931,14 @@ Structural and derived records describe different aspects of this one edit;
 grouping must not turn them or multiple witnesses into repeated findings. Canonical
 flow-claim scoring remains as defined in the [benchmark specification](BENCHMARKS.md).
 
+The [compact source report contract](COMPACT_REPORT.md), specified for K041, defines
+the next human/agent presentation of these facts: source sets at identified uses,
+shared control and overwrite rules, and deduplicated before/after findings. Required
+summary content may be represented once through those structured facts; it does
+not require one sentence per typed delta or a listing of every path condition.
+This extension is specified but not yet implemented. Full evidence requirements
+below remain in force.
+
 Keep the full upstream/downstream graphs separate from the delta list. A node or
 edge retained as context is not an extra change claim. For later consumer-history
 correlation, preserve each consumer's repository path, enclosing declaration,
