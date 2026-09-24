@@ -698,22 +698,35 @@ fn render_clauses(
                 .terms
                 .iter()
                 .map(|term| {
-                    let label = controls
+                    let (label, negated) = controls
                         .get(&term.control)
-                        .and_then(|control| match side {
-                            SnapshotSide::Before => control.before.as_ref(),
-                            SnapshotSide::After => control.after.as_ref(),
+                        .map(|control| match side {
+                            SnapshotSide::Before => {
+                                (control.before.as_ref(), control.before_value.as_ref())
+                            }
+                            SnapshotSide::After => {
+                                (control.after.as_ref(), control.after_value.as_ref())
+                            }
                         })
-                        .map(|site| site.operation.as_str())
-                        .unwrap_or("unresolved guard");
+                        .map(|(site, identity)| {
+                            (
+                                site.map(|site| site.operation.as_str())
+                                    .unwrap_or("unresolved guard"),
+                                identity.is_some_and(|identity| !identity.positive_outcome_is_true),
+                            )
+                        })
+                        .unwrap_or(("unresolved guard", false));
                     let expression = label
                         .strip_prefix("branch `")
                         .and_then(|value| value.strip_suffix('`'))
                         .unwrap_or(label);
-                    let expression = expression
+                    let mut expression = expression
                         .strip_prefix('(')
                         .and_then(|value| value.strip_suffix(')'))
                         .unwrap_or(expression);
+                    if negated {
+                        expression = expression.strip_prefix('!').unwrap_or(expression);
+                    }
                     if term.outcome {
                         expression.to_owned()
                     } else if expression
@@ -939,7 +952,7 @@ fn canonical_guards(
     paths: &BranchPaths,
     ids: &BTreeMap<NodeId, LogicalNodeId>,
 ) -> BTreeMap<NodeId, (LogicalNodeId, bool)> {
-    let mut by_version: BTreeMap<GuardVersion, (LogicalNodeId, bool)> = BTreeMap::new();
+    let mut by_version: BTreeMap<GuardVersion, LogicalNodeId> = BTreeMap::new();
     let mut result = BTreeMap::new();
     let mut branches: Vec<_> = ids.iter().collect();
     branches.sort_by_key(|(_, logical)| **logical);
@@ -964,15 +977,10 @@ fn canonical_guards(
             identity.reaching_writes,
             identity.origins,
         );
-        let (canonical, canonical_positive) = by_version
-            .entry(version)
-            .or_insert((*logical, identity.positive_outcome_is_true));
+        let canonical = by_version.entry(version).or_insert(*logical);
         result.insert(
             node.clone(),
-            (
-                *canonical,
-                identity.positive_outcome_is_true != *canonical_positive,
-            ),
+            (*canonical, !identity.positive_outcome_is_true),
         );
     }
     result
@@ -1032,6 +1040,85 @@ fn compatible_clauses(first: &BTreeSet<GuardClause>, second: &BTreeSet<GuardClau
                 })
             })
         })
+    })
+}
+
+fn equivalent_parameter_guard(control: &ControlDefinition) -> bool {
+    fn parameter_version(identity: &ConditionIdentity) -> Option<(u64, u64)> {
+        let binding = identity.binding.as_ref()?;
+        let write = identity.reaching_writes.iter().next()?;
+        if identity.reaching_writes.len() != 1
+            || !identity
+                .origins
+                .contains(&Source::ParameterEntry(write.clone()))
+            || !identity
+                .origins
+                .contains(&Source::FunctionInput(binding.clone()))
+            || identity.origins.len() != 2
+        {
+            return None;
+        }
+        Some((binding.local, write.local))
+    }
+    control
+        .before_value
+        .as_ref()
+        .and_then(parameter_version)
+        .zip(control.after_value.as_ref().and_then(parameter_version))
+        .is_some_and(|(before, after)| before == after)
+}
+
+fn observation_semantically_equal(
+    observation: &Observation,
+    sources: &[SourceDefinition],
+    controls: &[ControlDefinition],
+) -> bool {
+    let (Some(before), Some(after)) = (&observation.before_state, &observation.after_state) else {
+        return false;
+    };
+    let signature = |state: &ObservationState| {
+        state
+            .selections
+            .iter()
+            .map(|selection| (selection.source, selection.clauses.clone()))
+            .collect::<Vec<_>>()
+    };
+    if before.sources != after.sources
+        || before.exhaustive != after.exhaustive
+        || signature(before) != signature(after)
+        || before.precedence != after.precedence
+        || before.use_guard != after.use_guard
+    {
+        return false;
+    }
+    let relevant_guards = before
+        .selections
+        .iter()
+        .chain(&after.selections)
+        .flat_map(|selection| selection.clauses.iter())
+        .flat_map(|clauses| clauses.iter())
+        .chain(before.use_guard.iter().flat_map(|clauses| clauses.iter()))
+        .chain(after.use_guard.iter().flat_map(|clauses| clauses.iter()))
+        .flat_map(|clause| clause.terms.iter().map(|term| term.control))
+        .chain(before.sources.iter().chain(&after.sources).flat_map(|id| {
+            sources
+                .iter()
+                .filter(move |source| source.id == *id)
+                .flat_map(|source| {
+                    source
+                        .before_assignment_guard
+                        .iter()
+                        .chain(&source.after_assignment_guard)
+                })
+                .flat_map(|clauses| clauses.iter())
+                .flat_map(|clause| clause.terms.iter().map(|term| term.control))
+        }))
+        .collect::<BTreeSet<_>>();
+    relevant_guards.iter().all(|id| {
+        controls
+            .iter()
+            .find(|control| control.id == *id)
+            .is_some_and(equivalent_parameter_guard)
     })
 }
 
@@ -1678,6 +1765,30 @@ pub fn project_variable_sources(
                 .extend(evidence);
         }
     }
+    let equivalent_observations: BTreeSet<_> = observations
+        .iter()
+        .filter(|observation| observation_semantically_equal(observation, &sources, &controls))
+        .map(|observation| observation.id)
+        .collect();
+    let all_observations_equal =
+        !observations.is_empty() && equivalent_observations.len() == observations.len();
+    findings.retain(|(kind, subject, observation, _), _| {
+        if *kind == FindingKind::SelectionChanged
+            && observation.is_some_and(|id| equivalent_observations.contains(&id))
+        {
+            return false;
+        }
+        if *kind == FindingKind::ExpressionChanged
+            && observation.is_none()
+            && all_observations_equal
+            && controls
+                .iter()
+                .any(|control| control.id == *subject && equivalent_parameter_guard(control))
+        {
+            return false;
+        }
+        true
+    });
     let findings = findings
         .into_iter()
         .map(|(key, evidence)| {
