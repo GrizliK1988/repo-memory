@@ -327,6 +327,49 @@ impl VariableSourceReport {
             }) else {
                 continue;
             };
+            let covered_by_return = group.members.iter().all(|member| {
+                let selected_write = format!("write `{name} ");
+                if !self.observations.iter().any(|observation| {
+                    observation.id == member.id
+                        && observation
+                            .after
+                            .as_ref()
+                            .or(observation.before.as_ref())
+                            .is_some_and(|site| site.operation.starts_with(&selected_write))
+                }) {
+                    return false;
+                }
+                let local_changes: BTreeSet<_> = self
+                    .findings
+                    .iter()
+                    .filter(|finding| {
+                        finding.observation == Some(member.id)
+                            && finding.kind == FindingKind::ExpressionChanged
+                    })
+                    .flat_map(|finding| finding.changed_operations.iter().copied())
+                    .collect();
+                !local_changes.is_empty()
+                    && self.observations.iter().any(|other| {
+                        other.id != member.id
+                            && other
+                                .after
+                                .as_ref()
+                                .or(other.before.as_ref())
+                                .is_some_and(|site| site.operation.starts_with("return "))
+                            && [other.before_state.as_ref(), other.after_state.as_ref()]
+                                .into_iter()
+                                .flatten()
+                                .any(|state| state.sources.contains(&member.id))
+                            && self.findings.iter().any(|finding| {
+                                finding.observation == Some(other.id)
+                                    && finding.kind == FindingKind::ExpressionChanged
+                                    && local_changes.is_subset(&finding.changed_operations)
+                            })
+                    })
+            });
+            if covered_by_return {
+                continue;
+            }
             let affected = self.findings.iter().any(|finding| {
                 group
                     .members
@@ -468,6 +511,13 @@ impl VariableSourceReport {
                     }
                 }
                 for rule in &state.precedence {
+                    if observation
+                        .before_state
+                        .as_ref()
+                        .is_some_and(|before| before.precedence.contains(rule))
+                    {
+                        continue;
+                    }
                     lines.push(format!(
                         "Precedence: {} overrides {} when both writes apply.",
                         site_label(rule.later, SnapshotSide::After, &sites),
@@ -504,6 +554,15 @@ impl VariableSourceReport {
                 }
                 if finding.kind == FindingKind::ExpressionChanged {
                     for changed in &finding.changed_operations {
+                        if changed_sources.iter().any(|source_id| {
+                            source_id == changed
+                                || sites.get(source_id).is_some_and(|source| {
+                                    source.before_upstream.contains(changed)
+                                        || source.after_upstream.contains(changed)
+                                })
+                        }) {
+                            continue;
+                        }
                         lines.push(format!(
                             "Expression changed: {} -> {}.",
                             operation_label(*changed, SnapshotSide::Before, &sites, &controls),

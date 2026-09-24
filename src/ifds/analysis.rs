@@ -1650,6 +1650,31 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k041_human_summary_reports_one_value_change_once() {
+        let (full, compact) = run_reports(
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (flag) { x = 2; if (flag2) { x = 5; } } else { x = 3; } return x; }",
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (!flag) { x = 3; } else { x = 2; if (!flag2) {} else { x = 4; } } return x; }",
+            "x",
+        );
+        let summary = &full.human_summary;
+        assert_eq!(summary, &compact.render_text());
+        assert_eq!(summary.matches("x at return").count(), 1, "{summary}");
+        assert_eq!(
+            summary.matches("Before: write `x = 5`").count(),
+            1,
+            "{summary}"
+        );
+        assert_eq!(
+            summary.matches("After: write `x = 4`").count(),
+            1,
+            "{summary}"
+        );
+        assert!(!summary.contains("x at write `x = 4`"), "{summary}");
+        assert!(!summary.contains("Expression changed:"), "{summary}");
+        assert!(!summary.contains("Precedence:"), "{summary}");
+    }
+
+    #[test]
     fn ifds_k041_shared_conditions() {
         let (_, compact) = run_reports(
             "function f(a: boolean, b: boolean) { let x = 1; return x; }",
