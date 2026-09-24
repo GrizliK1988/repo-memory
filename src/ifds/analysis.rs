@@ -1616,6 +1616,40 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k041_inverted_empty_arm_is_equivalent() {
+        let (full, compact) = run_reports(
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (flag) { x = 2; if (flag2) { x = 5; } } else { x = 3; } return x; }",
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (!flag) { x = 3; } else { x = 2; if (!flag2) {} else { x = 5; } } return x; }",
+            "x",
+        );
+        let observation = compact_observation(&compact, "return x");
+        let before = observation.before_state.as_ref().unwrap();
+        let after = observation.after_state.as_ref().unwrap();
+        assert_eq!(before.sources, after.sources);
+        assert_eq!(before.precedence, after.precedence);
+        assert_eq!(before.use_guard, after.use_guard);
+        assert_eq!(
+            before
+                .selections
+                .iter()
+                .map(|selection| (selection.source, &selection.clauses))
+                .collect::<Vec<_>>(),
+            after
+                .selections
+                .iter()
+                .map(|selection| (selection.source, &selection.clauses))
+                .collect::<Vec<_>>()
+        );
+        assert!(compact.findings.is_empty(), "{:?}", compact.findings);
+        assert!(
+            full.human_summary
+                .starts_with("No established source or logic change"),
+            "{}",
+            full.human_summary
+        );
+    }
+
+    #[test]
     fn ifds_k041_shared_conditions() {
         let (_, compact) = run_reports(
             "function f(a: boolean, b: boolean) { let x = 1; return x; }",
