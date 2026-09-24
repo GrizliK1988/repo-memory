@@ -1563,6 +1563,59 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k041_inverted_branch_with_swapped_arms_is_equivalent() {
+        let (full, compact) = run_reports(
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (flag) { x = 2; if (flag2) { x = 5; } } else { x = 3; } return x; }",
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (!flag) { x = 3; } else { x = 2; if (flag2) { x = 5; } } return x; }",
+            "x",
+        );
+        let return_value = compact_observation(&compact, "return x");
+        let before = return_value.before_state.as_ref().unwrap();
+        let after = return_value.after_state.as_ref().unwrap();
+        let flag = compact
+            .controls
+            .iter()
+            .find(|control| control.before.as_ref().unwrap().operation == "branch `(flag)`")
+            .unwrap()
+            .id;
+        let flag2 = compact
+            .controls
+            .iter()
+            .find(|control| control.before.as_ref().unwrap().operation == "branch `(flag2)`")
+            .unwrap()
+            .id;
+        for (first, second, expected) in [
+            (false, false, "x = 3"),
+            (false, true, "x = 3"),
+            (true, false, "x = 2"),
+            (true, true, "x = 5"),
+        ] {
+            let values = BTreeMap::from([(flag, first), (flag2, second)]);
+            for state in [before, after] {
+                let active: Vec<_> = state
+                    .selections
+                    .iter()
+                    .filter(|selection| clauses_apply(selection.clauses.as_ref().unwrap(), &values))
+                    .collect();
+                assert_eq!(active.len(), 1, "{first}/{second}: {active:?}");
+                let source = compact
+                    .sources
+                    .iter()
+                    .find(|source| source.id == active[0].source)
+                    .unwrap();
+                assert!(source.after.as_ref().unwrap().operation.contains(expected));
+            }
+        }
+        assert!(compact.findings.is_empty(), "{:?}", compact.findings);
+        assert!(
+            full.human_summary
+                .starts_with("No established source or logic change"),
+            "{}",
+            full.human_summary
+        );
+    }
+
+    #[test]
     fn ifds_k041_shared_conditions() {
         let (_, compact) = run_reports(
             "function f(a: boolean, b: boolean) { let x = 1; return x; }",
