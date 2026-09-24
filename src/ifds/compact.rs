@@ -380,17 +380,59 @@ impl VariableSourceReport {
                     lines.push(format!("Also at: {}.", others.join("; ")));
                 }
             }
-            if let Some(state) = &observation.before_state {
-                lines.push(format!(
-                    "Before: {}.",
-                    render_sources(state, SnapshotSide::Before, &sites, &controls)
-                ));
+            let changed_sources = match (&observation.before_state, &observation.after_state) {
+                (Some(before), Some(after)) => {
+                    let before_labels =
+                        source_labels(before, SnapshotSide::Before, &sites, &controls);
+                    let after_labels = source_labels(after, SnapshotSide::After, &sites, &controls);
+                    before_labels
+                        .keys()
+                        .chain(after_labels.keys())
+                        .copied()
+                        .filter(|id| before_labels.get(id) != after_labels.get(id))
+                        .collect::<BTreeSet<_>>()
+                }
+                (Some(before), None) => before.sources.clone(),
+                (None, Some(after)) => after.sources.clone(),
+                (None, None) => BTreeSet::new(),
+            };
+            let coverage_changed = observation
+                .before_state
+                .as_ref()
+                .map(|state| state.exhaustive)
+                != observation
+                    .after_state
+                    .as_ref()
+                    .map(|state| state.exhaustive);
+            if !changed_sources.is_empty() || coverage_changed {
+                if let Some(state) = &observation.before_state {
+                    lines.push(format!(
+                        "Before: {}.",
+                        render_sources(
+                            state,
+                            SnapshotSide::Before,
+                            &changed_sources,
+                            coverage_changed,
+                            &sites,
+                            &controls
+                        )
+                    ));
+                }
+                if let Some(state) = &observation.after_state {
+                    lines.push(format!(
+                        "After: {}.",
+                        render_sources(
+                            state,
+                            SnapshotSide::After,
+                            &changed_sources,
+                            coverage_changed,
+                            &sites,
+                            &controls
+                        )
+                    ));
+                }
             }
             if let Some(state) = &observation.after_state {
-                lines.push(format!(
-                    "After: {}.",
-                    render_sources(state, SnapshotSide::After, &sites, &controls)
-                ));
                 for selection in &state.selections {
                     if !state.precedence.is_empty() && selection.clauses.is_some() {
                         continue;
@@ -400,6 +442,9 @@ impl VariableSourceReport {
                             .get(&selection.source)
                             .and_then(|source| source.after_assignment_guard.as_ref())
                     {
+                        continue;
+                    }
+                    if state.sources.len() == 1 && selection.clauses == state.use_guard {
                         continue;
                     }
                     if let Some(clauses) = &selection.clauses {
@@ -461,8 +506,8 @@ impl VariableSourceReport {
                     for changed in &finding.changed_operations {
                         lines.push(format!(
                             "Expression changed: {} -> {}.",
-                            site_label(*changed, SnapshotSide::Before, &sites),
-                            site_label(*changed, SnapshotSide::After, &sites)
+                            operation_label(*changed, SnapshotSide::Before, &sites, &controls),
+                            operation_label(*changed, SnapshotSide::After, &sites, &controls)
                         ));
                     }
                 }
@@ -509,9 +554,11 @@ impl VariableSourceReport {
             match finding.kind {
                 FindingKind::WriteAdded => lines.push(format!("Added {label}.")),
                 FindingKind::WriteRemoved => lines.push(format!("Removed {label}.")),
-                FindingKind::ExpressionChanged => {
-                    lines.push(format!("Changed expression at {label}."))
-                }
+                FindingKind::ExpressionChanged => lines.push(format!(
+                    "Changed expression: {} -> {}.",
+                    operation_label(finding.subject, SnapshotSide::Before, &sites, &controls),
+                    operation_label(finding.subject, SnapshotSide::After, &sites, &controls)
+                )),
                 FindingKind::ObservationAdded => lines.push(format!("Added observation {label}.")),
                 FindingKind::ObservationRemoved => {
                     lines.push(format!("Removed observation {label}."))
@@ -559,13 +606,31 @@ fn site_label(
         .unwrap_or_else(|| format!("source {}", id.0))
 }
 
-fn render_sources(
-    state: &ObservationState,
+fn operation_label(
+    id: LogicalNodeId,
     side: SnapshotSide,
     sites: &BTreeMap<LogicalNodeId, &SourceDefinition>,
     controls: &BTreeMap<LogicalNodeId, &ControlDefinition>,
 ) -> String {
-    let mut labels: Vec<_> = state
+    if let Some(control) = controls.get(&id) {
+        let site = match side {
+            SnapshotSide::Before => control.before.as_ref(),
+            SnapshotSide::After => control.after.as_ref(),
+        };
+        if let Some(site) = site {
+            return site.operation.clone();
+        }
+    }
+    site_label(id, side, sites)
+}
+
+fn source_labels(
+    state: &ObservationState,
+    side: SnapshotSide,
+    sites: &BTreeMap<LogicalNodeId, &SourceDefinition>,
+    controls: &BTreeMap<LogicalNodeId, &ControlDefinition>,
+) -> BTreeMap<LogicalNodeId, String> {
+    state
         .sources
         .iter()
         .map(|id| {
@@ -581,20 +646,38 @@ fn render_sources(
                     }])
                 {
                     if state.sources.len() > 1 {
-                        return format!("{label} as fallback");
+                        return (*id, format!("{label} as fallback"));
                     }
                 } else {
-                    return format!("{label} under {}", render_clauses(guard, controls, side));
+                    return (
+                        *id,
+                        format!("{label} under {}", render_clauses(guard, controls, side)),
+                    );
                 }
             }
-            label
+            (*id, label)
         })
+        .collect()
+}
+
+fn render_sources(
+    state: &ObservationState,
+    side: SnapshotSide,
+    visible: &BTreeSet<LogicalNodeId>,
+    show_coverage: bool,
+    sites: &BTreeMap<LogicalNodeId, &SourceDefinition>,
+    controls: &BTreeMap<LogicalNodeId, &ControlDefinition>,
+) -> String {
+    let mut labels: Vec<_> = source_labels(state, side, sites, controls)
+        .into_iter()
+        .filter(|(id, _)| visible.contains(id))
+        .map(|(_, label)| label)
         .collect();
-    if !state.exhaustive {
+    if show_coverage && !state.exhaustive {
         labels.push("other sources unresolved".into());
     }
     if labels.is_empty() {
-        "no reaching source established".into()
+        "none".into()
     } else {
         labels.join("; ")
     }
