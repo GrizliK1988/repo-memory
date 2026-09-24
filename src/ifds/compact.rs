@@ -147,6 +147,8 @@ pub enum FindingKind {
     WriteRemoved,
     ObservationAdded,
     ObservationRemoved,
+    ObservationFlowAdded,
+    ObservationFlowRemoved,
     ComparisonUnresolved,
 }
 
@@ -276,6 +278,7 @@ impl VariableSourceReport {
                     "before_graph.edges" => reference.index < full.before_graph.edges.len(),
                     "after_graph.edges" => reference.index < full.after_graph.edges.len(),
                     "deltas" => reference.index < full.deltas.len(),
+                    "alignment" => reference.index < full.alignment.len(),
                     _ => false,
                 }
             {
@@ -440,6 +443,18 @@ impl VariableSourceReport {
                 finding.observation == Some(observation.id)
                     && finding.projection.as_deref() == Some(&observation.projection)
             }) {
+                if finding.kind == FindingKind::SourceSetChanged {
+                    for removed in finding.before_sources.difference(&finding.after_sources) {
+                        if sites.get(removed).is_some_and(|source| {
+                            source.after.is_some() && source.role == SourceRole::Writer
+                        }) {
+                            lines.push(format!(
+                                "{} remains in the code but no longer reaches this input.",
+                                site_label(*removed, SnapshotSide::After, &sites)
+                            ));
+                        }
+                    }
+                }
                 if finding.kind == FindingKind::ExpressionChanged {
                     for changed in &finding.changed_operations {
                         lines.push(format!(
@@ -448,6 +463,14 @@ impl VariableSourceReport {
                             site_label(*changed, SnapshotSide::After, &sites)
                         ));
                     }
+                }
+                if finding.kind == FindingKind::ObservationFlowRemoved {
+                    lines.push(
+                        "This observation no longer carries the selected binding's value.".into(),
+                    );
+                }
+                if finding.kind == FindingKind::ObservationFlowAdded {
+                    lines.push("This observation now carries the selected binding's value.".into());
                 }
             }
         }
@@ -663,6 +686,18 @@ fn report_id(full: &VariableFlowReport) -> String {
     format!("ifds-{:016x}", stable_hash(&bytes))
 }
 
+pub(crate) fn comparison_is_complete(full: &VariableFlowReport) -> bool {
+    full.completeness == Completeness::CompleteForQuery
+        && !full
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == DiagnosticCode::AmbiguousMatch)
+        && !full
+            .deltas
+            .iter()
+            .any(|record| matches!(record.delta, FlowDelta::AnalysisUnknown { .. }))
+}
+
 fn value_relation(relation: &RelationKind) -> bool {
     matches!(
         relation,
@@ -689,6 +724,37 @@ fn site(node: &NodeId, graph: &FlowGraph, section: &str, identity: &str) -> Opti
                 index,
             },
         })
+}
+
+fn aligned_ir_site(
+    node: &NodeId,
+    ir: &ProcedureIr,
+    source: &str,
+    index: usize,
+    identity: &str,
+) -> Option<SourceSite> {
+    let operation = ir.nodes.get(node)?;
+    let span = operation.span.as_ref()?.clone();
+    let snippet = source
+        .get(span.byte_start as usize..span.byte_end as usize)?
+        .trim();
+    let kind = match operation.operation {
+        Operation::Write { .. } => "write",
+        Operation::Return { .. } => "return",
+        Operation::Compute { .. } => "compute",
+        Operation::Literal { .. } => "literal",
+        _ => "operation",
+    };
+    Some(SourceSite {
+        node: node.clone(),
+        operation: format!("{kind} `{snippet}`"),
+        span,
+        evidence: EvidenceRef {
+            report_id: identity.into(),
+            section: "alignment".into(),
+            index,
+        },
+    })
 }
 
 fn role(
@@ -866,6 +932,8 @@ pub fn project_variable_sources(
     full: &VariableFlowReport,
     before_ir: &ProcedureIr,
     after_ir: &ProcedureIr,
+    before_source: &str,
+    after_source: &str,
 ) -> VariableSourceReport {
     let identity = report_id(full);
     let evidence_file = format!("ifds-evidence-{identity}.json");
@@ -891,15 +959,38 @@ pub fn project_variable_sources(
     );
     let mut sources = Vec::new();
     let mut controls = Vec::new();
-    for alignment in &full.alignment {
-        let before = alignment
-            .before
-            .as_ref()
-            .and_then(|id| site(id, &full.before_graph, "before_graph.nodes", &identity));
-        let after = alignment
-            .after
-            .as_ref()
-            .and_then(|id| site(id, &full.after_graph, "after_graph.nodes", &identity));
+    let changed_operations: BTreeSet<_> = full
+        .deltas
+        .iter()
+        .flat_map(|record| match &record.delta {
+            FlowDelta::OperationChanged { logical, .. } => vec![*logical],
+            FlowDelta::ValueSourceChanged {
+                changed_operations, ..
+            } => changed_operations.iter().copied().collect(),
+            _ => Vec::new(),
+        })
+        .collect();
+    for (alignment_index, alignment) in full.alignment.iter().enumerate() {
+        let before = alignment.before.as_ref().and_then(|id| {
+            site(id, &full.before_graph, "before_graph.nodes", &identity).or_else(|| {
+                changed_operations
+                    .contains(&alignment.logical)
+                    .then(|| {
+                        aligned_ir_site(id, before_ir, before_source, alignment_index, &identity)
+                    })
+                    .flatten()
+            })
+        });
+        let after = alignment.after.as_ref().and_then(|id| {
+            site(id, &full.after_graph, "after_graph.nodes", &identity).or_else(|| {
+                changed_operations
+                    .contains(&alignment.logical)
+                    .then(|| {
+                        aligned_ir_site(id, after_ir, after_source, alignment_index, &identity)
+                    })
+                    .flatten()
+            })
+        });
         if before.is_none() && after.is_none() {
             continue;
         }
@@ -1257,6 +1348,37 @@ pub fn project_variable_sources(
                     .get(before)
                     .map(|id| (FindingKind::ObservationRemoved, *id, None, None))
             }
+            FlowDelta::SliceMembershipChanged { logical, change } => {
+                let is_return = full
+                    .alignment
+                    .iter()
+                    .find(|alignment| alignment.logical == *logical)
+                    .is_some_and(|alignment| {
+                        alignment.before.as_ref().is_some_and(|id| {
+                            matches!(
+                                before_ir.nodes.get(id).map(|node| &node.operation),
+                                Some(Operation::Return { .. })
+                            )
+                        }) || alignment.after.as_ref().is_some_and(|id| {
+                            matches!(
+                                after_ir.nodes.get(id).map(|node| &node.operation),
+                                Some(Operation::Return { .. })
+                            )
+                        })
+                    });
+                is_return.then(|| {
+                    (
+                        if *change == MembershipChange::Left {
+                            FindingKind::ObservationFlowRemoved
+                        } else {
+                            FindingKind::ObservationFlowAdded
+                        },
+                        *logical,
+                        Some(*logical),
+                        Some("value".into()),
+                    )
+                })
+            }
             FlowDelta::AnalysisUnknown { .. } => Some((
                 FindingKind::ComparisonUnresolved,
                 LogicalNodeId(0),
@@ -1392,12 +1514,7 @@ pub fn project_variable_sources(
         })
         .collect();
     let diagnostics: BTreeSet<_> = full.diagnostics.iter().map(|d| d.code.clone()).collect();
-    let comparison_complete = full.completeness == Completeness::CompleteForQuery
-        && !diagnostics.contains(&DiagnosticCode::AmbiguousMatch)
-        && !full
-            .deltas
-            .iter()
-            .any(|record| matches!(record.delta, FlowDelta::AnalysisUnknown { .. }));
+    let comparison_complete = comparison_is_complete(full);
     VariableSourceReport {
         schema_version: COMPACT_SCHEMA_VERSION,
         analysis_version: full.analysis_version.clone(),
