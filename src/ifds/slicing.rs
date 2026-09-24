@@ -459,7 +459,21 @@ impl<'a> SliceBuilder<'a> {
                 matches!(&self.procedure.nodes[*id].operation,
                     Operation::Write { target: Place::Binding(binding), .. } if binding == self.selected_binding)
             }).cloned().collect();
-            if !guard_is_selected && selected_writes.is_empty() {
+            let controlled_observations: Vec<_> = controlled
+                .iter()
+                .filter(|id| {
+                    self.graph_nodes.iter().any(|node| &node.id == *id)
+                        && matches!(
+                            self.procedure.nodes[*id].operation,
+                            Operation::Return { .. }
+                        )
+                })
+                .cloned()
+                .collect();
+            if !guard_is_selected
+                && selected_writes.is_empty()
+                && controlled_observations.is_empty()
+            {
                 continue;
             }
             if self
@@ -484,6 +498,15 @@ impl<'a> SliceBuilder<'a> {
                 });
             }
             self.add_node(&branch, None)?;
+            for observation in controlled_observations {
+                self.add_edge(
+                    branch.id.clone(),
+                    observation,
+                    crate::ifds::model::RelationKind::Controls,
+                    None,
+                    EvidenceKind::Supported,
+                );
+            }
             if guard_is_selected {
                 for origin in self.selected_origins.clone() {
                     for item in self.resolve_sources(

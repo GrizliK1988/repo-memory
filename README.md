@@ -9,16 +9,23 @@ straight-line scalar variable flow; later language features remain planned.
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
 
-To inspect a real stage-1 report from two local TypeScript files, run:
+To inspect a compact source report from two local TypeScript files, run:
 
 ```sh
 cargo run --locked --offline --example ifds_compare -- \
   tests/ifds/fixtures/overwrite/before/main.ts \
-  tests/ifds/fixtures/overwrite/after/main.ts x > report.json
+  tests/ifds/fixtures/overwrite/after/main.ts x
 ```
 
-The example prints the full JSON report, including `human_summary`, flow graphs,
-precise deltas, witnesses, coverage, and unknown boundaries. Replace the two paths
+The example prints concise text and saves the exact full evidence as
+`ifds-evidence-<report-id>.json` in the current directory. Use `--format compact-json`
+for the structured projection or `--format full-json` for the previous complete JSON
+stdout output. `--evidence-out <path>` selects a sidecar path for text and compact
+JSON. Compact evidence references name a section and zero-based index in that
+saved full report. Existing scripts that read full JSON should add
+`--format full-json` before redirecting stdout.
+
+Replace the two paths
 with your own `.ts` or `.tsx` files and `x` with a declaration name that occurs once
 in each file. The example analyzes the selected binding's containing procedure.
 

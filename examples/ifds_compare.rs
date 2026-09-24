@@ -4,7 +4,7 @@ use repo_memory::ifds::adapters::typescript::index_bindings;
 use repo_memory::ifds::{
     AnalysisEnvironment, AnalysisLimits, BindingSelector, CapabilitySet, EntryPoint, FileChange,
     FileChangeKind, InMemorySnapshot, InMemorySnapshotProvider, RepositoryDiff, SnapshotHandle,
-    SnapshotId, SnapshotSide, VariableFlowQuery, analyze_variable_flow,
+    SnapshotId, SnapshotSide, VariableFlowQuery, analyze_variable_flow_reports,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -19,11 +19,30 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let [before_path, after_path, binding_name] = arguments.as_slice() else {
-        return Err(
-            "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding>".into(),
-        );
-    };
+    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>]";
+    if arguments.len() < 3 {
+        return Err(usage.into());
+    }
+    let (before_path, after_path, binding_name) = (&arguments[0], &arguments[1], &arguments[2]);
+    let mut format = "text";
+    let mut evidence_out = None;
+    let mut index = 3;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--format" if index + 1 < arguments.len() => {
+                format = &arguments[index + 1];
+                index += 2;
+            }
+            "--evidence-out" if index + 1 < arguments.len() => {
+                evidence_out = Some(&arguments[index + 1]);
+                index += 2;
+            }
+            _ => return Err(usage.into()),
+        }
+    }
+    if !matches!(format, "text" | "compact-json" | "full-json") {
+        return Err(usage.into());
+    }
     let before = std::fs::read(before_path)?;
     let after = std::fs::read(after_path)?;
     let before_text = std::str::from_utf8(&before)?;
@@ -113,8 +132,32 @@ fn run() -> Result<(), Box<dyn Error>> {
             output_nodes: 100_000,
         },
     };
-    let report = analyze_variable_flow(query, &provider, &environment, &environment)?;
-    println!("{}", serde_json::to_string_pretty(&report)?);
+    let (mut report, mut compact) =
+        analyze_variable_flow_reports(query, &provider, &environment, &environment)?;
+    if format == "full-json" {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+        return Ok(());
+    }
+    let path = evidence_out
+        .cloned()
+        .unwrap_or_else(|| compact.evidence_file.clone());
+    compact.evidence_file = path.clone();
+    report.human_summary = compact.render_text();
+    let bytes = serde_json::to_vec_pretty(&report)?;
+    if let Ok(previous) = std::fs::read(&path) {
+        if previous != bytes {
+            return Err(
+                format!("evidence path {path:?} already contains a different report").into(),
+            );
+        }
+    } else {
+        std::fs::write(&path, bytes)?;
+    }
+    if format == "compact-json" {
+        println!("{}", serde_json::to_string_pretty(&compact)?);
+    } else {
+        println!("{}", compact.render_text());
+    }
     Ok(())
 }
 

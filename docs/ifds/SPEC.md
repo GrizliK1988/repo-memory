@@ -936,7 +936,7 @@ the next human/agent presentation of these facts: source sets at identified uses
 shared control and overwrite rules, and deduplicated before/after findings. Required
 summary content may be represented once through those structured facts; it does
 not require one sentence per typed delta or a listing of every path condition.
-This extension is specified but not yet implemented. Full evidence requirements
+This extension is being implemented in K041. Full evidence requirements
 below remain in force.
 
 Keep the full upstream/downstream graphs separate from the delta list. A node or

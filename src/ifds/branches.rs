@@ -11,6 +11,9 @@ pub struct BranchState {
     pub facts: BTreeSet<Fact>,
     pub labels: BTreeSet<String>,
     pub unproven: bool,
+    /// Branch outcomes are keyed by the operation that read the condition. A
+    /// display label alone cannot distinguish shadowing or later reassignment.
+    pub decisions: BTreeMap<NodeId, bool>,
     guards: BTreeMap<BindingId, bool>,
     known: BTreeMap<Place, bool>,
 }
@@ -29,6 +32,7 @@ impl BranchPaths {
             facts: entry_facts,
             labels: BTreeSet::new(),
             unproven: false,
+            decisions: BTreeMap::new(),
             guards: BTreeMap::new(),
             known: BTreeMap::new(),
         };
@@ -59,6 +63,7 @@ impl BranchPaths {
                     {
                         continue;
                     }
+                    next.decisions.insert(node_id.clone(), outcome);
                     if let Some((binding, positive)) = guard_binding(procedure, condition) {
                         let required = outcome == positive;
                         if let Some(previous) = next.guards.get(&binding)
