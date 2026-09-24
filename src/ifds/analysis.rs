@@ -489,6 +489,11 @@ mod tests {
         let start = source
             .find(&needle)
             .map(|offset| offset + 4)
+            .or_else(|| {
+                source
+                    .find(&format!("const {name}"))
+                    .map(|offset| offset + 6)
+            })
             .or_else(|| source.find(&format!("{name}:")))
             .unwrap();
         let line = 1 + source[..start]
@@ -1469,6 +1474,65 @@ mod tests {
             guards[0].after_value.as_ref().unwrap().reaching_writes,
             guards[1].after_value.as_ref().unwrap().reaching_writes
         );
+    }
+
+    #[test]
+    fn ifds_k041_repeated_negated_guard_has_no_false_precedence() {
+        let (full, compact) = run_reports(
+            "function example() { const x = 1; return x; }",
+            "function example(flag: boolean) { let x = 1; if (flag) { x = 2; } else { x = 3; } if (!flag) { x = 4; } return x; }",
+            "x",
+        );
+        let observation = compact_observation(&compact, "return x");
+        let after = observation.after_state.as_ref().unwrap();
+        assert!(after.precedence.is_empty(), "{:?}", after.precedence);
+        assert_eq!(after.sources.len(), 2);
+        assert_eq!(
+            after.use_guard.as_ref().unwrap(),
+            &BTreeSet::from([GuardClause {
+                terms: BTreeSet::new()
+            }])
+        );
+
+        let second = compact_source(&compact, "x = 2");
+        let fourth = compact_source(&compact, "x = 4");
+        let second_guard = second.after_assignment_guard.as_ref().unwrap();
+        let fourth_guard = fourth.after_assignment_guard.as_ref().unwrap();
+        assert_eq!(second_guard.len(), 1);
+        assert_eq!(fourth_guard.len(), 1);
+        let second_term = second_guard
+            .iter()
+            .next()
+            .unwrap()
+            .terms
+            .iter()
+            .next()
+            .unwrap();
+        let fourth_term = fourth_guard
+            .iter()
+            .next()
+            .unwrap()
+            .terms
+            .iter()
+            .next()
+            .unwrap();
+        assert_eq!(second_term.control, fourth_term.control);
+        assert_ne!(second_term.outcome, fourth_term.outcome);
+
+        for (flag, expected) in [(true, second.id), (false, fourth.id)] {
+            let values = BTreeMap::from([(second_term.control, flag)]);
+            let active: Vec<_> = after
+                .selections
+                .iter()
+                .filter(|selection| clauses_apply(selection.clauses.as_ref().unwrap(), &values))
+                .map(|selection| selection.source)
+                .collect();
+            assert_eq!(active, vec![expected]);
+        }
+        assert!(!full.human_summary.contains("Precedence:"));
+        assert!(!full.human_summary.contains("Use guard:"));
+        assert!(!full.human_summary.contains("!flag && !flag"));
+        assert!(!full.human_summary.contains("Added write write"));
     }
 
     #[test]

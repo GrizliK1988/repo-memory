@@ -9,7 +9,7 @@ use super::model::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const COMPACT_SCHEMA_VERSION: u32 = 1;
+pub const COMPACT_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -66,6 +66,8 @@ pub struct ControlDefinition {
 pub struct ConditionIdentity {
     pub read: Option<NodeId>,
     pub binding: Option<BindingId>,
+    /// Whether the branch's true outcome means the underlying Boolean is true.
+    pub positive_outcome_is_true: bool,
     pub reaching_writes: BTreeSet<DefinitionId>,
     pub origins: BTreeSet<Source>,
 }
@@ -505,8 +507,8 @@ impl VariableSourceReport {
             };
             let label = site_label(finding.subject, side, &sites);
             match finding.kind {
-                FindingKind::WriteAdded => lines.push(format!("Added write {label}.")),
-                FindingKind::WriteRemoved => lines.push(format!("Removed write {label}.")),
+                FindingKind::WriteAdded => lines.push(format!("Added {label}.")),
+                FindingKind::WriteRemoved => lines.push(format!("Removed {label}.")),
                 FindingKind::ExpressionChanged => {
                     lines.push(format!("Changed expression at {label}."))
                 }
@@ -794,7 +796,7 @@ fn condition_identity(
     paths: &BranchPaths,
     branch: &NodeId,
 ) -> Option<ConditionIdentity> {
-    fn source_read(ir: &ProcedureIr, place: &Place) -> Option<(NodeId, BindingId)> {
+    fn source_read(ir: &ProcedureIr, place: &Place) -> Option<(NodeId, BindingId, bool)> {
         let Place::Temporary(id) = place else {
             return None;
         };
@@ -802,19 +804,22 @@ fn condition_identity(
             Operation::Read {
                 source: Place::Binding(binding),
                 ..
-            } => Some((id.clone(), binding.clone())),
+            } => Some((id.clone(), binding.clone(), true)),
             Operation::Compute {
                 inputs,
                 operator: super::ir::PrimitiveOperator::LogicalNot,
                 ..
-            } => source_read(ir, &inputs.first()?.place),
+            } => {
+                let (read, binding, positive) = source_read(ir, &inputs.first()?.place)?;
+                Some((read, binding, !positive))
+            }
             _ => None,
         }
     }
     let Operation::Branch { condition } = &ir.nodes.get(branch)?.operation else {
         return None;
     };
-    let (read, binding) = source_read(ir, condition)?;
+    let (read, binding, positive_outcome_is_true) = source_read(ir, condition)?;
     let facts = paths.at.get(branch)?.iter().flat_map(|state| &state.facts);
     let mut reaching_writes = BTreeSet::new();
     let mut origins = BTreeSet::new();
@@ -838,15 +843,62 @@ fn condition_identity(
     Some(ConditionIdentity {
         read: Some(read),
         binding: Some(binding),
+        positive_outcome_is_true,
         reaching_writes,
         origins,
     })
 }
 
+type GuardVersion = (BindingId, BTreeSet<DefinitionId>, BTreeSet<Source>);
+
+fn canonical_guards(
+    ir: &ProcedureIr,
+    paths: &BranchPaths,
+    ids: &BTreeMap<NodeId, LogicalNodeId>,
+) -> BTreeMap<NodeId, (LogicalNodeId, bool)> {
+    let mut by_version: BTreeMap<GuardVersion, (LogicalNodeId, bool)> = BTreeMap::new();
+    let mut result = BTreeMap::new();
+    let mut branches: Vec<_> = ids.iter().collect();
+    branches.sort_by_key(|(_, logical)| **logical);
+    for (node, logical) in branches {
+        if !matches!(
+            ir.nodes.get(node).map(|item| &item.operation),
+            Some(Operation::Branch { .. })
+        ) {
+            continue;
+        }
+        let Some(identity) = condition_identity(ir, paths, node) else {
+            result.insert(node.clone(), (*logical, false));
+            continue;
+        };
+        // A unique reaching value is necessary to prove two reads equivalent.
+        if identity.reaching_writes.len() != 1 || identity.origins.is_empty() {
+            result.insert(node.clone(), (*logical, false));
+            continue;
+        }
+        let version = (
+            identity.binding.expect("resolved guard binding"),
+            identity.reaching_writes,
+            identity.origins,
+        );
+        let (canonical, canonical_positive) = by_version
+            .entry(version)
+            .or_insert((*logical, identity.positive_outcome_is_true));
+        result.insert(
+            node.clone(),
+            (
+                *canonical,
+                identity.positive_outcome_is_true != *canonical_positive,
+            ),
+        );
+    }
+    result
+}
+
 fn clauses(
     paths: &BranchPaths,
     at: &NodeId,
-    ids: &BTreeMap<NodeId, LogicalNodeId>,
+    canonical: &BTreeMap<NodeId, (LogicalNodeId, bool)>,
     predicate: impl Fn(&BTreeSet<Fact>) -> bool,
 ) -> Option<BTreeSet<GuardClause>> {
     let states = paths.at.get(at)?;
@@ -863,16 +915,41 @@ fn clauses(
             .decisions
             .iter()
             .map(|(node, outcome)| {
+                let (control, flip) = canonical.get(node)?;
                 Some(GuardTerm {
-                    control: *ids.get(node)?,
-                    outcome: *outcome,
+                    control: *control,
+                    outcome: *outcome != *flip,
                 })
             })
             .collect::<Option<BTreeSet<_>>>()?;
+        if terms.iter().any(|term| {
+            terms.contains(&GuardTerm {
+                control: term.control,
+                outcome: !term.outcome,
+            })
+        }) {
+            continue;
+        }
         result.insert(GuardClause { terms });
+    }
+    if result.is_empty() {
+        return None;
     }
     let simplified = simplify_clauses(result);
     (simplified.len() <= 64).then_some(simplified)
+}
+
+fn compatible_clauses(first: &BTreeSet<GuardClause>, second: &BTreeSet<GuardClause>) -> bool {
+    first.iter().any(|left| {
+        second.iter().any(|right| {
+            left.terms.iter().all(|term| {
+                !right.terms.contains(&GuardTerm {
+                    control: term.control,
+                    outcome: !term.outcome,
+                })
+            })
+        })
+    })
 }
 
 fn simplify_clauses(mut clauses: BTreeSet<GuardClause>) -> BTreeSet<GuardClause> {
@@ -957,6 +1034,8 @@ pub fn project_variable_sources(
         super::provenance::seed_entry_facts(after_ir),
         4096,
     );
+    let before_canonical = canonical_guards(before_ir, &before_paths, &before_ids);
+    let after_canonical = canonical_guards(after_ir, &after_paths, &after_ids);
     let mut sources = Vec::new();
     let mut controls = Vec::new();
     let changed_operations: BTreeSet<_> = full
@@ -1038,13 +1117,13 @@ pub fn project_variable_sources(
             |node: &Option<NodeId>,
              ir: &ProcedureIr,
              paths: &BranchPaths,
-             ids: &BTreeMap<NodeId, LogicalNodeId>| {
+             canonical: &BTreeMap<NodeId, (LogicalNodeId, bool)>| {
                 let node = node.as_ref()?;
                 matches!(
                     ir.nodes.get(node).map(|n| &n.operation),
                     Some(Operation::Write { .. })
                 )
-                .then(|| clauses(paths, node, ids, |_| true))
+                .then(|| clauses(paths, node, canonical, |_| true))
                 .flatten()
             };
         sources.push(SourceDefinition {
@@ -1062,13 +1141,13 @@ pub fn project_variable_sources(
                 &alignment.before,
                 before_ir,
                 &before_paths,
-                &before_ids,
+                &before_canonical,
             ),
             after_assignment_guard: assignment_guard(
                 &alignment.after,
                 after_ir,
                 &after_paths,
-                &after_ids,
+                &after_canonical,
             ),
             before,
             after,
@@ -1101,12 +1180,13 @@ pub fn project_variable_sources(
         };
         let build_state = |side: SnapshotSide, node: &Option<NodeId>| -> Option<ObservationState> {
             let node = node.as_ref()?;
-            let (graph, ir, ids, paths, extent) = match side {
+            let (graph, ir, ids, paths, canonical, extent) = match side {
                 SnapshotSide::Before => (
                     &full.before_graph,
                     before_ir,
                     &before_ids,
                     &before_paths,
+                    &before_canonical,
                     &full.flow_extent.before,
                 ),
                 SnapshotSide::After => (
@@ -1114,6 +1194,7 @@ pub fn project_variable_sources(
                     after_ir,
                     &after_ids,
                     &after_paths,
+                    &after_canonical,
                     &full.flow_extent.after,
                 ),
             };
@@ -1160,13 +1241,13 @@ pub fn project_variable_sources(
                 let source_node = edges.first().map(|(_, edge)| &edge.source);
                 let typed = source_node.and_then(|source_node| ir.nodes.get(source_node)).and_then(|source_node| {
                     match &source_node.operation {
-                        Operation::Write { target, definition, .. } => clauses(paths, node, ids, |facts| {
+                        Operation::Write { target, definition, .. } => clauses(paths, node, canonical, |facts| {
                             facts.contains(&Fact::LastWrite { place: target.clone(), write: definition.clone() })
                         }),
                         Operation::Literal { definition, .. } | Operation::Compute { definition, .. } =>
-                            clauses(paths, node, ids, |facts| facts.iter().any(|fact| matches!(fact,
+                            clauses(paths, node, canonical, |facts| facts.iter().any(|fact| matches!(fact,
                                 Fact::Origin { source: Source::Write(candidate), .. } if candidate == definition))),
-                        _ => clauses(paths, node, ids, |_| true),
+                        _ => clauses(paths, node, canonical, |_| true),
                     }
                 });
                 selections.push(SourceSelection {
@@ -1196,6 +1277,26 @@ pub fn project_variable_sources(
                             (Some(Operation::Write { target: first, .. }), Some(Operation::Write { target: second, .. })) if first == second)
                         && reachable(ir, a, b)
                         && !reachable(ir, b, a)
+                        && sources
+                            .iter()
+                            .find(|source| source.id == *earlier)
+                            .and_then(|source| {
+                                if side == SnapshotSide::Before {
+                                    source.before_assignment_guard.as_ref()
+                                } else {
+                                    source.after_assignment_guard.as_ref()
+                                }
+                            })
+                            .zip(sources.iter().find(|source| source.id == *later).and_then(
+                                |source| {
+                                    if side == SnapshotSide::Before {
+                                        source.before_assignment_guard.as_ref()
+                                    } else {
+                                        source.after_assignment_guard.as_ref()
+                                    }
+                                },
+                            ))
+                            .is_some_and(|(first, second)| compatible_clauses(first, second))
                     {
                         precedence.push(OverwriteRule {
                             earlier: *earlier,
@@ -1204,7 +1305,7 @@ pub fn project_variable_sources(
                     }
                 }
             }
-            let use_guard = clauses(paths, node, ids, |_| true);
+            let use_guard = clauses(paths, node, canonical, |_| true);
             Some(ObservationState {
                 sources: source_ids,
                 exhaustive: extent.upstream == Coverage::Complete
