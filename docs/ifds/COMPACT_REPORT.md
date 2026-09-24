@@ -1,11 +1,22 @@
 # Compact source and logic change report
 
-Status: specified; implementation pending. Owner: [K041](../../spec/kickoff/041-compact-source-report.md).
+Status: implementation in progress. Owner: [K041](../../spec/kickoff/041-compact-source-report.md).
 
 This extends [SPEC sections 6.4 and 7](SPEC.md#64-grouping-and-required-summary-content).
 It defines the default explanation for people and agents. Full graphs, typed deltas,
 witnesses, and lifecycle records remain the evidence model required by SPEC.
 Implementation must not reduce analysis scope to make the explanation smaller.
+
+The in-progress API returns `(VariableFlowReport, VariableSourceReport)` from
+`analyze_variable_flow_reports`. The existing `analyze_variable_flow` API keeps
+returning the full report. `VariableSourceReport` has its own schema version and
+contains sources, typed guard clauses, observations, source selections, overwrite
+rules, semantic findings, and separate analysis/comparison/presentation coverage.
+Its `full_report_id` is the deterministic FNV-1a digest of canonical full JSON with
+`human_summary` cleared, so the summary can refer to the report without making
+the digest circular. Each evidence reference names a section and zero-based index
+in that exact full report. The example command writes the full JSON sidecar for
+`text` and `compact-json`; `full-json` writes complete evidence to stdout.
 
 ## Questions answered
 

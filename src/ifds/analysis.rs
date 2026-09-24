@@ -3,6 +3,7 @@
 use super::adapters::typescript::{
     TypeScriptBindingIndex, alignable_bindings, index_bindings, lower_containing_procedure,
 };
+use super::compact::{VariableSourceReport, project_variable_sources};
 use super::compare::{AlignmentError, AlignmentResult, align_procedures};
 use super::comparison::{ComparisonError, ComparisonInput, compare_flow_slices};
 use super::model::*;
@@ -140,6 +141,17 @@ pub fn analyze_variable_flow<P: SnapshotProvider>(
     before_environment: &AnalysisEnvironment,
     after_environment: &AnalysisEnvironment,
 ) -> Result<VariableFlowReport, AnalysisError> {
+    analyze_variable_flow_reports(query, provider, before_environment, after_environment)
+        .map(|(full, _)| full)
+}
+
+/// Return the full evidence and its compact projection from the same analysis.
+pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
+    query: VariableFlowQuery,
+    provider: &P,
+    before_environment: &AnalysisEnvironment,
+    after_environment: &AnalysisEnvironment,
+) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
     validate_query(&query, provider, before_environment, after_environment)?;
     if !matches!(query.entry, EntryPoint::ContainingFunction) {
         return Err(InputError::CapabilityMismatch(
@@ -266,8 +278,6 @@ pub fn analyze_variable_flow<P: SnapshotProvider>(
         comparison.deltas,
         &before.procedure,
         &after.procedure,
-        &before_source,
-        &after_source,
     )
 }
 
@@ -316,9 +326,7 @@ fn assemble_report(
     deltas: BTreeSet<DeltaRecord>,
     before_ir: &super::ir::ProcedureIr,
     after_ir: &super::ir::ProcedureIr,
-    before_source: &str,
-    after_source: &str,
-) -> Result<VariableFlowReport, AnalysisError> {
+) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
     let mut diagnostics: BTreeSet<_> = before
         .diagnostics
         .iter()
@@ -421,20 +429,6 @@ fn assemble_report(
     stats.limits_hit.extend(after_solved.stats.limits_hit);
     stats.graph_truncated |= after_solved.stats.graph_truncated;
     stats.witnesses_truncated |= after_solved.stats.witnesses_truncated;
-    let human_summary = render_human_summary(
-        &deltas,
-        &before.graph,
-        &after.graph,
-        &alignment.nodes,
-        &diagnostics,
-        &unknown_frontiers,
-        before_ir,
-        after_ir,
-        before_source,
-        after_source,
-        &before_binding,
-        &after_binding,
-    );
     let entry_assumptions = before_ir
         .parameters
         .iter()
@@ -445,7 +439,7 @@ fn assemble_report(
             source: Source::FunctionInput(parameter.binding.clone()),
         })
         .collect();
-    let report = VariableFlowReport {
+    let mut report = VariableFlowReport {
         schema_version: REPORT_SCHEMA_VERSION,
         analysis_version: env!("CARGO_PKG_VERSION").into(),
         snapshots: BTreeSet::from([query.before.id.clone(), query.after.id.clone()]),
@@ -459,7 +453,7 @@ fn assemble_report(
         after_graph: after.graph,
         alignment: alignment.nodes,
         deltas,
-        human_summary,
+        human_summary: String::new(),
         witnesses,
         diagnostics,
         unknown_frontiers,
@@ -472,397 +466,11 @@ fn assemble_report(
         stats,
     };
     report.validate()?;
-    Ok(report)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn render_human_summary(
-    deltas: &BTreeSet<DeltaRecord>,
-    before: &FlowGraph,
-    after: &FlowGraph,
-    alignment: &BTreeSet<Alignment>,
-    diagnostics: &BTreeSet<Diagnostic>,
-    frontiers: &BTreeSet<UnknownFrontier>,
-    before_ir: &super::ir::ProcedureIr,
-    after_ir: &super::ir::ProcedureIr,
-    before_source: &str,
-    after_source: &str,
-    before_binding: &BindingId,
-    after_binding: &BindingId,
-) -> String {
-    let before_nodes: BTreeMap<_, _> = before.nodes.iter().map(|node| (&node.id, node)).collect();
-    let after_nodes: BTreeMap<_, _> = after.nodes.iter().map(|node| (&node.id, node)).collect();
-    let by_logical: BTreeMap<_, _> = alignment.iter().map(|item| (item.logical, item)).collect();
-    let label = |logical: &LogicalNodeId, side: SnapshotSide| -> String {
-        by_logical
-            .get(logical)
-            .and_then(|item| {
-                let id = match side {
-                    SnapshotSide::Before => item.before.as_ref(),
-                    SnapshotSide::After => item.after.as_ref(),
-                }?;
-                let graph_node = match side {
-                    SnapshotSide::Before => before_nodes.get(id),
-                    SnapshotSide::After => after_nodes.get(id),
-                };
-                graph_node
-                    .map(|node| {
-                        format!(
-                            "{} at {}:{}",
-                            node.operation, node.span.path, node.span.start_line
-                        )
-                    })
-                    .or_else(|| {
-                        let (ir, source) = match side {
-                            SnapshotSide::Before => (before_ir, before_source),
-                            SnapshotSide::After => (after_ir, after_source),
-                        };
-                        let node = ir.nodes.get(id)?;
-                        let span = node.span.as_ref()?;
-                        let snippet = source
-                            .get(span.byte_start as usize..span.byte_end as usize)?
-                            .trim();
-                        let kind = match node.operation {
-                            super::ir::Operation::Write { .. } => "write",
-                            super::ir::Operation::Return { .. } => "return",
-                            super::ir::Operation::Literal { .. } => "literal",
-                            _ => "operation",
-                        };
-                        Some(format!(
-                            "{kind} `{snippet}` at {}:{}",
-                            span.path, span.start_line
-                        ))
-                    })
-            })
-            .unwrap_or_else(|| format!("operation {}", logical.0))
-    };
-    let mut parts = BTreeSet::new();
-    for record in deltas {
-        match &record.delta {
-            FlowDelta::NodeAdded { after: id } => {
-                if let Some(node) = after_nodes.get(id)
-                    && after_ir.nodes.get(id).is_some_and(|ir_node| {
-                        matches!(ir_node.operation, super::ir::Operation::Return { .. })
-                    })
-                {
-                    parts.insert(format!(
-                        "Added {} at {}:{}.",
-                        node.operation, node.span.path, node.span.start_line
-                    ));
-                }
-            }
-            FlowDelta::WriteAdded { after: id } => {
-                if let Some(node) = after_nodes.get(id) {
-                    parts.insert(format!(
-                        "Added selected-binding {} at {}:{}.",
-                        node.operation, node.span.path, node.span.start_line
-                    ));
-                }
-            }
-            FlowDelta::WriteRemoved { before: id } => {
-                if let Some(node) = before_nodes.get(id) {
-                    parts.insert(format!(
-                        "Removed selected-binding {} at {}:{}.",
-                        node.operation, node.span.path, node.span.start_line
-                    ));
-                }
-            }
-            FlowDelta::OperationChanged { logical, .. } => {
-                parts.insert(format!(
-                    "Changed operation {} to {}.",
-                    label(logical, SnapshotSide::Before),
-                    label(logical, SnapshotSide::After)
-                ));
-                if let Some(item) = by_logical.get(logical)
-                    && item
-                        .before
-                        .as_ref()
-                        .and_then(|id| before_ir.nodes.get(id))
-                        .is_some_and(|node| {
-                            matches!(&node.operation,
-                            super::ir::Operation::Write { target: Place::Binding(binding), .. }
-                            if binding == before_binding)
-                        })
-                    && item
-                        .after
-                        .as_ref()
-                        .and_then(|id| after_ir.nodes.get(id))
-                        .is_some_and(|node| {
-                            matches!(&node.operation,
-                            super::ir::Operation::Write { target: Place::Binding(binding), .. }
-                            if binding == after_binding)
-                        })
-                {
-                    parts.insert("Its selected-binding write was retained.".into());
-                }
-            }
-            FlowDelta::SliceMembershipChanged {
-                logical,
-                change: MembershipChange::Left,
-            } => {
-                let operation = label(logical, SnapshotSide::Before);
-                if operation.starts_with("return ") {
-                    parts.insert(format!("Selected binding no longer reaches {operation}."));
-                } else {
-                    parts.insert(format!(
-                        "{operation} left the selected binding's flow slice."
-                    ));
-                }
-            }
-            FlowDelta::ValueSourceChanged {
-                consumer,
-                projection,
-                before_sources,
-                after_sources,
-                ..
-            } => {
-                let sources = |items: &BTreeSet<LogicalNodeId>, side| {
-                    let graph = match side {
-                        SnapshotSide::Before => before,
-                        SnapshotSide::After => after,
-                    };
-                    let consumer_id = by_logical.get(consumer).and_then(|item| match side {
-                        SnapshotSide::Before => item.before.as_ref(),
-                        SnapshotSide::After => item.after.as_ref(),
-                    });
-                    items
-                        .iter()
-                        .map(|id| {
-                            let mut description = label(id, side);
-                            let source_id = by_logical.get(id).and_then(|item| match side {
-                                SnapshotSide::Before => item.before.as_ref(),
-                                SnapshotSide::After => item.after.as_ref(),
-                            });
-                            let conditions: BTreeSet<_> = source_id
-                                .zip(consumer_id)
-                                .into_iter()
-                                .flat_map(|(source_id, consumer_id)| {
-                                    graph
-                                        .edges
-                                        .iter()
-                                        .filter(move |edge| {
-                                            edge.source == *source_id
-                                                && edge.target == *consumer_id
-                                                && edge.projection.as_deref() == Some(projection)
-                                                && matches!(
-                                                    edge.relation,
-                                                    RelationKind::Reaches
-                                                        | RelationKind::ValueDependency
-                                                        | RelationKind::Argument
-                                                        | RelationKind::Return
-                                                )
-                                        })
-                                        .map(|edge| edge.condition.clone())
-                                })
-                                .collect();
-                            if conditions.contains(&None) {
-                                description.push_str(" unconditionally");
-                            } else if !conditions.is_empty() {
-                                let conditions = conditions
-                                    .iter()
-                                    .filter_map(|condition| condition.as_deref())
-                                    .map(|condition| format!("`{condition}`"))
-                                    .collect::<Vec<_>>()
-                                    .join(" or ");
-                                description.push_str(&format!(" when {conditions}"));
-                            }
-                            description
-                        })
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                };
-                let relocated_from = deltas.iter().find_map(|candidate| {
-                    let FlowDelta::ValueSourceChanged {
-                        consumer: parent_consumer,
-                        projection: parent_projection,
-                        before_sources: parent_before,
-                        after_sources: parent_after,
-                        ..
-                    } = &candidate.delta
-                    else {
-                        return None;
-                    };
-                    (parent_consumer == consumer
-                        && projection
-                            .strip_prefix(parent_projection)
-                            .is_some_and(|suffix| suffix.starts_with('.'))
-                        && !parent_before.is_empty()
-                        && parent_after.is_empty()
-                        && before_sources.is_empty()
-                        && !after_sources.is_empty())
-                    .then_some((parent_projection, parent_before))
-                });
-                if let Some((parent_projection, parent_sources)) = relocated_from {
-                    parts.insert(format!(
-                        "Consumer input {} moved sources from ({parent_projection}) [{}] to ({projection}) [{}].",
-                        label(consumer, SnapshotSide::After),
-                        sources(parent_sources, SnapshotSide::Before),
-                        sources(after_sources, SnapshotSide::After)
-                    ));
-                    continue;
-                }
-                let relocates_to_child = after_sources.is_empty()
-                    && deltas.iter().any(|candidate| {
-                        matches!(
-                            &candidate.delta,
-                            FlowDelta::ValueSourceChanged {
-                                consumer: child_consumer,
-                                projection: child_projection,
-                                before_sources: child_before,
-                                after_sources: child_after,
-                                ..
-                            } if child_consumer == consumer
-                                && child_projection
-                                    .strip_prefix(projection)
-                                    .is_some_and(|suffix| suffix.starts_with('.'))
-                                && child_before.is_empty()
-                                && !child_after.is_empty()
-                        )
-                    });
-                if !relocates_to_child {
-                    parts.insert(format!(
-                        "Possible value origins reaching {} ({projection}) changed from [{}] to [{}].",
-                        label(consumer, SnapshotSide::After),
-                        sources(before_sources, SnapshotSide::Before),
-                        sources(after_sources, SnapshotSide::After)
-                    ));
-                }
-                for source in before_sources.difference(after_sources) {
-                    if let Some(item) = by_logical.get(source)
-                        && item.after.is_some()
-                        && item
-                            .before
-                            .as_ref()
-                            .and_then(|id| before_nodes.get(id))
-                            .is_some_and(|node| node.operation.starts_with("write"))
-                    {
-                        let selected_writer = item
-                            .before
-                            .as_ref()
-                            .and_then(|id| before_ir.nodes.get(id))
-                            .is_some_and(|node| {
-                                matches!(&node.operation,
-                                super::ir::Operation::Write { target: Place::Binding(binding), .. }
-                                if binding == before_binding)
-                            });
-                        let effect = if selected_writer {
-                            "no longer reaches this input"
-                        } else {
-                            "no longer carries the selected binding's value to this input"
-                        };
-                        parts.insert(format!(
-                            "Earlier writer {} remains in the code but {effect}.",
-                            label(source, SnapshotSide::Before).replacen("write ", "", 1)
-                        ));
-                    }
-                }
-            }
-            FlowDelta::FlowConditionChanged {
-                source,
-                target,
-                relation,
-                projection,
-                before,
-                after,
-            } => {
-                let target_is_return = by_logical
-                    .get(target)
-                    .and_then(|item| item.after.as_ref())
-                    .and_then(|id| after_ir.nodes.get(id))
-                    .is_some_and(|node| {
-                        matches!(node.operation, super::ir::Operation::Return { .. })
-                    });
-                if *relation == RelationKind::ValueDependency
-                    && projection
-                        .as_deref()
-                        .is_some_and(|projection| projection.starts_with("value.operands["))
-                    && target_is_return
-                {
-                    let timing = |condition: &str| {
-                        if condition == "true" {
-                            "unconditionally".to_owned()
-                        } else {
-                            format!("when `{condition}`")
-                        }
-                    };
-                    parts.insert(format!(
-                        "Value from {} is used as an operand of {} {} (previously {}).",
-                        label(source, SnapshotSide::After),
-                        label(target, SnapshotSide::After),
-                        timing(after),
-                        timing(before)
-                    ));
-                    continue;
-                }
-                parts.insert(format!(
-                    "Flow from {} to {} changed condition from {before} to {after}.",
-                    label(source, SnapshotSide::After),
-                    label(target, SnapshotSide::After)
-                ));
-            }
-            FlowDelta::FlowAdded {
-                source,
-                target,
-                relation: RelationKind::Reaches,
-                ..
-            } => {
-                if by_logical
-                    .get(target)
-                    .and_then(|item| item.after.as_ref())
-                    .and_then(|id| after_ir.nodes.get(id))
-                    .is_some_and(|node| {
-                        matches!(node.operation, super::ir::Operation::Return { .. })
-                    })
-                {
-                    let condition = record
-                        .condition
-                        .as_ref()
-                        .map(|condition| format!(" when `{condition}`"))
-                        .unwrap_or_default();
-                    parts.insert(format!(
-                        "Flow from {} to {} was added{condition}.",
-                        label(source, SnapshotSide::After),
-                        label(target, SnapshotSide::After)
-                    ));
-                }
-            }
-            _ => {}
-        }
-    }
-    for frontier in frontiers {
-        let location = before_nodes
-            .get(&frontier.node)
-            .or_else(|| after_nodes.get(&frontier.node))
-            .map(|node| format!("{}:{}", node.span.path, node.span.start_line))
-            .unwrap_or_else(|| format!("{:?}", frontier.node));
-        parts.insert(format!(
-            "Unknown {:?} boundary at {}: {}.",
-            frontier.affected_direction, location, frontier.next_operation
-        ));
-    }
-    for diagnostic in diagnostics {
-        if diagnostic.frontier.is_none()
-            && matches!(
-                diagnostic.code,
-                DiagnosticCode::AmbiguousMatch
-                    | DiagnosticCode::ParseError
-                    | DiagnosticCode::OutputTruncated
-                    | DiagnosticCode::AnalysisBudgetExceeded
-            )
-        {
-            let prefix = if diagnostic.code == DiagnosticCode::AmbiguousMatch {
-                "Alignment uncertain"
-            } else {
-                "Unknown boundary"
-            };
-            parts.insert(format!("{prefix}: {}.", diagnostic.message));
-        }
-    }
-    if parts.is_empty() {
-        "No established flow changes within the analyzed scope.".into()
-    } else {
-        parts.into_iter().collect::<Vec<_>>().join(" ")
-    }
+    let compact = project_variable_sources(&report, before_ir, after_ir);
+    report.human_summary = compact.render_text();
+    report.validate()?;
+    compact.validate_with_full(&report)?;
+    Ok((report, compact))
 }
 
 #[cfg(test)]

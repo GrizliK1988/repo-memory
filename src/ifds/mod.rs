@@ -5,6 +5,7 @@
 pub mod adapters;
 pub mod analysis;
 pub mod branches;
+pub mod compact;
 pub mod compare;
 pub mod comparison;
 pub mod fixtures;
@@ -17,6 +18,7 @@ pub mod solver;
 pub mod uncertainty;
 
 pub use analysis::*;
+pub use compact::*;
 pub use compare::*;
 pub use comparison::*;
 pub use fixtures::*;
