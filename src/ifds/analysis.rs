@@ -539,6 +539,18 @@ fn render_human_summary(
     let mut parts = BTreeSet::new();
     for record in deltas {
         match &record.delta {
+            FlowDelta::NodeAdded { after: id } => {
+                if let Some(node) = after_nodes.get(id)
+                    && after_ir.nodes.get(id).is_some_and(|ir_node| {
+                        matches!(ir_node.operation, super::ir::Operation::Return { .. })
+                    })
+                {
+                    parts.insert(format!(
+                        "Added {} at {}:{}.",
+                        node.operation, node.span.path, node.span.start_line
+                    ));
+                }
+            }
             FlowDelta::WriteAdded { after: id } => {
                 if let Some(node) = after_nodes.get(id) {
                     parts.insert(format!(
@@ -748,15 +760,71 @@ fn render_human_summary(
             FlowDelta::FlowConditionChanged {
                 source,
                 target,
+                relation,
+                projection,
                 before,
                 after,
-                ..
             } => {
+                let target_is_return = by_logical
+                    .get(target)
+                    .and_then(|item| item.after.as_ref())
+                    .and_then(|id| after_ir.nodes.get(id))
+                    .is_some_and(|node| {
+                        matches!(node.operation, super::ir::Operation::Return { .. })
+                    });
+                if *relation == RelationKind::ValueDependency
+                    && projection
+                        .as_deref()
+                        .is_some_and(|projection| projection.starts_with("value.operands["))
+                    && target_is_return
+                {
+                    let timing = |condition: &str| {
+                        if condition == "true" {
+                            "unconditionally".to_owned()
+                        } else {
+                            format!("when `{condition}`")
+                        }
+                    };
+                    parts.insert(format!(
+                        "Value from {} is used as an operand of {} {} (previously {}).",
+                        label(source, SnapshotSide::After),
+                        label(target, SnapshotSide::After),
+                        timing(after),
+                        timing(before)
+                    ));
+                    continue;
+                }
                 parts.insert(format!(
                     "Flow from {} to {} changed condition from {before} to {after}.",
                     label(source, SnapshotSide::After),
                     label(target, SnapshotSide::After)
                 ));
+            }
+            FlowDelta::FlowAdded {
+                source,
+                target,
+                relation: RelationKind::Reaches,
+                ..
+            } => {
+                if by_logical
+                    .get(target)
+                    .and_then(|item| item.after.as_ref())
+                    .and_then(|id| after_ir.nodes.get(id))
+                    .is_some_and(|node| {
+                        matches!(node.operation, super::ir::Operation::Return { .. })
+                    })
+                {
+                    let condition = record
+                        .condition
+                        .as_ref()
+                        .map(|condition| format!(" when `{condition}`"))
+                        .unwrap_or_default();
+                    parts.insert(format!(
+                        "Flow from {} to {} was added{condition}.",
+                        label(source, SnapshotSide::After),
+                        label(target, SnapshotSide::After)
+                    ));
+                }
             }
             _ => {}
         }
@@ -1299,6 +1367,25 @@ mod tests {
             report
                 .human_summary
                 .contains("no longer carries the selected binding's value")
+        );
+    }
+
+    #[test]
+    fn ifds_k014_human_summary_names_added_early_return_flow() {
+        let report = run(
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; x = 3; x = 4; return x + 4; }",
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; if (flag) return x; x = 3; x = 4; return x + 4; }",
+            "x",
+        );
+        assert!(report.diagnostics.is_empty(), "{:?}", report.diagnostics);
+        assert!(report.human_summary.contains("Added return `return x;`"));
+        assert!(report.human_summary.contains(
+            "Flow from write `x = 2` at main.ts:1 to return `return x;` at main.ts:1 was added when `flag`."
+        ));
+        assert!(
+            report
+                .human_summary
+                .contains("changed condition from true to !flag")
         );
     }
 }
