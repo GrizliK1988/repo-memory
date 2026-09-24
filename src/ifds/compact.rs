@@ -705,7 +705,11 @@ fn render_clauses(
                                 (control.before.as_ref(), control.before_value.as_ref())
                             }
                             SnapshotSide::After => {
-                                (control.after.as_ref(), control.after_value.as_ref())
+                                if control.after.is_some() {
+                                    (control.after.as_ref(), control.after_value.as_ref())
+                                } else {
+                                    (control.before.as_ref(), control.before_value.as_ref())
+                                }
                             }
                         })
                         .map(|(site, identity)| {
@@ -1043,29 +1047,34 @@ fn compatible_clauses(first: &BTreeSet<GuardClause>, second: &BTreeSet<GuardClau
     })
 }
 
-fn equivalent_parameter_guard(control: &ControlDefinition) -> bool {
-    fn parameter_version(identity: &ConditionIdentity) -> Option<(u64, u64)> {
-        let binding = identity.binding.as_ref()?;
-        let write = identity.reaching_writes.iter().next()?;
-        if identity.reaching_writes.len() != 1
-            || !identity
-                .origins
-                .contains(&Source::ParameterEntry(write.clone()))
-            || !identity
-                .origins
-                .contains(&Source::FunctionInput(binding.clone()))
-            || identity.origins.len() != 2
-        {
-            return None;
-        }
-        Some((binding.local, write.local))
+fn parameter_version(identity: &ConditionIdentity) -> Option<(u64, u64)> {
+    let binding = identity.binding.as_ref()?;
+    let write = identity.reaching_writes.iter().next()?;
+    if identity.reaching_writes.len() != 1
+        || !identity
+            .origins
+            .contains(&Source::ParameterEntry(write.clone()))
+        || !identity
+            .origins
+            .contains(&Source::FunctionInput(binding.clone()))
+        || identity.origins.len() != 2
+    {
+        return None;
     }
-    control
-        .before_value
-        .as_ref()
-        .and_then(parameter_version)
-        .zip(control.after_value.as_ref().and_then(parameter_version))
-        .is_some_and(|(before, after)| before == after)
+    Some((binding.local, write.local))
+}
+
+fn equivalent_parameter_guard(id: LogicalNodeId, controls: &[ControlDefinition]) -> bool {
+    let before = controls
+        .iter()
+        .find(|control| control.id == id)
+        .and_then(|control| control.before_value.as_ref())
+        .and_then(parameter_version);
+    before.is_some_and(|version| {
+        controls.iter().any(|control| {
+            control.after_value.as_ref().and_then(parameter_version) == Some(version)
+        })
+    })
 }
 
 fn observation_semantically_equal(
@@ -1114,12 +1123,9 @@ fn observation_semantically_equal(
                 .flat_map(|clause| clause.terms.iter().map(|term| term.control))
         }))
         .collect::<BTreeSet<_>>();
-    relevant_guards.iter().all(|id| {
-        controls
-            .iter()
-            .find(|control| control.id == *id)
-            .is_some_and(equivalent_parameter_guard)
-    })
+    relevant_guards
+        .iter()
+        .all(|id| equivalent_parameter_guard(*id, controls))
 }
 
 fn simplify_clauses(mut clauses: BTreeSet<GuardClause>) -> BTreeSet<GuardClause> {
@@ -1205,7 +1211,25 @@ pub fn project_variable_sources(
         4096,
     );
     let before_canonical = canonical_guards(before_ir, &before_paths, &before_ids);
-    let after_canonical = canonical_guards(after_ir, &after_paths, &after_ids);
+    let mut after_canonical = canonical_guards(after_ir, &after_paths, &after_ids);
+    let mut before_parameter_controls = BTreeMap::new();
+    for (node, (control, _)) in &before_canonical {
+        if let Some(version) = condition_identity(before_ir, &before_paths, node)
+            .as_ref()
+            .and_then(parameter_version)
+        {
+            before_parameter_controls.entry(version).or_insert(*control);
+        }
+    }
+    for (node, (control, _)) in &mut after_canonical {
+        if let Some(before_control) = condition_identity(after_ir, &after_paths, node)
+            .as_ref()
+            .and_then(parameter_version)
+            .and_then(|version| before_parameter_controls.get(&version))
+        {
+            *control = *before_control;
+        }
+    }
     let mut sources = Vec::new();
     let mut controls = Vec::new();
     let changed_operations: BTreeSet<_> = full
@@ -1781,9 +1805,7 @@ pub fn project_variable_sources(
         if *kind == FindingKind::ExpressionChanged
             && observation.is_none()
             && all_observations_equal
-            && controls
-                .iter()
-                .any(|control| control.id == *subject && equivalent_parameter_guard(control))
+            && equivalent_parameter_guard(*subject, &controls)
         {
             return false;
         }
