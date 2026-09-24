@@ -1536,6 +1536,33 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k041_human_summary_omits_unchanged_nested_sources() {
+        let (full, compact) = run_reports(
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (flag) { x = 2; if (flag2) { x = 5; } } else { x = 3; } return x; }",
+            "function example(flag: boolean, flag2: boolean) { let x = 1; if (flag) { x = 2; if (!flag2) { x = 5; } } else { x = 3; } return x; }",
+            "x",
+        );
+        let summary = &full.human_summary;
+        assert_eq!(summary, &compact.render_text());
+        assert!(!summary.contains("Before: literal `5`"), "{summary}");
+        assert!(!summary.contains("After: literal `5`"), "{summary}");
+        assert!(!summary.contains("write `x = 3` under !flag"), "{summary}");
+        assert!(
+            summary.contains("Before: write `x = 5` under flag && flag2."),
+            "{summary}"
+        );
+        assert!(
+            summary.contains("After: write `x = 5` under flag && !flag2."),
+            "{summary}"
+        );
+        assert!(
+            summary.contains("Changed expression: branch `(flag2)` -> branch `(!flag2)`."),
+            "{summary}"
+        );
+        assert!(!summary.contains("source 9"), "{summary}");
+    }
+
+    #[test]
     fn ifds_k041_shared_conditions() {
         let (_, compact) = run_reports(
             "function f(a: boolean, b: boolean) { let x = 1; return x; }",
