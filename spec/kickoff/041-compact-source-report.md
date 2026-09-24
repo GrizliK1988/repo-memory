@@ -1,6 +1,6 @@
 # K041 — Compact source and logic change report
 
-Status: planned. Roadmap stage: 2, report extension for the supported subset.
+Status: done. Roadmap stage: 2, report extension for the supported subset.
 
 Dependencies: [K013](013-analysis-api.md), [K014](014-branches.md).
 Can follow K014 directly; its numeric ID does not require completing K015–K040.
@@ -43,7 +43,7 @@ This is an additional contract; completed K013 remains the baseline full API.
 | `output_contract` | Versioned deterministic serialization, resolvable evidence references, and text/JSON semantic parity; full API/evidence output preserved. |
 | `presentation_budget` | Shared guards/sources do not multiply with witnesses; omitted groups are counted and retrievable; analysis and presentation truncation remain distinct. |
 
-These are requirements for future implementation, not tests added by the specification.
+All named requirements have corresponding Rust unit tests under `src/ifds/`.
 
 ## Verification
 

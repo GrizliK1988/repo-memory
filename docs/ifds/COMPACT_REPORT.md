@@ -1,13 +1,13 @@
 # Compact source and logic change report
 
-Status: implementation in progress. Owner: [K041](../../spec/kickoff/041-compact-source-report.md).
+Status: implemented for the supported subset. Owner: [K041](../../spec/kickoff/041-compact-source-report.md).
 
 This extends [SPEC sections 6.4 and 7](SPEC.md#64-grouping-and-required-summary-content).
 It defines the default explanation for people and agents. Full graphs, typed deltas,
 witnesses, and lifecycle records remain the evidence model required by SPEC.
 Implementation must not reduce analysis scope to make the explanation smaller.
 
-The in-progress API returns `(VariableFlowReport, VariableSourceReport)` from
+The API returns `(VariableFlowReport, VariableSourceReport)` from
 `analyze_variable_flow_reports`. The existing `analyze_variable_flow` API keeps
 returning the full report. `VariableSourceReport` has its own schema version and
 contains sources, typed guard clauses, observations, source selections, overwrite
@@ -225,7 +225,7 @@ the returned copy even though `x` is later overwritten. In `x = p; x = 3; return
 the same edit does not change the return's source. Preserve this distinction and
 the direct writer versus upstream input distinction in compact JSON and text.
 
-## Implementation plan, not implemented by this document
+## Implemented projection steps
 
 1. Build compact source/observation identities from alignment, slices, provenance,
    typed deltas, and boundaries; do not summarize `human_summary` strings.

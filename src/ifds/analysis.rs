@@ -278,6 +278,8 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         comparison.deltas,
         &before.procedure,
         &after.procedure,
+        &before_source,
+        &after_source,
     )
 }
 
@@ -326,6 +328,8 @@ fn assemble_report(
     deltas: BTreeSet<DeltaRecord>,
     before_ir: &super::ir::ProcedureIr,
     after_ir: &super::ir::ProcedureIr,
+    before_source: &str,
+    after_source: &str,
 ) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
     let mut diagnostics: BTreeSet<_> = before
         .diagnostics
@@ -466,7 +470,8 @@ fn assemble_report(
         stats,
     };
     report.validate()?;
-    let compact = project_variable_sources(&report, before_ir, after_ir);
+    let compact =
+        project_variable_sources(&report, before_ir, after_ir, before_source, after_source);
     report.human_summary = compact.render_text();
     report.validate()?;
     compact.validate_with_full(&report)?;
@@ -476,6 +481,7 @@ fn assemble_report(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ifds::compact::{FindingKind, GuardClause, Observation, SourceDefinition};
     use crate::ifds::snapshots::{InMemorySnapshot, InMemorySnapshotProvider};
 
     fn selector(snapshot: SnapshotId, source: &str, name: &str) -> BindingSelector {
@@ -507,12 +513,29 @@ mod tests {
         run_with_counterpart(before, after, name, true)
     }
 
+    fn run_reports(
+        before: &str,
+        after: &str,
+        name: &str,
+    ) -> (VariableFlowReport, VariableSourceReport) {
+        run_reports_with_counterpart(before, after, name, true)
+    }
+
     fn run_with_counterpart(
         before: &str,
         after: &str,
         name: &str,
         explicit_counterpart: bool,
     ) -> VariableFlowReport {
+        run_reports_with_counterpart(before, after, name, explicit_counterpart).0
+    }
+
+    fn run_reports_with_counterpart(
+        before: &str,
+        after: &str,
+        name: &str,
+        explicit_counterpart: bool,
+    ) -> (VariableFlowReport, VariableSourceReport) {
         let before_id = SnapshotId {
             side: SnapshotSide::Before,
             revision: "before".into(),
@@ -583,7 +606,7 @@ mod tests {
                 output_nodes: 100_000,
             },
         };
-        analyze_variable_flow(query, &provider, &environment, &environment).unwrap()
+        analyze_variable_flow_reports(query, &provider, &environment, &environment).unwrap()
     }
 
     const OVERWRITE_BEFORE: &str = "function example() {\n  let x = 1;\n  return x;\n}\n";
@@ -710,27 +733,30 @@ mod tests {
 
     #[test]
     fn ifds_k013_human_summary_contract() {
-        let report = run(OVERWRITE_BEFORE, OVERWRITE_AFTER, "x");
-        assert!(
-            report
-                .human_summary
-                .contains("Added selected-binding write")
-        );
-        assert!(
-            report
-                .human_summary
-                .contains("Possible value origins reaching")
-        );
+        let (report, compact) = run_reports(OVERWRITE_BEFORE, OVERWRITE_AFTER, "x");
+        assert_eq!(report.human_summary, compact.render_text());
+        assert!(report.human_summary.contains("Before:"));
+        assert!(report.human_summary.contains("After:"));
         assert!(report.human_summary.contains("x = 2"));
-        assert!(report.human_summary.contains("Earlier writer"));
+        assert!(report.human_summary.contains("return x"));
+        assert!(
+            report
+                .human_summary
+                .contains("remains in the code but no longer reaches this input")
+        );
+        assert!(compact.findings.iter().any(|finding| finding.kind == super::super::compact::FindingKind::SourceSetChanged));
         assert!(!report.human_summary.contains("no further impact"));
         let detached = run(
             "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 2;\n  return z;\n}\n",
             "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = 1;\n  return z;\n}\n",
             "x",
         );
-        assert!(detached.human_summary.contains("z = 1"));
-        assert!(detached.human_summary.contains("no longer reaches return"));
+        assert!(
+            detached.human_summary.contains("z = 1"),
+            "{}",
+            detached.human_summary
+        );
+        assert!(detached.human_summary.contains("return z"));
         assert!(!detached.human_summary.contains("operation 8"));
         let z = run(
             "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 2;\n  return z;\n}\n",
@@ -743,31 +769,20 @@ mod tests {
 
     #[test]
     fn ifds_k014_added_guard_report_preserves_path_conditions() {
-        let report = run(
+        let (report, compact) = run_reports(
             "function f(flag: boolean) {\n  let x = 0;\n  return x;\n}\n",
             "function f(flag: boolean) {\n  let x = 0;\n  if (flag) x = 1;\n  return x;\n}\n",
             "x",
         );
+        assert_eq!(report.human_summary, compact.render_text());
+        assert!(report.human_summary.contains("x = 0"));
         assert!(
-            report.human_summary.contains(
-                "Possible value origins reaching return `return x;` at main.ts:4 (value)"
-            )
+            report.human_summary.contains("x = 1` under flag"),
+            "{}",
+            report.human_summary
         );
-        assert!(
-            report
-                .human_summary
-                .contains("write `x = 0` at main.ts:2 unconditionally")
-        );
-        assert!(
-            report
-                .human_summary
-                .contains("write `x = 0` at main.ts:2 when `!flag`")
-        );
-        assert!(
-            report
-                .human_summary
-                .contains("write `x = 1` at main.ts:3 when `flag`")
-        );
+        assert!(report.human_summary.contains("return x"));
+        assert!(!compact.controls.is_empty());
         assert!(!report.human_summary.contains("Consumer input"));
     }
 
@@ -848,23 +863,32 @@ mod tests {
         let local = "function f() {\n  let x = 1;\n  let y = 2;\n  return x + y;\n}\n";
         let parameter = "function f(x: number) {\n  let y = 2;\n  return x + y;\n}\n";
         for explicit in [false, true] {
-            let report = run_with_counterpart(local, parameter, "x", explicit);
+            let (report, compact) = run_reports_with_counterpart(local, parameter, "x", explicit);
             assert_eq!(report.completeness, Completeness::CompleteForQuery);
             assert!(
                 report
-                    .human_summary
-                    .contains("Removed selected-binding write `x = 1`")
+                    .deltas
+                    .iter()
+                    .any(|record| matches!(record.delta, FlowDelta::WriteRemoved { .. }))
             );
+            assert!(compact.findings.iter().any(|finding| finding.kind
+                == super::super::compact::FindingKind::SourceSetChanged
+                && finding.before_sources != finding.after_sources));
             assert!(report.human_summary.contains("function_input `x`"));
             assert!(report.diagnostics.is_empty());
 
-            let reverse = run_with_counterpart(parameter, local, "x", explicit);
+            let (reverse, reverse_compact) =
+                run_reports_with_counterpart(parameter, local, "x", explicit);
             assert_eq!(reverse.completeness, Completeness::CompleteForQuery);
             assert!(
                 reverse
-                    .human_summary
-                    .contains("Added selected-binding write `x = 1`")
+                    .deltas
+                    .iter()
+                    .any(|record| matches!(record.delta, FlowDelta::WriteAdded { .. }))
             );
+            assert!(reverse_compact.findings.iter().any(|finding| finding.kind
+                == super::super::compact::FindingKind::SourceSetChanged
+                && finding.before_sources != finding.after_sources));
             assert!(reverse.human_summary.contains("function_input `x`"));
             assert!(reverse.diagnostics.is_empty());
         }
@@ -872,21 +896,19 @@ mod tests {
 
     #[test]
     fn ifds_k013_reports_sources_moved_into_expression_operand() {
-        let report = run(
+        let (report, compact) = run_reports(
             "function example() {\n  let x = 1;\n  return x;\n}\n",
             "function example() {\n  let y = 1;\n  let x = 2;\n  return x + y;\n}\n",
             "x",
         );
         assert!(
-            report
-                .human_summary
-                .contains("moved sources from (value) [write `x = 1`")
+            compact
+                .observations
+                .iter()
+                .any(|observation| observation.projection == "value.operands[0]")
         );
-        assert!(
-            report
-                .human_summary
-                .contains("to (value.operands[0]) [write `x = 2`")
-        );
+        assert!(compact.findings.iter().any(|finding| finding.kind == super::super::compact::FindingKind::SourceSetChanged));
+        assert!(report.human_summary.contains("x = 2"));
         assert!(!report
             .human_summary
             .contains("return `return x + y;` at snippet.ts:4 (value) changed sources from [write `x = 1`] to []"));
@@ -894,7 +916,7 @@ mod tests {
 
     #[test]
     fn ifds_k013_retargeted_consumer_chain() {
-        let report = run(
+        let (report, compact) = run_reports(
             "function example() {\n  let x = 1;\n  let y = x + 1;\n  let z = y + 4;\n  return z;\n}\n",
             "function example() {\n  let x = 1;\n  let y = 2;\n  let z = x - y - 6;\n  return z;\n}\n",
             "x",
@@ -922,11 +944,7 @@ mod tests {
                 .iter()
                 .any(|diagnostic| diagnostic.code == DiagnosticCode::AmbiguousMatch)
         );
-        assert!(
-            report
-                .human_summary
-                .contains("no longer carries the selected binding's value")
-        );
+        assert!(compact.findings.iter().any(|finding| finding.kind == super::super::compact::FindingKind::SourceSetChanged));
         assert!(
             !report
                 .human_summary
@@ -936,7 +954,7 @@ mod tests {
 
     #[test]
     fn ifds_k013_reordered_sources_keep_direct_flow() {
-        let report = run(
+        let (report, compact) = run_reports(
             "function example() {\n  let x = 1;\n  let y = x + 2;\n  let z = x + y;\n  return z;\n}\n",
             "function example() {\n  let y = 1;\n  let x = 2;\n  let z = x + y;\n  return z;\n}\n",
             "x",
@@ -971,29 +989,572 @@ mod tests {
         )));
         assert_eq!(report.completeness, Completeness::CompleteForQuery);
         assert!(report.diagnostics.is_empty());
-        assert!(
-            report
-                .human_summary
-                .contains("no longer carries the selected binding's value")
-        );
+        assert!(compact.findings.iter().any(|finding| finding.kind == super::super::compact::FindingKind::SourceSetChanged));
     }
 
     #[test]
     fn ifds_k014_human_summary_names_added_early_return_flow() {
-        let report = run(
+        let (report, compact) = run_reports(
             "function f(flag: boolean) { let x = 0; x = 1; x = 2; x = 3; x = 4; return x + 4; }",
             "function f(flag: boolean) { let x = 0; x = 1; x = 2; if (flag) return x; x = 3; x = 4; return x + 4; }",
             "x",
         );
         assert!(report.diagnostics.is_empty(), "{:?}", report.diagnostics);
-        assert!(report.human_summary.contains("Added return `return x;`"));
-        assert!(report.human_summary.contains(
-            "Flow from write `x = 2` at main.ts:1 to return `return x;` at main.ts:1 was added when `flag`."
-        ));
-        assert!(
-            report
-                .human_summary
-                .contains("changed condition from true to !flag")
+        assert!(compact.findings.iter().any(|finding| finding.kind == super::super::compact::FindingKind::ObservationAdded));
+        assert!(report.human_summary.contains("return x"));
+        assert!(report.human_summary.contains("Use guard: flag"));
+        assert!(report.human_summary.contains("!flag"));
+    }
+
+    fn compact_observation<'a>(compact: &'a VariableSourceReport, text: &str) -> &'a Observation {
+        compact
+            .observations
+            .iter()
+            .find(|observation| {
+                observation
+                    .after
+                    .as_ref()
+                    .or(observation.before.as_ref())
+                    .is_some_and(|site| site.operation.contains(text))
+            })
+            .unwrap_or_else(|| panic!("observation {text:?} missing"))
+    }
+
+    fn compact_source<'a>(compact: &'a VariableSourceReport, text: &str) -> &'a SourceDefinition {
+        compact
+            .sources
+            .iter()
+            .find(|source| {
+                source
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains(text))
+                    || source
+                        .before
+                        .as_ref()
+                        .is_some_and(|site| site.operation.contains(text))
+            })
+            .unwrap_or_else(|| panic!("source {text:?} missing"))
+    }
+
+    fn clauses_apply(
+        clauses: &BTreeSet<GuardClause>,
+        outcomes: &BTreeMap<LogicalNodeId, bool>,
+    ) -> bool {
+        clauses.iter().any(|clause| {
+            clause
+                .terms
+                .iter()
+                .all(|term| outcomes.get(&term.control) == Some(&term.outcome))
+        })
+    }
+
+    #[test]
+    fn ifds_k041_sequential_guards() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean, flag2: boolean) { let x = 1; return x; }",
+            "function f(flag: boolean, flag2: boolean) { let x = 1; if (flag) x = 2; if (flag2) x = 3; return x; }",
+            "x",
         );
+        let observation = compact_observation(&compact, "return x");
+        let after = observation.after_state.as_ref().unwrap();
+        assert_eq!(after.sources.len(), 3);
+        assert_eq!(compact.controls.len(), 2);
+        assert!(after.precedence.iter().any(|rule| {
+            let earlier = compact
+                .sources
+                .iter()
+                .find(|source| source.id == rule.earlier)
+                .unwrap();
+            let later = compact
+                .sources
+                .iter()
+                .find(|source| source.id == rule.later)
+                .unwrap();
+            earlier.after.as_ref().unwrap().operation.contains("x = 2")
+                && later.after.as_ref().unwrap().operation.contains("x = 3")
+        }));
+        let flag = compact
+            .controls
+            .iter()
+            .find(|control| {
+                control
+                    .after
+                    .as_ref()
+                    .unwrap()
+                    .operation
+                    .contains("(flag) ")
+            })
+            .unwrap_or_else(|| {
+                compact
+                    .controls
+                    .iter()
+                    .find(|control| {
+                        control
+                            .after
+                            .as_ref()
+                            .unwrap()
+                            .operation
+                            .contains("(flag)\u{60}")
+                    })
+                    .unwrap()
+            });
+        let flag2 = compact
+            .controls
+            .iter()
+            .find(|control| control.after.as_ref().unwrap().operation.contains("flag2"))
+            .unwrap();
+        for (first, second, expected) in [
+            (false, false, "x = 1"),
+            (true, false, "x = 2"),
+            (false, true, "x = 3"),
+            (true, true, "x = 3"),
+        ] {
+            let values = BTreeMap::from([(flag.id, first), (flag2.id, second)]);
+            let active: Vec<_> = after
+                .selections
+                .iter()
+                .filter(|selection| clauses_apply(selection.clauses.as_ref().unwrap(), &values))
+                .collect();
+            assert_eq!(active.len(), 1, "{first:?}/{second:?}: {active:?}");
+            let writer = compact
+                .sources
+                .iter()
+                .find(|source| source.id == active[0].source)
+                .unwrap();
+            assert!(writer.after.as_ref().unwrap().operation.contains(expected));
+        }
+        assert!(full.human_summary.len() < 1100);
+        assert!(
+            compact.to_canonical_json().unwrap().len() < full.to_canonical_json().unwrap().len()
+        );
+    }
+
+    #[test]
+    fn ifds_k041_guard_only_change() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) { let x = 1; if (flag) x = 2; return x; }",
+            "function f(flag: boolean) { let x = 1; if (!flag) x = 2; return x; }",
+            "x",
+        );
+        let return_value = compact_observation(&compact, "return x");
+        assert_eq!(
+            return_value.before_state.as_ref().unwrap().sources,
+            return_value.after_state.as_ref().unwrap().sources
+        );
+        assert!(
+            compact
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::SelectionChanged)
+        );
+        assert!(!full.deltas.iter().any(|record| matches!(
+            record.delta,
+            FlowDelta::WriteAdded { .. } | FlowDelta::WriteRemoved { .. }
+        )));
+        assert!(compact.controls.iter().any(|control| {
+            control.before.as_ref().unwrap().operation.contains("flag")
+                && control.after.as_ref().unwrap().operation.contains("!flag")
+        }));
+    }
+
+    #[test]
+    fn ifds_k041_reordered_priority() {
+        let (_, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) x = 2; if (b) x = 3; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (b) x = 3; if (a) x = 2; return x; }",
+            "x",
+        );
+        let observation = compact_observation(&compact, "return x");
+        let before = observation.before_state.as_ref().unwrap();
+        let after = observation.after_state.as_ref().unwrap();
+        assert_eq!(before.sources, after.sources);
+        assert_ne!(before.precedence, after.precedence);
+        assert!(
+            compact
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::SelectionChanged)
+        );
+    }
+
+    #[test]
+    fn ifds_k041_nested_guards() {
+        let (_, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) { if (b) x = 2; else x = 3; } return x; }",
+            "x",
+        );
+        let two = compact_source(&compact, "x = 2");
+        let three = compact_source(&compact, "x = 3");
+        let two_guard = two.after_assignment_guard.as_ref().unwrap();
+        let three_guard = three.after_assignment_guard.as_ref().unwrap();
+        assert!(two_guard.iter().all(|clause| clause.terms.len() >= 2));
+        assert!(three_guard.iter().all(|clause| clause.terms.len() >= 2));
+        assert_ne!(two_guard, three_guard);
+        assert!(
+            three_guard
+                .iter()
+                .any(|clause| clause.terms.iter().any(|term| !term.outcome))
+        );
+    }
+
+    #[test]
+    fn ifds_k041_early_return() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; x = 3; return x + 4; }",
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; if (flag) return x; x = 3; return x + 4; }",
+            "x",
+        );
+        assert!(
+            compact
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::ObservationAdded)
+        );
+        assert!(
+            compact
+                .observations
+                .iter()
+                .filter(|observation| observation
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains("return x")))
+                .count()
+                >= 2
+        );
+        assert!(full.human_summary.contains("Use guard: flag"));
+        assert!(full.human_summary.contains("!flag"));
+        let (repeated_full, repeated_compact) = run_reports(
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; x = 3; return x; }",
+            "function f(flag: boolean) { let x = 0; x = 1; x = 2; if (flag) return x; x = 3; return x; }",
+            "x",
+        );
+        if repeated_full
+            .diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.code == DiagnosticCode::AmbiguousMatch)
+        {
+            assert!(!repeated_compact.comparison_complete);
+        }
+    }
+
+    #[test]
+    fn ifds_k041_operand_and_origins() {
+        let (_, compact) = run_reports(
+            "function f(p: number) { let x = p; return x + 4; }",
+            "function f(p: number) { let x = p + 1; return x + 4; }",
+            "x",
+        );
+        let writer = compact_source(&compact, "x = p + 1");
+        assert!(!writer.after_upstream.is_empty());
+        assert!(
+            writer
+                .after_upstream
+                .iter()
+                .any(|id| compact.sources.iter().any(|source| source.id == *id
+                    && source
+                        .after
+                        .as_ref()
+                        .is_some_and(|site| site.operation.contains("p"))))
+        );
+        let operand = compact
+            .observations
+            .iter()
+            .find(|observation| {
+                observation.projection == "value.operands[0]"
+                    && observation
+                        .after
+                        .as_ref()
+                        .is_some_and(|site| site.operation.contains("return x + 4"))
+            })
+            .unwrap();
+        assert!(
+            operand
+                .after_state
+                .as_ref()
+                .unwrap()
+                .sources
+                .contains(&writer.id)
+        );
+        assert!(!compact.observations.iter().any(|observation| {
+            observation.projection == "value"
+                && observation
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains("return x + 4"))
+                && observation
+                    .after_state
+                    .as_ref()
+                    .is_some_and(|state| state.sources.contains(&writer.id))
+        }));
+    }
+
+    #[test]
+    fn ifds_k041_overwritten_and_copied() {
+        let (_, copied) = run_reports(
+            "function f(p: number, q: number) { let x = p; let y = x; x = 3; return y; }",
+            "function f(p: number, q: number) { let x = q; let y = x; x = 3; return y; }",
+            "x",
+        );
+        let old_writer = compact_source(&copied, "x = p");
+        let copy = compact_source(&copied, "y = x");
+        assert!(copy.before_upstream.contains(&old_writer.id));
+        assert!(
+            copied
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::ExpressionChanged
+                    || finding.kind == FindingKind::SourceSetChanged)
+        );
+        let (_, overwritten) = run_reports(
+            "function f(p: number, q: number) { let x = p; x = 3; return x; }",
+            "function f(p: number, q: number) { let x = q; x = 3; return x; }",
+            "x",
+        );
+        let final_return = compact_observation(&overwritten, "return x");
+        let final_sources = &final_return.after_state.as_ref().unwrap().sources;
+        assert!(final_sources.contains(&compact_source(&overwritten, "x = 3").id));
+        assert!(!final_sources.contains(&compact_source(&overwritten, "x = q").id));
+    }
+
+    #[test]
+    fn ifds_k041_equal_rhs_distinct_writes() {
+        let (_, compact) = run_reports(
+            "function f() { let x = 1; return x; }",
+            "function f() { let x = 1; x = 1; return x; }",
+            "x",
+        );
+        let same_rhs: Vec<_> = compact
+            .sources
+            .iter()
+            .filter(|source| {
+                source
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains("x = 1"))
+            })
+            .collect();
+        assert_eq!(same_rhs.len(), 2);
+        assert_ne!(same_rhs[0].id, same_rhs[1].id);
+        let (_, self_assignment) = run_reports(
+            "function f() { let x = 1; return x; }",
+            "function f() { let x = 1; x = x; return x; }",
+            "x",
+        );
+        let self_write = compact_source(&self_assignment, "x = x");
+        assert!(!self_write.after_upstream.is_empty());
+        assert!(
+            self_assignment
+                .findings
+                .iter()
+                .any(|finding| finding.after_sources.contains(&self_write.id)
+                    || finding.kind == FindingKind::WriteAdded)
+        );
+    }
+
+    #[test]
+    fn ifds_k041_expression_only_change() {
+        let (_, compact) = run_reports(
+            "function f(p: number) { let x = p + 1; return x; }",
+            "function f(p: number) { let x = p - 1; return x; }",
+            "x",
+        );
+        assert!(
+            compact
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::ExpressionChanged)
+        );
+        assert!(compact.render_text().contains("p + 1"));
+        assert!(compact.render_text().contains("p - 1"));
+        assert!(!compact.findings.iter().any(|finding| matches!(
+            finding.kind,
+            FindingKind::WriteAdded | FindingKind::WriteRemoved
+        )));
+    }
+
+    #[test]
+    fn ifds_k041_observations_and_grouping() {
+        let (_, compact) = run_reports(
+            "function f() { let x = 1; let y = x; y = x; return y; }",
+            "function f() { let x = 2; let y = x; y = x; return y; }",
+            "x",
+        );
+        let copies: Vec<_> = compact
+            .observations
+            .iter()
+            .filter(|observation| {
+                observation
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains("y = x"))
+            })
+            .collect();
+        assert_eq!(copies.len(), 2);
+        assert_ne!(copies[0].id, copies[1].id);
+        assert!(
+            compact
+                .observation_groups
+                .iter()
+                .any(|group| group.members.len() >= 2)
+        );
+        assert!(
+            compact
+                .findings
+                .iter()
+                .any(|finding| finding.kind == FindingKind::ExpressionChanged
+                    || finding.kind == FindingKind::SourceSetChanged)
+        );
+    }
+
+    #[test]
+    fn ifds_k041_uncertainty_and_scope() {
+        let (partial_full, partial) = run_reports(
+            "function f() { let x = 1; x = mystery(x); return x; }",
+            "function f() { let x = 1; x = mystery(x); return x; }",
+            "x",
+        );
+        assert_ne!(partial.analysis_coverage, Completeness::CompleteForQuery);
+        assert!(!partial.comparison_complete);
+        assert!(
+            partial
+                .observations
+                .iter()
+                .flat_map(|observation| [
+                    observation.before_state.as_ref(),
+                    observation.after_state.as_ref()
+                ])
+                .flatten()
+                .any(|state| !state.exhaustive)
+        );
+        assert!(!partial_full.flow_extent.after.value_lifecycle_closed);
+
+        let (complete_full, _) = run_reports(OVERWRITE_BEFORE, OVERWRITE_AFTER, "x");
+        assert_eq!(complete_full.completeness, Completeness::CompleteForQuery);
+        let mut ambiguous = complete_full.clone();
+        ambiguous.diagnostics.insert(Diagnostic {
+            code: DiagnosticCode::AmbiguousMatch,
+            message: "two return sites can correspond".into(),
+            snapshot: None,
+            frontier: None,
+            span: None,
+            affected_flows: BTreeSet::new(),
+        });
+        assert!(!crate::ifds::compact::comparison_is_complete(&ambiguous));
+        assert_eq!(ambiguous.before_graph, complete_full.before_graph);
+        assert_eq!(ambiguous.after_graph, complete_full.after_graph);
+    }
+
+    #[test]
+    fn ifds_k041_guard_versions() {
+        let (_, compact) = run_reports(
+            "function f(flag: boolean, other: boolean) { let x = 1; if (flag) x = 2; flag = other; if (flag) x = 3; return x; }",
+            "function f(flag: boolean, other: boolean) { let x = 1; if (flag) x = 2; flag = other; if (flag) x = 4; return x; }",
+            "x",
+        );
+        let guards: Vec<_> = compact
+            .controls
+            .iter()
+            .filter(|control| {
+                control
+                    .after
+                    .as_ref()
+                    .is_some_and(|site| site.operation.contains("flag"))
+            })
+            .collect();
+        assert!(guards.len() >= 2);
+        assert_ne!(guards[0].id, guards[1].id);
+        assert_ne!(
+            guards[0].after_value.as_ref().unwrap().reaching_writes,
+            guards[1].after_value.as_ref().unwrap().reaching_writes
+        );
+    }
+
+    #[test]
+    fn ifds_k041_shared_conditions() {
+        let (_, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) x = 2; if (b) x = 3; return x; }",
+            "x",
+        );
+        let third = compact_source(&compact, "x = 3");
+        let observation = compact_observation(&compact, "return x");
+        let selection = observation
+            .after_state
+            .as_ref()
+            .unwrap()
+            .selections
+            .iter()
+            .find(|selection| selection.source == third.id)
+            .unwrap();
+        let clauses = selection.clauses.as_ref().unwrap();
+        assert_eq!(clauses.len(), 1);
+        assert_eq!(clauses.iter().next().unwrap().terms.len(), 1);
+        let (_, unsupported) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a && b) x = 2; return x; }",
+            "x",
+        );
+        assert!(
+            !unsupported.comparison_complete
+                || unsupported.analysis_coverage != Completeness::CompleteForQuery
+        );
+    }
+
+    #[test]
+    fn ifds_k041_output_contract() {
+        let (full, compact) = run_reports(OVERWRITE_BEFORE, OVERWRITE_AFTER, "x");
+        let encoded = compact.to_canonical_json().unwrap();
+        let decoded = VariableSourceReport::from_json(&encoded).unwrap();
+        assert_eq!(decoded, compact);
+        assert_eq!(encoded, decoded.to_canonical_json().unwrap());
+        assert!(decoded.validate_with_full(&full).is_ok());
+        assert_eq!(full.human_summary, compact.render_text());
+        assert_eq!(
+            VariableFlowReport::from_json(&full.to_canonical_json().unwrap()).unwrap(),
+            full
+        );
+        let mut invalid = compact.clone();
+        invalid.findings[0]
+            .evidence
+            .insert(crate::ifds::compact::EvidenceRef {
+                report_id: compact.full_report_id.clone(),
+                section: "deltas".into(),
+                index: full.deltas.len(),
+            });
+        assert!(invalid.validate_with_full(&full).is_err());
+    }
+
+    #[test]
+    fn ifds_k041_presentation_budget() {
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) x = 2; if (b) x = 3; return x; }",
+            "x",
+        );
+        assert!(!full.witnesses.is_empty());
+        assert!(compact.presentation_complete);
+        assert_eq!(compact.omitted_groups, 0);
+        assert_eq!(
+            compact
+                .sources
+                .iter()
+                .map(|source| source.id)
+                .collect::<BTreeSet<_>>()
+                .len(),
+            compact.sources.len()
+        );
+        assert_eq!(
+            compact
+                .controls
+                .iter()
+                .map(|control| control.id)
+                .collect::<BTreeSet<_>>()
+                .len(),
+            compact.controls.len()
+        );
+        assert!(compact.render_text().len() < full.to_canonical_json().unwrap().len());
+        assert_eq!(compact.analysis_coverage, full.completeness);
     }
 }
