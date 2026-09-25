@@ -3,7 +3,7 @@
 
 use crate::ifds::ir::{EdgeKind, LiteralKind, Operation, PrimitiveOperator, ProcedureIr};
 use crate::ifds::model::{BindingId, Fact, NodeId, Place};
-use crate::ifds::provenance::ProcedureFlowFunctions;
+use crate::ifds::provenance::{ProcedureFlowFunctions, transfer_operation};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -15,7 +15,22 @@ pub struct BranchState {
     /// display label alone cannot distinguish shadowing or later reassignment.
     pub decisions: BTreeMap<NodeId, bool>,
     guards: BTreeMap<BindingId, bool>,
-    known: BTreeMap<Place, bool>,
+    known: BTreeMap<Place, KnownValue>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+struct KnownValue {
+    truthy: bool,
+    nullish: bool,
+}
+
+impl KnownValue {
+    fn boolean(value: bool) -> Self {
+        Self {
+            truthy: value,
+            nullish: false,
+        }
+    }
 }
 
 #[derive(Default)]
@@ -47,7 +62,37 @@ impl BranchPaths {
         while let Some((node_id, incoming)) = queue.pop_front() {
             let node = &procedure.nodes[&node_id];
             let mut outgoing = incoming.clone();
-            outgoing.facts = flows.transfer_all(&node_id, &incoming.facts).into_facts();
+            outgoing.facts = if let Operation::Compute {
+                operator: PrimitiveOperator::ValueJoin { branch },
+                inputs,
+                result,
+                definition,
+            } = &node.operation
+            {
+                let selected = incoming
+                    .decisions
+                    .get(branch)
+                    .and_then(|outcome| inputs.get(if *outcome { 0 } else { 1 }));
+                if let Some(input) = selected {
+                    let selected_operation = Operation::Compute {
+                        definition: definition.clone(),
+                        inputs: vec![input.clone()],
+                        result: result.clone(),
+                        operator: PrimitiveOperator::ValueJoin {
+                            branch: branch.clone(),
+                        },
+                    };
+                    incoming
+                        .facts
+                        .iter()
+                        .flat_map(|fact| transfer_operation(&selected_operation, fact).into_facts())
+                        .collect()
+                } else {
+                    flows.transfer_all(&node_id, &incoming.facts).into_facts()
+                }
+            } else {
+                flows.transfer_all(&node_id, &incoming.facts).into_facts()
+            };
             outgoing.update_known(&node.operation);
             for edge in procedure.edges.iter().filter(|edge| edge.source == node_id) {
                 if !matches!(edge.kind, EdgeKind::Normal | EdgeKind::Branch { .. }) {
@@ -59,7 +104,7 @@ impl BranchPaths {
                         continue;
                     };
                     if let Some(value) = next.known.get(condition)
-                        && *value != outcome
+                        && value.truthy != outcome
                     {
                         continue;
                     }
@@ -137,12 +182,30 @@ impl BranchState {
     fn update_known(&mut self, operation: &Operation) {
         match operation {
             Operation::Literal {
-                literal_kind: LiteralKind::Boolean,
+                literal_kind,
                 raw,
+                cooked,
                 result,
                 ..
             } => {
-                self.known.insert(result.clone(), raw == "true");
+                let value = match literal_kind {
+                    LiteralKind::Boolean => Some(KnownValue::boolean(raw == "true")),
+                    LiteralKind::Null | LiteralKind::Undefined => Some(KnownValue {
+                        truthy: false,
+                        nullish: true,
+                    }),
+                    LiteralKind::Number => known_number(raw).map(KnownValue::boolean),
+                    LiteralKind::BigInt => {
+                        known_number(raw.trim_end_matches('n')).map(KnownValue::boolean)
+                    }
+                    LiteralKind::String => {
+                        known_string(raw, cooked.as_deref()).map(KnownValue::boolean)
+                    }
+                    LiteralKind::TemplateChunk => None,
+                };
+                if let Some(value) = value {
+                    self.known.insert(result.clone(), value);
+                }
             }
             Operation::Read { source, result } => {
                 if let Some(value) = self.known.get(source).copied() {
@@ -162,7 +225,43 @@ impl BranchState {
                     .and_then(|input| self.known.get(&input.place))
                     .copied()
                 {
-                    self.known.insert(result.clone(), !value);
+                    self.known
+                        .insert(result.clone(), KnownValue::boolean(!value.truthy));
+                }
+            }
+            Operation::Compute {
+                operator: PrimitiveOperator::IsNullish,
+                inputs,
+                result,
+                ..
+            } => {
+                if let Some(value) = inputs
+                    .first()
+                    .and_then(|input| self.known.get(&input.place))
+                    .copied()
+                {
+                    self.known
+                        .insert(result.clone(), KnownValue::boolean(value.nullish));
+                }
+            }
+            Operation::Compute {
+                operator: PrimitiveOperator::ValueJoin { branch },
+                inputs,
+                result,
+                ..
+            } => {
+                let index = self
+                    .decisions
+                    .get(branch)
+                    .map(|outcome| if *outcome { 0 } else { 1 });
+                if let Some(value) = index
+                    .and_then(|index| inputs.get(index))
+                    .and_then(|input| self.known.get(&input.place))
+                    .copied()
+                {
+                    self.known.insert(result.clone(), value);
+                } else {
+                    self.known.remove(result);
                 }
             }
             Operation::Write {
@@ -184,6 +283,45 @@ impl BranchState {
             _ => {}
         }
     }
+}
+
+fn known_number(raw: &str) -> Option<bool> {
+    let compact = raw.replace('_', "");
+    if let Some(hex) = compact
+        .strip_prefix("0x")
+        .or_else(|| compact.strip_prefix("0X"))
+    {
+        return u128::from_str_radix(hex, 16).ok().map(|value| value != 0);
+    }
+    if let Some(binary) = compact
+        .strip_prefix("0b")
+        .or_else(|| compact.strip_prefix("0B"))
+    {
+        return u128::from_str_radix(binary, 2).ok().map(|value| value != 0);
+    }
+    if let Some(octal) = compact
+        .strip_prefix("0o")
+        .or_else(|| compact.strip_prefix("0O"))
+    {
+        return u128::from_str_radix(octal, 8).ok().map(|value| value != 0);
+    }
+    compact
+        .parse::<f64>()
+        .ok()
+        .map(|value| value != 0.0 && !value.is_nan())
+}
+
+fn known_string(raw: &str, cooked: Option<&str>) -> Option<bool> {
+    if let Some(cooked) = cooked {
+        return Some(!cooked.is_empty());
+    }
+    if raw == "''" {
+        return Some(false);
+    }
+    if raw.starts_with('\'') && raw.ends_with('\'') && !raw.contains('\\') {
+        return Some(true);
+    }
+    None
 }
 
 fn guard_binding(procedure: &ProcedureIr, place: &Place) -> Option<(BindingId, bool)> {

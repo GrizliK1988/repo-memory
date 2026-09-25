@@ -90,6 +90,8 @@ struct Lowerer<'a> {
     diagnostics: Vec<Diagnostic>,
 }
 
+type ValueArm<'tree> = (bool, Option<Node<'tree>>, Option<(Place, Node<'tree>)>);
+
 impl<'a> Lowerer<'a> {
     fn new(
         source: &'a str,
@@ -256,36 +258,41 @@ impl<'a> Lowerer<'a> {
         }
     }
 
-    fn lower_assignment(&mut self, assignment: Node<'_>) {
+    fn lower_assignment(&mut self, assignment: Node<'_>) -> Place {
         let left = assignment.child_by_field_name("left");
         let right = assignment.child_by_field_name("right");
         let Some(left) = left else {
-            self.emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), false);
-            return;
+            return self
+                .emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
         };
         let Some(right) = right else {
-            self.emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true);
-            return;
+            return self
+                .emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
         };
         let operator = operator_between(left, right, self.source).trim();
         if left.kind() != "identifier" || operator != "=" {
-            self.emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true);
-            return;
+            return self
+                .emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
         }
         let Some(target) = self.reference_binding_at(left) else {
-            self.emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true);
-            return;
+            return self
+                .emit_unknown(assignment, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
         };
         let value = self.lower_expression(right);
         let node_id = self.peek_id();
         self.emit(
             Operation::Write {
                 target: Place::Binding(target),
-                sources: BTreeSet::from([value]),
+                sources: BTreeSet::from([value.clone()]),
                 definition: DefinitionId::new(self.index.snapshot.clone(), node_id.local),
             },
             Some(source_span(&self.index.path, assignment)),
         );
+        value
     }
 
     fn lower_return(&mut self, node: Node<'_>) {
@@ -421,6 +428,8 @@ impl<'a> Lowerer<'a> {
                     })
             }
             "binary_expression" => self.lower_binary(node),
+            "ternary_expression" => self.lower_ternary(node),
+            "assignment_expression" => self.lower_assignment(node),
             "unary_expression" => self.lower_unary(node),
             "member_expression" => self.lower_member(node),
             "subscript_expression" => self.lower_subscript(node),
@@ -447,6 +456,9 @@ impl<'a> Lowerer<'a> {
             .child_by_field_name("operator")
             .map(|operator| node_text(operator, self.source))
             .unwrap_or_else(|| operator_between(left, right, self.source));
+        if matches!(operator_text.trim(), "&&" | "||" | "??") {
+            return self.lower_short_circuit(node, left, right, operator_text.trim());
+        }
         let Some(operator) = primitive_binary(operator_text) else {
             return self
                 .emit_unknown(node, UnknownEffectKind::Value, Vec::new(), true)
@@ -472,6 +484,133 @@ impl<'a> Lowerer<'a> {
                 ),
             ],
         )
+    }
+
+    fn lower_ternary(&mut self, node: Node<'_>) -> Place {
+        let Some(condition) = node.child_by_field_name("condition") else {
+            return self
+                .emit_unknown(node, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
+        };
+        let Some(consequence) = node.child_by_field_name("consequence") else {
+            return self
+                .emit_unknown(node, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
+        };
+        let Some(alternative) = node.child_by_field_name("alternative") else {
+            return self
+                .emit_unknown(node, UnknownEffectKind::Value, Vec::new(), true)
+                .unwrap();
+        };
+        let tested = self.lower_expression(condition);
+        let branch = self.emit(
+            Operation::Branch { condition: tested },
+            Some(source_span(&self.index.path, condition)),
+        );
+        let label = node_text(condition, self.source).trim().to_owned();
+        self.lower_value_arms(
+            node,
+            branch,
+            &label,
+            [
+                (true, Some(consequence), None),
+                (false, Some(alternative), None),
+            ],
+        )
+    }
+
+    fn lower_short_circuit(
+        &mut self,
+        node: Node<'_>,
+        left: Node<'_>,
+        right: Node<'_>,
+        operator: &str,
+    ) -> Place {
+        let left_value = self.lower_expression(left);
+        let condition = if operator == "??" {
+            self.emit_compute(
+                left,
+                PrimitiveOperator::IsNullish,
+                vec![input(
+                    left_value.clone(),
+                    ComputeInputRole::Operand { index: 0 },
+                    self.index,
+                    left,
+                )],
+            )
+        } else {
+            left_value.clone()
+        };
+        let branch = self.emit(
+            Operation::Branch { condition },
+            Some(source_span(&self.index.path, left)),
+        );
+        let label = if operator == "??" {
+            format!("({}) == null", node_text(left, self.source).trim())
+        } else {
+            node_text(left, self.source).trim().to_owned()
+        };
+        let evaluate_on_true = operator != "||";
+        let arms = if evaluate_on_true {
+            [
+                (true, Some(right), None),
+                (false, None, Some((left_value, left))),
+            ]
+        } else {
+            [
+                (true, None, Some((left_value, left))),
+                (false, Some(right), None),
+            ]
+        };
+        self.lower_value_arms(node, branch, &label, arms)
+    }
+
+    fn lower_value_arms(
+        &mut self,
+        node: Node<'_>,
+        branch: NodeId,
+        label: &str,
+        arms: [ValueArm<'_>; 2],
+    ) -> Place {
+        let mut tails = Vec::new();
+        let mut inputs = Vec::new();
+        for (index, (outcome, expression, existing)) in arms.into_iter().enumerate() {
+            self.tail = None;
+            let entry = self.emit(Operation::Join, None);
+            self.edges.insert(IrEdge {
+                source: branch.clone(),
+                target: entry,
+                kind: EdgeKind::Branch { outcome },
+                construct: Some(source_span(&self.index.path, node)),
+                assumption: Some(if outcome {
+                    label.to_owned()
+                } else {
+                    format!("!({label})")
+                }),
+            });
+            let (value, span_node) = if let Some(expr) = expression {
+                (self.lower_expression(expr), expr)
+            } else {
+                existing.expect("each arm has a value")
+            };
+            if let Some(tail) = self.tail.take() {
+                tails.push(tail);
+            }
+            inputs.push(ComputeInput {
+                place: value,
+                role: ComputeInputRole::Operand {
+                    index: index as u32,
+                },
+                span: source_span(&self.index.path, span_node),
+            });
+        }
+        self.tail = None;
+        let result = self.emit_compute(node, PrimitiveOperator::ValueJoin { branch }, inputs);
+        let join = self.tail.clone().expect("value join node");
+        for tail in tails {
+            self.edges.insert(normal_edge(tail, join.clone()));
+        }
+        result
     }
 
     fn lower_unary(&mut self, node: Node<'_>) -> Place {

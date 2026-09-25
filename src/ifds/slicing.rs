@@ -1,7 +1,7 @@
 //! Construction of a selected binding's complete supported source-level slice.
 
 use crate::ifds::branches::BranchPaths;
-use crate::ifds::ir::{ComputeInputRole, IrNode, Operation, ProcedureIr};
+use crate::ifds::ir::{ComputeInputRole, IrNode, Operation, PrimitiveOperator, ProcedureIr};
 use crate::ifds::model::{
     BindingId, Completeness, Coverage, Diagnostic, DiagnosticCode, Direction, EvidenceKind, Fact,
     FlowEdge, FlowGraph, FlowNode, NodeId, PathEnding, PathEndingKind, Place, SnapshotExtent,
@@ -94,6 +94,7 @@ struct SliceBuilder<'a> {
     upstream_partial: bool,
     downstream_partial: bool,
     branches: Option<BranchPaths>,
+    path_facts_at: BTreeMap<NodeId, BTreeSet<Fact>>,
 }
 
 pub fn build_flow_slice(request: SliceRequest<'_>) -> Result<SliceOutput, SliceError> {
@@ -172,6 +173,25 @@ impl<'a> SliceBuilder<'a> {
                 )
             });
         let branch_truncated = branches.as_ref().is_some_and(|paths| paths.truncated);
+        let path_facts_at = branches
+            .as_ref()
+            .filter(|paths| !paths.truncated)
+            .map(|paths| {
+                paths
+                    .at
+                    .iter()
+                    .map(|(node, states)| {
+                        (
+                            node.clone(),
+                            states
+                                .iter()
+                                .flat_map(|state| state.facts.iter().cloned())
+                                .collect(),
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
         let mut builder = Self {
             procedure,
             facts_at,
@@ -194,6 +214,7 @@ impl<'a> SliceBuilder<'a> {
             upstream_partial: false,
             downstream_partial: false,
             branches,
+            path_facts_at,
         };
         if branch_truncated {
             builder.downstream_partial = true;
@@ -1237,6 +1258,10 @@ impl<'a> SliceBuilder<'a> {
         }
         let operation = &self.procedure.nodes[source].operation;
         match operation {
+            Operation::Read { result, .. } => paths.conditions_for(target, |facts| {
+                facts.iter().any(|fact| matches!(fact,
+                    Fact::Origin { place, .. } | Fact::LastWrite { place, .. } if place == result))
+            }),
             Operation::Write { target: place, definition, .. } if *relation == crate::ifds::model::RelationKind::Reaches =>
                 paths.conditions_for(target, |facts| facts.contains(&Fact::LastWrite { place: place.clone(), write: definition.clone() })),
             Operation::Write { definition, .. } | Operation::Literal { definition, .. } | Operation::Compute { definition, .. } =>
@@ -1349,7 +1374,11 @@ impl<'a> SliceBuilder<'a> {
 
     fn facts(&self, node: &NodeId) -> &BTreeSet<Fact> {
         static EMPTY: std::sync::LazyLock<BTreeSet<Fact>> = std::sync::LazyLock::new(BTreeSet::new);
-        self.facts_at.get(node).unwrap_or(&EMPTY)
+        if self.branches.as_ref().is_some_and(|paths| !paths.truncated) {
+            self.path_facts_at.get(node).unwrap_or(&EMPTY)
+        } else {
+            self.facts_at.get(node).unwrap_or(&EMPTY)
+        }
     }
 
     fn place_has_origin(&self, node: &NodeId, place: &Place, origin: &Source) -> bool {
@@ -1544,7 +1573,11 @@ fn operation_fingerprint(operation: &Operation) -> String {
             operator, inputs, ..
         } => {
             let roles: Vec<_> = inputs.iter().map(|input| &input.role).collect();
-            format!("compute:{operator:?}:{roles:?}")
+            if matches!(operator, PrimitiveOperator::ValueJoin { .. }) {
+                format!("compute:ValueJoin:{roles:?}")
+            } else {
+                format!("compute:{operator:?}:{roles:?}")
+            }
         }
         Operation::UnknownEffect {
             effect_kind,
