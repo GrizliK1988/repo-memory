@@ -4,7 +4,7 @@
 //! establishes which snapshot-local declarations and operations may be compared;
 //! `K012` consumes that result to decide what changed in the flow graph.
 
-use crate::ifds::ir::{ComputeInputRole, Operation, ProcedureIr};
+use crate::ifds::ir::{ComputeInputRole, Operation, PrimitiveOperator, ProcedureIr};
 use crate::ifds::model::{
     Alignment, AlignmentAmbiguity, AlignmentCandidate, AlignmentEntity, BindingAlignment,
     BindingId, Diagnostic, DiagnosticCode, FileChangeKind, LogicalBindingId, LogicalNodeId, NodeId,
@@ -789,7 +789,12 @@ fn fingerprint_node(
         Operation::Compute {
             inputs, operator, ..
         } => format!(
-            "compute({operator:?},[{}])",
+            "compute({},[{}])",
+            if matches!(operator, PrimitiveOperator::ValueJoin { .. }) {
+                "ValueJoin".to_owned()
+            } else {
+                format!("{operator:?}")
+            },
             inputs
                 .iter()
                 .map(|input| format!(

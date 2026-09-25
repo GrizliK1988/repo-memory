@@ -98,6 +98,8 @@ pub enum PrimitiveOperator {
     UnaryPlus,
     UnaryMinus,
     LogicalNot,
+    IsNullish,
+    ValueJoin { branch: NodeId },
     StrictEqual,
     StrictNotEqual,
     GreaterThan,

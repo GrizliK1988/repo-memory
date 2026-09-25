@@ -3,9 +3,10 @@ use crate::ifds::adapters::typescript::{
     TypeScriptBindingIndex, TypeScriptLoweringResult, alignable_bindings, index_bindings,
     lower_containing_procedure,
 };
+use crate::ifds::branches::BranchPaths;
 use crate::ifds::model::{
-    AnalysisLimits, FileChange, FileChangeKind, PathEndingKind, RepositoryDiff, SnapshotId,
-    SnapshotSide,
+    AnalysisLimits, Fact, FileChange, FileChangeKind, PathEndingKind, RepositoryDiff, SnapshotId,
+    SnapshotSide, Source,
 };
 use crate::ifds::provenance::seed_entry_facts;
 use crate::ifds::slicing::{SliceRequest, build_flow_slice};
@@ -368,6 +369,235 @@ fn ifds_k014_path_endings_independent() {
                 && ending.condition.as_deref() == Some("!flag"))
     );
     assert!(!result.extent.value_lifecycle_closed);
+}
+
+#[test]
+fn ifds_k015_ternary_sources() {
+    let (index, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(flag: boolean, a: number, b: number) { let x = flag ? a : b; return x; }",
+    );
+    let paths = BranchPaths::build(
+        &lowered.procedure,
+        seed_entry_facts(&lowered.procedure),
+        4096,
+    );
+    let ret = lowered
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::Return { .. }))
+        .unwrap();
+    let a = index
+        .bindings
+        .iter()
+        .find(|binding| binding.name == "a")
+        .unwrap()
+        .id
+        .clone();
+    let b = index
+        .bindings
+        .iter()
+        .find(|binding| binding.name == "b")
+        .unwrap()
+        .id
+        .clone();
+    let x = Place::Binding(lowered.selected_binding.clone());
+    let states = &paths.at[&ret.id];
+    assert_eq!(states.len(), 2);
+    for state in states {
+        let origin_a = state.facts.contains(&Fact::Origin {
+            place: x.clone(),
+            source: Source::FunctionInput(a.clone()),
+        });
+        let origin_b = state.facts.contains(&Fact::Origin {
+            place: x.clone(),
+            source: Source::FunctionInput(b.clone()),
+        });
+        assert_ne!(origin_a, origin_b);
+        assert_eq!(origin_a, state.labels.contains("flag"));
+    }
+    assert_eq!(
+        lowered
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| matches!(node.operation, Operation::Write { .. }))
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn ifds_k015_and_or_skip_rhs() {
+    for (expression, runs) in [
+        ("false && (x = 1)", false),
+        ("true || (x = 1)", false),
+        ("true && (x = 1)", true),
+        ("false || (x = 1)", true),
+    ] {
+        let source = format!("function f() {{ let x = 0; {expression}; return x; }}");
+        let (_, lowered) = lower(SnapshotSide::Before, &source);
+        let paths = BranchPaths::build(
+            &lowered.procedure,
+            seed_entry_facts(&lowered.procedure),
+            4096,
+        );
+        let write = lowered
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| matches!(node.operation, Operation::Write { .. }))
+            .next_back()
+            .unwrap();
+        assert_eq!(paths.at.contains_key(&write.id), runs, "{expression}");
+    }
+}
+
+#[test]
+fn ifds_k015_nullish_not_falsy() {
+    for (left, runs) in [
+        ("0", false),
+        ("false", false),
+        ("\"\"", false),
+        ("''", false),
+        ("'a'", false),
+        ("null", true),
+        ("undefined", true),
+    ] {
+        let source = format!("function f() {{ let x = 0; {left} ?? (x = 1); return x; }}");
+        let (_, lowered) = lower(SnapshotSide::Before, &source);
+        let paths = BranchPaths::build(
+            &lowered.procedure,
+            seed_entry_facts(&lowered.procedure),
+            4096,
+        );
+        let write = lowered
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| matches!(node.operation, Operation::Write { .. }))
+            .next_back()
+            .unwrap();
+        assert_eq!(paths.at.contains_key(&write.id), runs, "{left}");
+    }
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f(value: number | null) { let x = 0; value ?? (x = 1); return x; }",
+    );
+    let paths = BranchPaths::build(
+        &lowered.procedure,
+        seed_entry_facts(&lowered.procedure),
+        4096,
+    );
+    let ret = lowered
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(node.operation, Operation::Return { .. }))
+        .unwrap();
+    assert_eq!(paths.at[&ret.id].len(), 2);
+    assert!(paths.at[&ret.id].iter().all(|state| state.unproven));
+}
+
+#[test]
+fn ifds_k015_nested_order() {
+    let (_, lowered) = lower(
+        SnapshotSide::Before,
+        "function f() { let x = 0; if (true && (false || true)) x = false ? 2 : 3; return x; }",
+    );
+    let paths = BranchPaths::build(
+        &lowered.procedure,
+        seed_entry_facts(&lowered.procedure),
+        4096,
+    );
+    let write = lowered
+        .procedure
+        .nodes
+        .values()
+        .filter(|node| matches!(node.operation, Operation::Write { .. }))
+        .next_back()
+        .unwrap();
+    assert!(paths.at.contains_key(&write.id));
+    let skipped = lowered
+        .procedure
+        .nodes
+        .values()
+        .find(|node| matches!(&node.operation, Operation::Literal { raw, .. } if raw == "2"))
+        .unwrap();
+    assert!(!paths.at.contains_key(&skipped.id));
+}
+
+#[test]
+fn ifds_k015_operand_change_delta() {
+    let source_pair = pair(
+        "function f(flag: boolean, a: number, b: number) { let x = flag ? a : b; return x; }",
+        "function f(flag: boolean, a: number, b: number) { let x = flag ? a + 1 : b; return x; }",
+    );
+    let result = run(&source_pair);
+    assert!(
+        result
+            .deltas
+            .iter()
+            .any(|record| matches!(record.delta, FlowDelta::ValueSourceChanged { .. })),
+        "{result:?}"
+    );
+    assert!(
+        !result.deltas.iter().any(|record| matches!(
+            record.delta,
+            FlowDelta::WriteAdded { .. } | FlowDelta::WriteRemoved { .. }
+        )),
+        "{result:?}"
+    );
+    let guard_pair = pair(
+        "function f(flag: boolean, a: number, b: number) { let x = flag ? a : b; return x; }",
+        "function f(flag: boolean, a: number, b: number) { let x = !flag ? a : b; return x; }",
+    );
+    let guard_result = run(&guard_pair);
+    assert!(
+        guard_result
+            .deltas
+            .iter()
+            .any(|record| matches!(record.delta, FlowDelta::FlowConditionChanged { .. })),
+        "{guard_result:?}"
+    );
+    assert!(
+        !guard_result
+            .deltas
+            .iter()
+            .any(|record| matches!(record.delta, FlowDelta::ValueSourceChanged { .. })),
+        "{guard_result:?}"
+    );
+}
+
+#[test]
+fn ifds_k015_unknown_rhs_boundary() {
+    for (left, runs) in [("false", false), ("true", true)] {
+        let source = format!("function f() {{ let x = 0; {left} && x.toString(); return x; }}");
+        let (_, lowered) = lower(SnapshotSide::Before, &source);
+        let paths = BranchPaths::build(
+            &lowered.procedure,
+            seed_entry_facts(&lowered.procedure),
+            4096,
+        );
+        let unknown = lowered
+            .procedure
+            .nodes
+            .values()
+            .filter(|node| matches!(node.operation, Operation::UnknownEffect { .. }))
+            .next_back()
+            .unwrap();
+        assert_eq!(paths.at.contains_key(&unknown.id), runs, "{left}");
+        let sliced = slice(&lowered);
+        assert_eq!(
+            sliced
+                .unknown_frontiers
+                .iter()
+                .any(|frontier| frontier.node == unknown.id),
+            runs,
+            "{left}: {sliced:?}"
+        );
+    }
 }
 
 fn deltas(output: &ComparisonOutput) -> Vec<&FlowDelta> {
