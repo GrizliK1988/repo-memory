@@ -1,7 +1,8 @@
 # Function result analysis and comparison
 
-Status: planned extension; no function-result API, report, or acceptance tests are
-implemented by this document. Delivery tasks: [function results](../../spec/function-results/README.md).
+Status: implemented for the first synchronous single-function subset, with
+separately versioned full, compact JSON, and text reports. Delivery tasks:
+[function results](../../spec/function-results/README.md).
 This extends the [shared specification](SPEC.md) with a new analysis target.
 
 ## 1. Product contract
@@ -15,7 +16,7 @@ through their influence on the selected function's result.
 The primary observation is the whole normal return value. Include all reachable
 explicit returns, early returns, expression-bodied arrow results, and implicit
 `undefined` on reachable fallthrough. Compare both versions under the same inputs
-and declared entry assumptions. A return expression may be described symbolically
+and any optional entry assumptions. A return expression may be described symbolically
 when its exact value is unknown.
 
 Required questions:
@@ -41,11 +42,14 @@ Conceptually, target selection can be shared internally:
 ```text
 AnalysisTarget = Binding(binding_selector) | FunctionResult(function_selector)
 
-analyze_function_result(query: FunctionResultQuery)
-    -> Result<FunctionResultReport, InputError>
+analyze_function_result(query, provider, environments)
+    -> Result<FunctionResultAnalysis, FunctionResultError>
+compare_function_results(&analysis) -> FunctionResultComparison
+analyze_function_result_reports(query, provider, environments)
+    -> Result<(FunctionResultReport, FunctionResultCompactReport), FunctionResultError>
 ```
 
-These are proposed contracts. Preserve `VariableFlowQuery`, `VariableFlowReport`,
+These are the implemented public entry points for this subset. Preserve `VariableFlowQuery`, `VariableFlowReport`,
 `VariableSourceReport`, and their APIs and serialized meaning. A separately
 versioned result report may reuse common evidence structures. Do not encode this
 mode as a guessed local binding or rewrite user source to insert a result variable.
@@ -68,8 +72,16 @@ different inputs with a common name or fabricate a result on a missing function 
 An explicit mapping must state why two input slots receive the same runtime value;
 it cannot turn a changed call signature into an unchanged call. A reordered
 formal can receive a different argument even when its name remains unchanged.
-At the default function entry, use symbolic positional argument slots; a resolved
-call context supplies concrete or modeled values for those same slots.
+At the default function entry, use symbolic positional argument slots with no
+declared type or value restriction; a resolved call context supplies concrete or
+modeled values for those same slots. For a pure condition that reads a paired input,
+track its JavaScript truthiness symbolically. `if (flag)` and `if (!flag)` can be
+compared over truthy and falsy values without assuming that `flag` is a Boolean.
+Likewise, the truthiness of pure `enabled && ready` is the conjunction of their
+truthiness. An edited condition is a source finding; establish its effect on the
+returned result separately under the shared input conditions where both normal
+results are known. Effects, unstable reads, and unsupported predicates retain
+uncertainty. Explicit entry domains remain optional query-scope restrictions.
 Represent assumptions as structured expressions with typed operators and operand
 references, not display strings. Retain both versions of an edited assumption,
 their input dependencies, and their provenance as query scope. Expression nodes
@@ -80,8 +92,9 @@ feasibility. Other predicates remain visible with unresolved feasibility. An
 assumption edit changes the query domain and is not a source-code change. FR002
 compares established common domains and discloses one-sided or unresolved regions.
 
-Boolean-only examples below declare Boolean entry domains. A TypeScript type
-annotation alone is not proof that every runtime caller satisfies that domain.
+TypeScript type annotations alone do not restrict runtime entry values. Examples
+that need a narrower domain declare it explicitly; simple guard-change examples
+use symbolic truthiness without a Boolean entry domain.
 The first function-result delivery selects ordinary declarations, function
 expressions, and arrows. [K031](../../spec/kickoff/031-classes.md) extends this to
 class and object methods with receiver-aware result observations. Automatic
@@ -148,9 +161,11 @@ two mutually exclusive paths as if they occurred on the same inputs. Retain
 unknown regions and uncovered entry inputs explicitly. The report need not list
 every path pair: share guards, expressions, and equal facts and group regions only
 when equivalence is established. Budgets may yield partial comparisons.
-These guards are symbolic. A supported Boolean rewrite such as `flag` to `!flag`
-can establish a changed return selection without evaluating `flag` for a
-concrete input or invoking a general predicate solver.
+These guards are symbolic. A supported rewrite such as `flag` to `!flag` can
+establish a changed return selection over paired truthy and falsy input values
+without evaluating `flag` for a concrete input, declaring it Boolean, or invoking
+a general predicate solver. Record the condition edit even when its result effect
+is equal or unresolved.
 
 Return-site alignment and result equivalence are separate evidence dimensions.
 An early return can be split, merged, or moved while preserving the same result
@@ -194,14 +209,15 @@ though the inputs may happen to hold equal values.
 A guard edit must also show its effect at the return. For `if (flag) return "yes";
 return "no";` changing to `if (!flag) return "yes"; return "no";`, report
 the changed condition, the swapped return-selection rules, and the affected
-returned values. Under an explicit Boolean input domain, symbolic polarity and
-the two distinct literals establish `"yes" -> "no"` when `flag` is true and
-`"no" -> "yes"` when it is false. A simple changed-selection finding is
+returned values. Symbolic truthiness and the two distinct literals establish
+`"yes" -> "no"` when `flag` is truthy and `"no" -> "yes"` when it is falsy,
+without a Boolean input domain. A simple changed-selection finding is
 available without evaluating the guard. Do not report only a changed condition
 while leaving its supported return consequence unexplained.
 
-The first comparison theory must support Boolean input conditions, negation,
-supported conjunction/disjunction and branch composition, primitive literal
+The first comparison theory must support truthiness of stable paired positional
+inputs in pure conditions, negation, supported conjunction/disjunction and branch
+composition, primitive literal
 equality/inequality, identity of a paired unchanged primitive input or copy,
 and structural identity of the same supported pure deterministic expression
 over paired primitive inputs. This last rule establishes equality without
@@ -278,6 +294,12 @@ references resolve into that exact report and snapshot pair. Reuse the compact
 report's deterministic IDs, sharing, and evidence principles without requiring a
 selected binding or silently changing `VariableSourceReport`.
 
+When the before and after entry domains do not intersect, show the guarded
+normal-result flow for each snapshot under its own assumptions, then state that
+there are no common inputs. Keep each flow's result expressions, dependencies,
+and completion uncertainty available through its observation references. Do not
+draw a before-to-after result arrow or assign a result relation to either flow.
+
 Presentation size should follow distinct result rules and findings. Count omitted
 groups and provide detail references when output is truncated. Keep analysis,
 comparison, and presentation limits distinct; an empty partial delta list must not
@@ -287,7 +309,8 @@ render as "behavior unchanged".
 
 ### A condition changes which result is returned
 
-Under explicit Boolean entry assumptions for `enabled` and `ready`:
+With paired inputs and no entry-domain restriction, `enabled` and `ready` below
+denote their JavaScript truthiness:
 
 ```typescript
 // Before
@@ -315,7 +338,8 @@ Retain both return sites and the shared control evidence without duplicate findi
 
 ### Report affected return choices with their selection conditions
 
-Under explicit Boolean entry assumptions for all four parameters:
+With paired inputs and no entry-domain restriction, the four parameter names below
+denote their JavaScript truthiness:
 
 ```typescript
 // Before
@@ -354,8 +378,9 @@ edit already visible in the table.
 
 ### Additional required cases
 
-Snippets are synchronous function bodies with declared primitive/Boolean input
-domains as appropriate. Expected results are authored independently of the analyzer.
+Snippets are synchronous function bodies. Declare a narrower primitive input
+domain only when the example requires one. Expected results are authored
+independently of the analyzer.
 
 | Case | Before -> after | Required conclusion |
 | --- | --- | --- |
@@ -363,12 +388,12 @@ domains as appropriate. Expected results are authored independently of the analy
 | Equal branch results | `if (flag) return 1; return 1;` -> `if (!flag) return 1; return 1;` | Changed control; unconditional equal normal result, even if individual return-site alignment is unresolved. |
 | New early return | `return 2;` -> `if (flag) return 1; return 2;` | `different` under `flag`, `equal` under `!flag`; retain the final-return continuation guard. |
 | Implicit result | `if (flag) return 1;` -> `if (flag) return 1; return 2;` | `undefined -> 2` under `!flag`; the `flag` region remains equal. |
-| Equivalent return shape | `return flag ? 1 : 2;` -> `if (flag) return 1; return 2;` | Equal results throughout the Boolean input domain despite changed observation structure. |
+| Equivalent return shape | `return flag ? 1 : 2;` -> `if (flag) return 1; return 2;` | Equal results for all paired inputs under symbolic truthiness despite changed observation structure. |
 | Overwritten source | `let x = p; x = 3; return x;` -> replace `p` with `q` | Result remains 3; the killed initializer is not a reaching result source. |
 | Copy survives overwrite | `let x = 1; const y = x; x = 3; return y;` -> initializer 1 becomes 2 | Result changes 1 -> 2 through `y`. |
 | Same result input | `return p;` -> `const copy = p; return copy;` | Equal for the same paired primitive input, with changed intermediate structure. |
 | Computation changes | `return p + 1;` -> `return p + 2;` | Report `changed` with both whole expressions and the edited operand; no numeric evaluation or claim of unequal values is required. |
-| Guard inversion selects a different return | `if (flag) return "yes"; return "no";` -> `if (!flag) return "yes"; return "no";` | Show `flag -> !flag` and the resulting switch of return values for the same symbolic Boolean input, without running the condition. |
+| Guard inversion selects a different return | `if (flag) return "yes"; return "no";` -> `if (!flag) return "yes"; return "no";` | Show `flag -> !flag` and the resulting switch of return values for the same paired input's truthiness, without running the condition or declaring its type. |
 | Guard version changes | `let g = flag; if (g) return 1; return 2;` -> insert `g = !g` before the condition | Track the new value of `g`; result selection reverses for Boolean `flag`. |
 | Unknown completion | `return 1;` -> `mystery(); return 1;` | The unknown call prevents an unconditional equal-completion claim. |
 | Unsupported return | `return p;` -> `return mystery(p);` | Known argument dependency does not establish the call result; comparison is unknown. |

@@ -2,7 +2,7 @@
 
 Status: design and staged roadmap. Implementation status is recorded in the task
 files; these documents do not establish benchmark results. Function-result
-analysis is a planned extension.
+analysis is implemented for the first synchronous single-function subset.
 
 The objective is to explain how a bugfix changes the definitions, uses, and paths
 associated with a selected variable, or the conditions and values of a selected
@@ -29,7 +29,7 @@ Documents:
   dependencies, unit-test acceptance cases, and additional integration gates.
 - [Analysis specification](SPEC.md): semantics, architecture, API, graph comparison,
   evidence, uncertainty, and resource limits.
-- [Function result specification](FUNCTION_RESULTS.md): planned function selection,
+- [Function result specification](FUNCTION_RESULTS.md): function selection,
   return dependencies, same-input condition/result comparisons, and extensions.
 - [Function result tasks](../../spec/function-results/README.md): separate delivery
   and acceptance gates for the new target mode.
@@ -69,7 +69,7 @@ Limited read-only projection support in stage 5 does not imply mutation/alias su
 
 ## Function-result extension
 
-The planned [FR001–FR003 tasks](../../spec/function-results/README.md) can follow
+The [FR001–FR003 tasks](../../spec/function-results/README.md) build on
 K015 and K041 using the existing scalar/branch subset. This is an additional
 analysis target with its own result comparison and report; it does not require
 completing all later language stages first. Select the function, collect every
