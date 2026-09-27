@@ -21,6 +21,10 @@ K IDs refer to the [kickoff tasks](../kickoff/README.md). Their completed behavi
 is the baseline, not a claim that these FR tasks are implemented. The feature can
 follow K015/K041 before K016 loops, K018 calls, or K032 broader predicate reasoning.
 The minimal Boolean/result theory in FR002 is part of this delivery.
+FR001 accepts typed entry-assumption expressions; FR002 compares their common
+domain and records changes to query scope. Automatic function-rename tracking is
+deferred to the [later feature](../function-rename-tracking/README.md). K031 owns
+class and object method support.
 
 See [acceptance test examples](TEST_EXAMPLES.md) for source fixtures and expected
 semantic claims corresponding to each FR001–FR003 test name. These examples are

@@ -7,6 +7,8 @@ an ordered task index and one Markdown file per independently verifiable task.
   specification, decomposed into implementation tasks and unit-test acceptance sets.
 - [Function result analysis](function-results/README.md): planned function targets,
   return dependencies, same-input condition/result comparison, and report acceptance.
+- [Function rename tracking](function-rename-tracking/README.md): later automatic
+  counterpart matching for renamed functions after the initial result delivery.
 
 Add later features in sibling folders rather than mixing their tasks into kickoff.
 Task descriptions are implementation plans, not evidence that code or tests exist.

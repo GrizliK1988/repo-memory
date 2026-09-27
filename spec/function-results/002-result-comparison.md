@@ -12,7 +12,8 @@ Fixture examples: [FR002 acceptance test sketches](TEST_EXAMPLES.md).
 ## Scope
 
 - Compare guarded summaries on paired equal inputs and feasible intersections of
-  before/after conditions. Record common-domain coverage and excluded inputs.
+  before/after conditions and entry-assumption expressions. Record common-domain
+  coverage, one-sided domains, excluded inputs, and changes to declared scope.
 - Implement the minimal declared Boolean and primitive result theory separately
   from IFDS transfers; retain symbolic expressions outside that theory.
 - Emit `equal`, `different`, `changed`, or `unknown` per region with evidence/proof references.
@@ -40,6 +41,7 @@ behavioral equivalence, and claims that a concrete witness proves a larger regio
 | `presence_not_value` | Confirmed function addition/removal is a presence finding, not a comparison against fabricated undefined; ambiguous function matching stays unresolved. |
 | `primitive_semantics` | Supported ordinary primitive literals compare by the declared result-equality rules; coercions, unmodeled special numbers, and object identity stay unknown. |
 | `declared_input_scope` | A result established for the declared input domain `flag = true` is scoped to that domain; no result claim is made for excluded `flag = false` inputs. |
+| `entry_assumption_change` | Different before/after Boolean expressions over paired positional inputs are compared as query-scope conditions. Equal results are claimed only on their proven common domain; one-sided or unresolved domains are disclosed, and an assumption edit is not attributed to a source-code edit. |
 
 ## Verification
 

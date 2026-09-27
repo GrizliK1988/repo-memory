@@ -11,8 +11,16 @@ Fixture examples: [FR001 acceptance test sketches](TEST_EXAMPLES.md).
 
 ## Scope
 
-- Add function selectors, explicit counterparts, entry assumptions and input
-  correspondence without changing existing binding query/API schemas.
+- Add a public function-result query with function selectors and explicit
+  counterparts, plus internal per-snapshot result observations and dependencies.
+  Preserve existing binding query/API schemas; full result reports belong to FR003.
+- Represent entry assumptions as typed expressions over positional input slots,
+  including their operand dependencies and before/after versions. Preserve
+  supported Boolean/primitive expressions and known values through serialization;
+  unsupported predicates remain explicit uncertainty, never silently discarded.
+- Infer counterparts only when current path/name/owner evidence identifies one
+  function. Require an explicit counterpart for a renamed function; automatic
+  rename tracking is a later feature.
 - Seed all normal return observations owned by the selected procedure, including
   literals, bare returns, expression-bodied arrows, and reachable fallthrough.
 - Reuse forward flow facts to build complete result dependencies and effective
@@ -21,14 +29,17 @@ Fixture examples: [FR001 acceptance test sketches](TEST_EXAMPLES.md).
   from the returned value's open caller continuation.
 
 Excludes result-equivalence proofs, loops, resolved interprocedural expansion,
-exceptions, and async/generator result semantics.
+exceptions, and async/generator result semantics. Class and object methods are
+owned by K031; this task selects ordinary function declarations, function
+expressions, and arrows.
 
 ## Required unit tests
 
 | Test suffix | Required evidence |
 | --- | --- |
-| `function_selector` | Exact declaration/expression spans select one function; stale hashes, invalid UTF-8 spans, and name/owner assertion mismatches fail. Ambiguous counterparts stay unresolved. |
-| `input_correspondence` | Match simple formals through positional actual arguments: a rename retains the input, while a reorder can move a named formal to a different input. Changed arity/forms require supported argument semantics or justified assumptions. Entry-domain assumptions survive serialization. |
+| `function_selector` | Exact declaration/expression spans select one ordinary function or arrow; stale hashes, invalid UTF-8 spans, and name/owner assertion mismatches fail. Ambiguous counterparts stay unresolved; function renames require an explicit counterpart. Methods are outside this selector subset. |
+| `input_correspondence` | Match simple formals through positional actual arguments: a parameter rename retains the input, while a reorder can move a named formal to a different input. Changed arity/forms require supported argument semantics or justified assumptions. Entry-domain assumptions survive serialization. |
+| `entry_assumption_expressions` | Before/after assumptions retain typed expression trees over positional inputs, operand roles, declared value domains, and distinct versions through serialization. Supported conditions constrain reachability; unsupported conditions mark affected coverage unknown. |
 | `literal_without_binding` | `return 1` is a complete value observation without a selected variable. |
 | `all_normal_exits` | Multiple early returns, bare return, arrow result, and reachable fallthrough have exact conditions and distinct observation identities; undefined differs from missing data. |
 | `nested_and_unreachable` | Nested function returns and unreachable returns do not become reachable outer results. |
