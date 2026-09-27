@@ -1,9 +1,15 @@
-# Variable flow analysis specification
+# Data flow and function result analysis specification
 
-Status: design for a future separate Rust module. The API records below are
-contract sketches, not code that currently exists.
+Status: shared design contract for the Rust IFDS module. Implementation status is
+recorded in the task sets. Function-result analysis is a planned extension; its
+API records are contract sketches, not existing interfaces.
 
 ## 1. Product contract
+
+The analyzer has two explicit target modes: an existing selected-binding mode and
+a planned function-result mode. Both use immutable snapshots, dependency evidence,
+declared capabilities, and explicit uncertainty. The following binding contract
+remains in force; the function-result extension is defined below.
 
 Given before/after repository snapshots, their Git diff, and one selected binding,
 explain which nodes write it, which definitions reach reads, how its value reaches
@@ -69,6 +75,22 @@ Historical correlation, a UI, and automated bug-cause conclusions are outside th
 initial implementation; a current flow connection alone does not prove a past bug
 is present or that the edited origin caused it.
 
+### Function-result target
+
+Select a function to explain all its normal return values and the conditions
+selecting them, without requiring a local binding. Build dependencies from every
+reachable result, including early returns and implicit `undefined`. Compare the
+versions under paired equal inputs and report the condition, whole result before
+and after, contributing changes, and supporting or unresolved evidence.
+
+The [function result specification](FUNCTION_RESULTS.md) defines this additive
+mode. Its first delivery uses the supported scalar/branch subset within one
+synchronous function. It introduces bounded result assessments (`equal`,
+`different`, `changed`, `unknown`) separately from structural and flow deltas. Equal normal
+results do not prove equal side effects, exception behavior, or termination.
+Loops, calls, and other later capabilities keep their existing semantic gates
+and gain result-specific acceptance cases when enabled.
+
 ## 2. Architecture and separation
 
 Proposed module structure, created incrementally:
@@ -118,7 +140,7 @@ scripts, custom compiler plugins, or contacting external services.
 
 ## 3. Query and identities
 
-The planned entry point is conceptually:
+The binding entry point is conceptually:
 
 ```text
 analyze_variable_flow(query: VariableFlowQuery) -> Result<VariableFlowReport, InputError>
@@ -149,6 +171,15 @@ and `DefinitionId` identify static operations inside one snapshot. Calls have
 `CallSiteId`s and independent return sites. Comparison uses a separate
 `LogicalNodeId` mapping; IDs from different snapshots are not directly equated.
 Loop iterations and recursive activations do not allocate unbounded static IDs.
+
+Function-result queries use an additive `FunctionResultQuery` and conceptual
+`analyze_function_result` entry point, as specified in
+[query, inputs, and compatibility](FUNCTION_RESULTS.md#2-query-inputs-and-compatibility).
+They select one exact function declaration/expression, its optional counterpart,
+and all owned normal results. They also record paired input correspondence and
+common entry assumptions. Nested functions own their own returns. Missing or
+ambiguous function/input correspondence must not become a fabricated result.
+Existing `VariableFlowQuery` and report schemas retain their meaning.
 
 ## 4. Control flow and facts
 
@@ -487,7 +518,8 @@ This relevant part of the program is called the selected variable's **slice**.
 
 ### Full upstream and downstream coverage
 
-Build both parts of the slice for each tracked write, then retain their union:
+For binding targets, build both parts of the slice for each tracked write, then
+retain their union:
 
 - **Upstream:** definitions, inputs, and expressions feeding the write, plus the
   guards and call contexts needed to justify those connections.
@@ -543,6 +575,22 @@ reported as a completed lifecycle. In stage 4, an explicitly included enclosing
 caller context must also follow a value returned from the selected function into
 that caller's later consumers; do not merge distinct caller contexts to extend it.
 
+### Function-result dependency coverage
+
+A function-result target roots its dependency slice at all normal result
+observations. Include full upstream value and control dependencies, effective
+return guards, whole expressions and their operand roles, and any relevant
+unknown completion. Reuse forward facts to construct this backward slice;
+do not alter distributive transfers or select an arbitrary local variable.
+The diff does not restrict dependency traversal.
+
+This target does not automatically include unrelated sibling uses of an upstream
+input. Result observation can be complete at the selected function's return while
+the value's caller continuation remains open. Explicitly included caller consumers
+extend the observation scope when that capability is available. Preserve the
+existing full lifecycle traversal for binding targets. Detailed exit, scope and
+dependency rules are in [the result contract](FUNCTION_RESULTS.md#3-result-observations-and-dependency-construction).
+
 ### Exact consumer inputs and external boundaries
 
 Keep the exact part of an input that receives the selected value. For example,
@@ -567,10 +615,12 @@ model or unknown boundary used for either case.
 ## 6. Before/after comparison
 
 Analyze both snapshots independently with identical capabilities and summaries.
-Never propagate facts across revisions. Compare the same selected binding using
-its cross-revision counterpart. Record entry assumptions separately on each
-side: moving a local declaration to a parameter introduces a function input,
-while moving a parameter to a local declaration removes that input.
+Never propagate facts across revisions. Compare the selected target using its
+cross-revision counterpart. For binding queries, record entry assumptions
+separately on each side: moving a local declaration to a parameter introduces a
+function input, while moving a parameter to a local declaration removes that input.
+Function-result queries additionally establish common input correspondence and
+compare guarded results under equal inputs, as defined in section 6.5.
 
 ### 6.1. Identity and delta kinds
 
@@ -628,7 +678,8 @@ removed or which new node corresponds to it. Unambiguous parts remain comparable
 5. A write is an assignment event, not proof of a different runtime value.
    Inserting `x = x` still adds a write. Likewise, report changed source expressions
    without claiming their runtime results must differ; value-equivalence proofs
-   are outside the initial analysis.
+   are outside the initial binding analysis. The planned function-result mode
+   adds a separate bounded proof layer without changing these flow-delta meanings.
 
 Compare path conditions using the supported guard rules, not predicate text alone.
 Proven equivalent conditions produce no condition delta. If those rules cannot
@@ -949,13 +1000,39 @@ Pair-local logical IDs must not be assumed to identify the same code across
 arbitrary historical revisions; any later history comparison needs its own
 alignment evidence and compatible scope/model information.
 
+### 6.5. Function-result comparison
+
+The [function result comparison contract](FUNCTION_RESULTS.md#4-comparing-conditions-and-results)
+adds guarded result summaries and comparisons on feasible shared input regions.
+Keep `equal`, `different`, `changed`, and `unknown` result assessments separate from condition,
+source, operation, and observation findings. `changed` establishes a changed
+return computation or selection on a feasible region without proving unequal
+runtime values. Equal source sets can still select
+different results under the same input; changed guards can still return equal
+values. Neither conclusion follows from graph deltas alone.
+
+Preserve symbolic expressions and explicit uncertainty when even a changed
+computation or selection cannot be established. A whole-query unchanged-result
+claim requires complete equal-region coverage and established normal completion
+throughout the common domain. Return-site alignment uncertainty remains separate
+from independently proved result equivalence. Exceptions and nontermination must
+not be represented as implicit `undefined`.
+
+Result findings show the changed condition/computation, its same-input region,
+the whole result before and after, and evidence linking contributing edits to the
+observation. Text and compact JSON use the same facts, with full evidence available.
+The required examples and independent acceptance cases are in the result contract.
+
 ## 7. Results, evidence, and uncertainty
+
+The following shared evidence requirements apply to each target's declared scope;
+existing binding report fields retain their current serialized contract.
 
 | Report field | Required content |
 | --- | --- |
 | `schema_version`, `analysis_version` | Versioned output and implementation/model identifiers. |
-| `snapshots`, `query`, `entry_assumptions` | Reproducible inputs and resolved selected bindings. |
-| `before_graph`, `after_graph`, `alignment` | Full supported upstream/downstream slice, including unchanged intermediate and final consumers, typed edges, locations, fingerprints, and cross-revision mapping evidence. |
+| `snapshots`, `query`, `entry_assumptions` | Reproducible inputs and resolved target; function-result reports also retain paired input correspondence and common-domain assumptions. |
+| `before_graph`, `after_graph`, `alignment` | Full supported target-specific slice from section 5, including unchanged relevant dependencies/consumers, typed edges, locations, fingerprints, and cross-revision mapping evidence. |
 | `deltas` | Typed changes with before/after endpoints, logical IDs, conditions, source spans, and group IDs. |
 | `witnesses` | Compact valid paths or summary expansions supporting a relation; cycles represented by backedges. |
 | `diagnostics`, `unknown_frontiers` | Reasons, affected files/nodes/flows, and the next unsupported operation. |
@@ -963,6 +1040,12 @@ alignment evidence and compatible scope/model information.
 | `flow_extent` | Upstream/downstream coverage separately for each snapshot, declared entry/caller scope and source/sink boundaries, and whether value-lifecycle closure is established. |
 | `path_endings` | Per-origin/carrier endings or open continuations from section 5: kind, location, condition/context, witness, and model or diagnostic where applicable. |
 | `completeness`, `stats` | Overall and per-region completeness, counts, timing, limits hit, graph/witness truncation. |
+
+The separately versioned `FunctionResultReport` additionally contains all return
+observations, guarded results and their comparison assessments, derivations, and
+unknown reasons. Distinguish per-snapshot analysis, source alignment, input mapping,
+result comparison, and presentation coverage. Its schema and output requirements
+are defined in [report and presentation](FUNCTION_RESULTS.md#5-report-and-presentation).
 
 Use categorical evidence, not invented per-flow probability scores:
 

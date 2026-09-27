@@ -9,6 +9,11 @@ straight-line scalar variable flow; later language features remain planned.
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
 
+The planned [function result extension](docs/ifds/FUNCTION_RESULTS.md) selects a
+function and explains how its return values and controlling conditions change
+under the same inputs. Its [implementation tasks](spec/function-results/README.md)
+are separate from the existing binding analysis.
+
 To inspect a compact source report from two local TypeScript files, run:
 
 ```sh

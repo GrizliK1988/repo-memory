@@ -1,17 +1,21 @@
 # IFDS analysis: specification and roadmap
 
-Status: proposed implementation specification, agreed product scope. No IFDS
-implementation or benchmark results are delivered by these documents.
+Status: design and staged roadmap. Implementation status is recorded in the task
+files; these documents do not establish benchmark results. Function-result
+analysis is a planned extension.
 
 The objective is to explain how a bugfix changes the definitions, uses, and paths
-associated with one explicitly selected variable. The full repository is available
-in both revisions. Results identify changed data flows and their evidence; they do
-not claim to establish the runtime cause of a bug.
+associated with a selected variable, or the conditions and values of a selected
+function's normal results. The full repository is available in both revisions.
+Results identify changed flows and scoped result relations with their evidence;
+they do not claim to establish the runtime cause of a bug.
 
-Each query includes the full supported upstream and downstream flow, not just the
-path into the edited code. Follow derived copies and unchanged consumers until
-their influence ends or the modeled execution exits. Scope, model, and unsupported
-boundaries stay explicit; reaching one is not proof that later impact is absent.
+Binding queries include the full supported upstream and downstream flow, not just
+the path into edited code. Follow derived copies and unchanged consumers until
+their influence ends or modeled execution exits. Function-result queries include
+all normal results and their full value/control dependencies, compared under
+shared inputs. Scope, model, and unsupported boundaries stay explicit; reaching
+one is not proof that later impact is absent.
 
 Start with initialization, reassignment, and uses of local scalar bindings. Expand
 to branches, loops, functions, and further TypeScript execution behavior in stages.
@@ -25,6 +29,10 @@ Documents:
   dependencies, unit-test acceptance cases, and additional integration gates.
 - [Analysis specification](SPEC.md): semantics, architecture, API, graph comparison,
   evidence, uncertainty, and resource limits.
+- [Function result specification](FUNCTION_RESULTS.md): planned function selection,
+  return dependencies, same-input condition/result comparisons, and extensions.
+- [Function result tasks](../../spec/function-results/README.md): separate delivery
+  and acceptance gates for the new target mode.
 - [Benchmark specification](BENCHMARKS.md): exact fixture rules plus the late-stage
   reviewed-suite precision, coverage, and release gates.
 - [PR #5816 case study](PR-5816.md): the selected `contentLangs` variable and the
@@ -58,6 +66,22 @@ required in stage 4 and is enforced by exact tests. Aggregate benchmark measurem
 is deliberately deferred to stage 11, when a frozen reviewed real-repository suite
 exists. Unknown behavior must never be silently treated as identity.
 Limited read-only projection support in stage 5 does not imply mutation/alias support.
+
+## Function-result extension
+
+The planned [FR001–FR003 tasks](../../spec/function-results/README.md) can follow
+K015 and K041 using the existing scalar/branch subset. This is an additional
+analysis target with its own result comparison and report; it does not require
+completing all later language stages first. Select the function, collect every
+normal return and its dependencies, and explain condition/result changes under
+paired equal inputs. Distinguish changed computations from proved changed values.
+
+Stage 3 later adds result-specific loop-exit and carried-value acceptance cases.
+Stage 4 adds guarded callee summaries, matched call contexts, recursion, and
+explicit caller continuations. Each extension must pass both its existing flow
+gate and the [result-specific gate](FUNCTION_RESULTS.md#7-extension-boundaries).
+An unknown completion or unsupported result must remain visible. The first
+delivery does not promise full behavioral equivalence or actual runtime traces.
 
 ## First deliverable: stage 1
 

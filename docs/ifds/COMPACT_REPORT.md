@@ -7,6 +7,13 @@ It defines the default explanation for people and agents. Full graphs, typed del
 witnesses, and lifecycle records remain the evidence model required by SPEC.
 Implementation must not reduce analysis scope to make the explanation smaller.
 
+This contract remains centered on a selected binding. The planned
+[function result report](FUNCTION_RESULTS.md#5-report-and-presentation) reuses its
+shared guards, dependencies, evidence references, and text/JSON parity principles
+in a separately versioned schema. That mode selects all normal results of a
+function and adds same-input result relations; it does not reinterpret existing
+`VariableSourceReport` observations as a complete function-result analysis.
+
 The API returns `(VariableFlowReport, VariableSourceReport)` from
 `analyze_variable_flow_reports`. The existing `analyze_variable_flow` API keeps
 returning the full report. `VariableSourceReport` has its own schema version and

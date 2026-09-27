@@ -13,8 +13,10 @@ development fixtures must not be presented as a representative precision result.
 ## 1. Test contract and independent expectations
 
 Each case supplies a small repository before and after an edit, its diff, one
-selected binding, the enabled capabilities and summary versions, and reviewed
-expected results. Tests run offline and must not fetch branches or GitHub PRs.
+selected target, the enabled capabilities and summary versions, and reviewed
+expected results. Existing fixtures select a binding. Planned function-result
+fixtures select a function and declare input correspondence and entry domains.
+Tests run offline and must not fetch branches or GitHub PRs.
 Use immutable revisions and retain required upstream attribution for copied code.
 
 Planned fixture layout:
@@ -61,7 +63,22 @@ oracle only where all executions in the declared input/loop domain are covered.
 Hand-proven loop invariants and reviewed witnesses are needed for unbounded cases;
 finite runtime observations alone cannot establish the absence of a static flow.
 
+Function-result fixtures additionally declare all normal observations, guarded
+whole results, shared input regions, and required/forbidden `equal`, `different`,
+`changed`, and `unknown` assessments from the [result contract](FUNCTION_RESULTS.md#6-required-examples).
+Check result-domain coverage and completion uncertainty separately from source
+alignment and dependency edges. An equal-result fixture can still require a
+control or expression delta. A changed-result fixture can retain the same source
+set. The new fixture target/schema must preserve existing binding expectations.
+
 ## 2. Scoring unit
+
+The following flow-claim unit remains the binding benchmark contract. Function
+result assessments require a separate category and reviewed scoring definition when
+aggregate evaluation is introduced: a supported `changed` computation claim
+must not be scored as a proved unequal-value claim. Until then, enforce exact FR001–FR003 acceptance fixtures
+and report unknown regions and coverage; do not apply a measured flow precision
+number to result claims or count unknown as unchanged.
 
 Do not score true-negative pairs over every possible pair of nodes; that would
 inflate an accuracy number in a sparse graph. Score positive reported flow-change

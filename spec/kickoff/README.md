@@ -18,6 +18,11 @@ any additional integration gate pass. Keep task IDs stable when adding detail.
 Historical bugfix correlation, a UI, automatic root-cause conclusions, and automatic
 selection of multiple variables are not part of this kickoff implementation.
 
+The planned [function result task set](../function-results/README.md) adds a
+separate target mode after the existing scalar/branch foundation. It reuses these
+language stages and introduces its own result-comparison acceptance gates; it does
+not change completed binding-query contracts or renumber the kickoff tasks.
+
 ## Unit-test convention and completion gate
 
 - Put Rust unit tests beside the implementation under `src/ifds/`, using `#[test]`.

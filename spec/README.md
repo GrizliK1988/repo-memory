@@ -5,6 +5,8 @@ an ordered task index and one Markdown file per independently verifiable task.
 
 - [Kickoff: IFDS variable-flow analysis](kickoff/README.md): the current analysis
   specification, decomposed into implementation tasks and unit-test acceptance sets.
+- [Function result analysis](function-results/README.md): planned function targets,
+  return dependencies, same-input condition/result comparison, and report acceptance.
 
 Add later features in sibling folders rather than mixing their tasks into kickoff.
 Task descriptions are implementation plans, not evidence that code or tests exist.
