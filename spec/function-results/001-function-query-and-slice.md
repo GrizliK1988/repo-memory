@@ -1,6 +1,6 @@
 # FR001 — Function query and result dependencies
 
-Status: planned.
+Status: implemented for the first synchronous single-function subset.
 
 Dependencies: [K013](../kickoff/013-analysis-api.md),
 [K014](../kickoff/014-branches.md), [K015](../kickoff/015-short-circuit-expressions.md).

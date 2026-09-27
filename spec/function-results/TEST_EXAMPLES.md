@@ -1,7 +1,7 @@
 # Function result acceptance test examples
 
-Status: planned fixture sketches for [FR001–FR003](README.md). The analyzer and
-report API described here do not yet exist.
+Status: fixture sketches for [FR001–FR003](README.md). The required unit-test
+families and function-result integration suite are implemented for the first subset.
 
 Each case below gives a compact fixture idea and its expected semantic assertion.
 These are reviewable oracles, not executable Rust tests. Convert them to in-memory
@@ -11,8 +11,10 @@ serialized field names.
 
 Unless a case says otherwise, the selected function is uniquely matched,
 same-position parameters are paired inputs, capabilities and summaries match across
-snapshots, and branch feasibility is supported. Boolean examples declare Boolean
-entry domains. A result means the whole normally returned value.
+snapshots, and branch feasibility is supported. Simple guards over paired input
+reads use symbolic JavaScript truthiness without an entry-domain restriction;
+examples that specifically test declared domains say so. A result means the
+whole normally returned value.
 
 ## FR001 — Function query and result dependencies
 
@@ -218,9 +220,10 @@ function result(enabled: boolean, ready: boolean) {
 }
 ~~~
 
-Assert exactly: enabled && ready gives "ok" -> "ok", equal; enabled && !ready
-gives "ok" -> "skip", different; !enabled gives "skip" -> "skip", equal. The
-possible-value set is unchanged, but that must not hide the changed middle region.
+With no declared Boolean entry domains, assert exactly: truthy enabled and ready
+gives "ok" -> "ok", equal; truthy enabled and falsy ready gives "ok" -> "skip",
+different; falsy enabled gives "skip" -> "skip", equal. The possible-value set
+is unchanged, but that must not hide the changed middle region.
 
 ### equal_branch_values
 
@@ -348,11 +351,11 @@ function value(flag: boolean) { if (!flag) return "yes"; return "no"; }
 ~~~
 
 Assert the condition edit flag -> !flag and a finding that links it to the changed
-return selection. For the same symbolic Boolean input, flag true changes the
-result from "yes" to "no"; flag false changes it from "no" to "yes". The
-distinct literals support different results on both regions. No concrete flag
-evaluation or general predicate solver is required: the supported Boolean
-polarity is sufficient. In particular, the two "yes" return paths cannot be
+return selection without a declared Boolean entry domain. For the same paired
+input, truthy flag changes the result from "yes" to "no"; falsy flag changes it
+from "no" to "yes". The distinct literals support different results on both
+regions. No concrete flag evaluation or general predicate solver is required:
+symbolic truthiness is sufficient. In particular, the two "yes" return paths cannot be
 treated as one common input region, since their guards are flag and !flag.
 Keep the result consequence alongside the condition change in text and JSON.
 
@@ -375,6 +378,21 @@ their proven common domain `flag && ready`. Report `flag && !ready` as an
 after-only query domain and `!flag` as outside both query domains. Show the
 before/after assumption expressions as a scope change, without attributing them
 to a source-code edit or comparing an absent before-side result.
+
+### empty_common_domain
+
+~~~typescript
+// Before
+function answer(flag: boolean) { if (flag) return "old"; return "off"; }
+// After
+function answer(flag: boolean) { if (flag) return "new"; return "off"; }
+~~~
+
+Declare `flag = true` before and `flag = false` after. Assert `no common inputs`
+and no `equal`, `different`, or `changed` result relation. Display the before
+flow `flag -> "old"` under its own domain and the after flow
+`!flag -> "off"` under its own domain, with their return observations and
+dependencies. Do not present `"old" -> "off"` as a same-input value change.
 
 ### independent_unknown_region
 
@@ -571,8 +589,11 @@ partial delta list must not render as unchanged behavior.
 Run an existing selected-binding fixture. Assert its query fields, full graph,
 VariableFlowReport and VariableSourceReport schemas, compact source facts, output
 choices, and command invocation retain their existing meaning. Function
-selection must require its explicit new target; never infer it by changing the
-old binding selector's interpretation.
+selection uses `--function <name>` with optional `--after-function <name>` for an
+explicitly renamed counterpart; never infer it by changing the old binding
+selector's interpretation. A duplicate function name in either selected snapshot
+fails clearly in the command; exact source-span selection remains available in
+the public API.
 
 ## Promoting sketches to executable tests
 

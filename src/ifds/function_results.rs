@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
 
-pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 1;
+pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -145,6 +145,8 @@ pub struct ResultDependency {
     pub node: NodeId,
     pub role: Option<ComputeInputRole>,
     pub operation: String,
+    pub literal: Option<FunctionKnownValue>,
+    pub operator: Option<PrimitiveOperator>,
     pub origin: Option<Source>,
     pub inputs: Vec<Self>,
     pub unresolved: bool,
@@ -154,6 +156,7 @@ pub struct ResultDependency {
 #[serde(deny_unknown_fields)]
 pub struct ResultGuard {
     pub branch: NodeId,
+    pub span: Option<SourceSpan>,
     pub outcome: bool,
     pub condition: ResultDependency,
 }
@@ -199,6 +202,7 @@ pub struct FunctionSnapshotResult {
     pub function: FunctionSelector,
     pub procedure: ProcedureId,
     pub parameters: Vec<BindingId>,
+    pub parameter_names: Vec<String>,
     pub parameter_forms_supported: bool,
     pub entry: FunctionEntry,
     pub observations: Vec<ResultObservation>,
@@ -666,6 +670,20 @@ fn analyze_side<P: SnapshotProvider>(
             .parameters
             .iter()
             .map(|parameter| parameter.binding.clone())
+            .collect(),
+        parameter_names: procedure
+            .parameters
+            .iter()
+            .map(|parameter| {
+                index
+                    .bindings
+                    .iter()
+                    .find(|binding| binding.id == parameter.binding)
+                    .map_or_else(
+                        || format!("arg{}", parameter.index),
+                        |binding| binding.name.clone(),
+                    )
+            })
             .collect(),
         parameter_forms_supported,
         entry: entry.clone(),
@@ -1209,6 +1227,7 @@ impl DependencyWalker<'_> {
                 let condition = self.trace(condition, branch, None);
                 Some(ResultGuard {
                     branch: branch.clone(),
+                    span: self.procedure.nodes[branch].span.clone(),
                     outcome: *outcome,
                     condition,
                 })
@@ -1244,6 +1263,8 @@ impl DependencyWalker<'_> {
                 node: at.clone(),
                 role,
                 operation: "cycle".into(),
+                literal: None,
+                operator: None,
                 origin: None,
                 inputs: Vec::new(),
                 unresolved: true,
@@ -1319,6 +1340,36 @@ impl DependencyWalker<'_> {
             node: id.clone(),
             role,
             operation,
+            literal: match &node.operation {
+                Operation::Literal {
+                    literal_kind,
+                    raw,
+                    cooked,
+                    ..
+                } => match literal_kind {
+                    super::ir::LiteralKind::Boolean => Some(FunctionKnownValue::Boolean {
+                        value: raw == "true",
+                    }),
+                    super::ir::LiteralKind::Number => {
+                        Some(FunctionKnownValue::Number { value: raw.clone() })
+                    }
+                    super::ir::LiteralKind::String => cooked
+                        .clone()
+                        .or_else(|| {
+                            let inner = raw.strip_prefix('\'')?.strip_suffix('\'')?;
+                            (!inner.contains('\\')).then(|| inner.to_owned())
+                        })
+                        .map(|value| FunctionKnownValue::String { value }),
+                    super::ir::LiteralKind::Null => Some(FunctionKnownValue::Null),
+                    super::ir::LiteralKind::Undefined => Some(FunctionKnownValue::Undefined),
+                    _ => None,
+                },
+                _ => None,
+            },
+            operator: match &node.operation {
+                Operation::Compute { operator, .. } => Some(operator.clone()),
+                _ => None,
+            },
             origin,
             inputs,
             unresolved,
@@ -1354,6 +1405,7 @@ impl DependencyWalker<'_> {
                         .map(|source| self.trace(source, &node.id, None)).collect();
                     inputs.push(ResultDependency {
                         node: node.id.clone(), role: None, operation: "write".into(),
+                        literal: None, operator: None,
                         origin: Some(Source::Write(write.clone())), inputs: writer_inputs,
                         unresolved: false,
                     });
@@ -1362,17 +1414,44 @@ impl DependencyWalker<'_> {
                 parameter.binding == *binding && parameter.entry_definition == write) {
                 inputs.push(ResultDependency { node: self.procedure.entry.clone(), role: None,
                     operation: "positional_input".into(), origin: Some(Source::FunctionInput(binding.clone())),
+                    literal: None, operator: None,
                     inputs: Vec::new(), unresolved: false });
             }
+        }
+        if inputs.is_empty()
+            && self
+                .procedure
+                .parameters
+                .iter()
+                .any(|parameter| parameter.binding == *binding)
+        {
+            // An unsupported effect can erase the last-write fact. Preserve the
+            // syntactic parameter dependency without claiming its value survived.
+            inputs.push(ResultDependency {
+                node: self.procedure.entry.clone(),
+                role: None,
+                operation: "possible_positional_input".into(),
+                literal: None,
+                operator: None,
+                origin: Some(Source::FunctionInput(binding.clone())),
+                inputs: Vec::new(),
+                unresolved: true,
+            });
         }
         let unresolved = inputs.is_empty();
         ResultDependency {
             node: at.clone(),
             role,
             operation: "binding_value".into(),
+            literal: None,
+            operator: None,
             origin: None,
             inputs,
             unresolved,
         }
     }
 }
+
+#[cfg(test)]
+#[path = "function_results_tests.rs"]
+mod tests;

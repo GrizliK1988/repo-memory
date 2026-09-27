@@ -9,7 +9,7 @@ straight-line scalar variable flow; later language features remain planned.
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
 
-The planned [function result extension](docs/ifds/FUNCTION_RESULTS.md) selects a
+The [function result analysis](docs/ifds/FUNCTION_RESULTS.md) selects a
 function and explains how its return values and controlling conditions change
 under the same inputs. Its [implementation tasks](spec/function-results/README.md)
 are separate from the existing binding analysis.
@@ -29,6 +29,23 @@ stdout output. `--evidence-out <path>` selects a sidecar path for text and compa
 JSON. Compact evidence references name a section and zero-based index in that
 saved full report. Existing scripts that read full JSON should add
 `--format full-json` before redirecting stdout.
+
+To compare all normal results of one function without selecting a variable, use
+the explicit function target:
+
+```sh
+cargo run --locked --offline --example ifds_compare -- \
+  tests/ifds/function_result_cases/guard_added/before.ts \
+  tests/ifds/function_result_cases/guard_added/after.ts \
+  --function result
+```
+
+Use `--after-function <name>` when the function was renamed. Each name must be
+unique in its snapshot; the public API accepts exact source spans for ambiguous
+names. The function target supports the same `--format text|compact-json|full-json`
+and `--evidence-out <path>` options. Text and compact JSON save a separately
+versioned full function-result report. Simple guards use symbolic JavaScript
+truthiness, so the command does not require a Boolean input declaration.
 
 Replace the two paths
 with your own `.ts` or `.tsx` files and `x` with a declaration name that occurs once

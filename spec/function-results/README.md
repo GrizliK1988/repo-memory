@@ -1,7 +1,7 @@
 # Function result analysis: implementation tasks
 
-Status: planned. These tasks implement the
-[function result specification](../../docs/ifds/FUNCTION_RESULTS.md) and extend the
+Status: implemented for the first synchronous single-function subset. These
+tasks implement the [function result specification](../../docs/ifds/FUNCTION_RESULTS.md) and extend the
 [shared analysis contract](../../docs/ifds/SPEC.md).
 
 The first delivery selects one synchronous function and compares all its normal
@@ -18,17 +18,18 @@ and public contracts.
 | FR003 | [Reports and end-to-end acceptance](003-reports-and-acceptance.md) | FR002, K041 |
 
 K IDs refer to the [kickoff tasks](../kickoff/README.md). Their completed behavior
-is the baseline, not a claim that these FR tasks are implemented. The feature can
-follow K015/K041 before K016 loops, K018 calls, or K032 broader predicate reasoning.
-The minimal Boolean/result theory in FR002 is part of this delivery.
+is the baseline. This subset follows K015/K041 before K016 loops, K018 calls,
+or K032 broader predicate reasoning.
+The minimal truthiness/result theory in FR002 compares pure guards over paired
+symbolic inputs without requiring a declared Boolean entry domain.
 FR001 accepts typed entry-assumption expressions; FR002 compares their common
 domain and records changes to query scope. Automatic function-rename tracking is
 deferred to the [later feature](../function-rename-tracking/README.md). K031 owns
 class and object method support.
 
 See [acceptance test examples](TEST_EXAMPLES.md) for source fixtures and expected
-semantic claims corresponding to each FR001–FR003 test name. These examples are
-review sketches, not existing tests or an implemented API.
+semantic claims corresponding to each FR001–FR003 test name. The sketches are
+independent acceptance oracles; implemented tests live under `src/ifds/` and `tests/`.
 
 ## Completion gate
 
@@ -38,6 +39,7 @@ suffix exists and is not ignored. Then run its tests and the existing
 [shared completion gate](../kickoff/README.md#unit-test-convention-and-completion-gate):
 formatting, the full locked offline test suite, and Clippy with warnings denied.
 Zero discovered tests do not pass a task. No tests are added by these plans.
+The function-result integration suite is `cargo test --locked --offline --test ifds_function_results`.
 
 Author fixture expectations from source semantics before accepting implementation
 output. Extend the fixture contract with an explicit function-result target and

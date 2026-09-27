@@ -1,10 +1,11 @@
-//! Run the stage-1 variable-flow analyzer on two local TypeScript snippets.
+//! Compare a selected binding or function in two local TypeScript snippets.
 
-use repo_memory::ifds::adapters::typescript::index_bindings;
+use repo_memory::ifds::adapters::typescript::{index_bindings, index_functions};
 use repo_memory::ifds::{
     AnalysisEnvironment, AnalysisLimits, BindingSelector, CapabilitySet, EntryPoint, FileChange,
-    FileChangeKind, InMemorySnapshot, InMemorySnapshotProvider, RepositoryDiff, SnapshotHandle,
-    SnapshotId, SnapshotSide, VariableFlowQuery, analyze_variable_flow_reports,
+    FileChangeKind, FunctionEntry, FunctionResultQuery, FunctionSelector, InMemorySnapshot,
+    InMemorySnapshotProvider, RepositoryDiff, SnapshotHandle, SnapshotId, SnapshotSide,
+    VariableFlowQuery, analyze_function_result_reports, analyze_variable_flow_reports,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -19,16 +20,27 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>]";
+    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--format text|compact-json|full-json] [--evidence-out <path>]";
     if arguments.len() < 3 {
         return Err(usage.into());
     }
-    let (before_path, after_path, binding_name) = (&arguments[0], &arguments[1], &arguments[2]);
+    let (before_path, after_path) = (&arguments[0], &arguments[1]);
+    let binding_name = (!arguments[2].starts_with("--")).then_some(arguments[2].as_str());
+    let mut function_name = None;
+    let mut after_function_name = None;
     let mut format = "text";
     let mut evidence_out = None;
-    let mut index = 3;
+    let mut index = if binding_name.is_some() { 3 } else { 2 };
     while index < arguments.len() {
         match arguments[index].as_str() {
+            "--function" if index + 1 < arguments.len() => {
+                function_name = Some(arguments[index + 1].as_str());
+                index += 2;
+            }
+            "--after-function" if index + 1 < arguments.len() => {
+                after_function_name = Some(arguments[index + 1].as_str());
+                index += 2;
+            }
             "--format" if index + 1 < arguments.len() => {
                 format = &arguments[index + 1];
                 index += 2;
@@ -41,6 +53,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         }
     }
     if !matches!(format, "text" | "compact-json" | "full-json") {
+        return Err(usage.into());
+    }
+    if binding_name.is_some() == function_name.is_some()
+        || (after_function_name.is_some() && function_name.is_none())
+    {
         return Err(usage.into());
     }
     let before = std::fs::read(before_path)?;
@@ -77,10 +94,6 @@ fn run() -> Result<(), Box<dyn Error>> {
         id: after_id.clone(),
         repository_id: "local-example".into(),
     };
-    let before_index = index_bindings(before_id.clone(), &report_path, before_text)?;
-    let after_index = index_bindings(after_id.clone(), &report_path, after_text)?;
-    let selected_binding = selector(&before_index, binding_name)?;
-    let counterpart = selector(&after_index, binding_name)?;
     let changes = if before == after {
         BTreeSet::new()
     } else {
@@ -95,11 +108,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     let provider = InMemorySnapshotProvider::new([
         InMemorySnapshot {
             handle: before_handle.clone(),
-            files: BTreeMap::from([(report_path.clone(), (before_hash.clone(), before))]),
+            files: BTreeMap::from([(report_path.clone(), (before_hash.clone(), before.clone()))]),
         },
         InMemorySnapshot {
             handle: after_handle.clone(),
-            files: BTreeMap::from([(report_path, (after_hash.clone(), after))]),
+            files: BTreeMap::from([(report_path.clone(), (after_hash.clone(), after.clone()))]),
         },
     ]);
     let capabilities = CapabilitySet {
@@ -111,26 +124,77 @@ fn run() -> Result<(), Box<dyn Error>> {
         capabilities: capabilities.clone(),
         summaries: BTreeSet::new(),
     };
+    let diff = RepositoryDiff {
+        before_content_id: before_hash,
+        after_content_id: after_hash,
+        changes,
+    };
+    let limits = AnalysisLimits {
+        time_ms: 120_000,
+        memory_bytes: 4_294_967_296,
+        processed_path_edges: 1_000_000,
+        witnesses_per_relation: 3,
+        output_nodes: 100_000,
+    };
+    if let Some(name) = function_name {
+        let selected = function_selector(&before_id, &report_path, before_text, name)?;
+        let counterpart = after_function_name
+            .map(|name| function_selector(&after_id, &report_path, after_text, name))
+            .transpose()?;
+        let query = FunctionResultQuery {
+            before: before_handle,
+            after: after_handle,
+            diff,
+            selected_function: selected,
+            counterpart,
+            before_entry: FunctionEntry::default(),
+            after_entry: FunctionEntry::default(),
+            capabilities,
+            summaries: BTreeSet::new(),
+            limits,
+        };
+        let (report, mut compact) =
+            analyze_function_result_reports(query, &provider, &environment, &environment)?;
+        if format == "full-json" {
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            return Ok(());
+        }
+        let path = evidence_out
+            .cloned()
+            .unwrap_or_else(|| compact.evidence_file.clone());
+        compact.evidence_file = path.clone();
+        let bytes = serde_json::to_vec_pretty(&report)?;
+        if let Ok(previous) = std::fs::read(&path) {
+            if previous != bytes {
+                return Err(
+                    format!("evidence path {path:?} already contains a different report").into(),
+                );
+            }
+        } else {
+            std::fs::write(&path, bytes)?;
+        }
+        if format == "compact-json" {
+            println!("{}", serde_json::to_string_pretty(&compact)?);
+        } else {
+            println!("{}", compact.render_text(&report));
+        }
+        return Ok(());
+    }
+    let binding_name = binding_name.expect("validated binding target");
+    let before_index = index_bindings(before_id.clone(), &report_path, before_text)?;
+    let after_index = index_bindings(after_id.clone(), &report_path, after_text)?;
+    let selected_binding = selector(&before_index, binding_name)?;
+    let counterpart = selector(&after_index, binding_name)?;
     let query = VariableFlowQuery {
         before: before_handle,
         after: after_handle,
-        diff: RepositoryDiff {
-            before_content_id: before_hash,
-            after_content_id: after_hash,
-            changes,
-        },
+        diff,
         selected_binding,
         counterpart: Some(counterpart),
         entry: EntryPoint::ContainingFunction,
         capabilities,
         summaries: BTreeSet::new(),
-        limits: AnalysisLimits {
-            time_ms: 120_000,
-            memory_bytes: 4_294_967_296,
-            processed_path_edges: 1_000_000,
-            witnesses_per_relation: 3,
-            output_nodes: 100_000,
-        },
+        limits,
     };
     let (mut report, mut compact) =
         analyze_variable_flow_reports(query, &provider, &environment, &environment)?;
@@ -159,6 +223,33 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("{}", compact.render_text());
     }
     Ok(())
+}
+
+fn function_selector(
+    snapshot: &SnapshotId,
+    path: &str,
+    source: &str,
+    name: &str,
+) -> Result<FunctionSelector, Box<dyn Error>> {
+    let index = index_functions(path, source)?;
+    let mut matches = index
+        .iter()
+        .filter(|function| function.name.as_deref() == Some(name));
+    let Some(function) = matches.next() else {
+        return Err(format!("function {name:?} was not found in {path}").into());
+    };
+    if matches.next().is_some() {
+        return Err(format!(
+            "multiple functions named {name:?} in {path}; use the exact source-span API"
+        )
+        .into());
+    }
+    Ok(FunctionSelector {
+        snapshot: snapshot.clone(),
+        declaration: function.span.clone(),
+        expected_name: function.name.clone(),
+        expected_enclosing_symbol: function.owner.clone(),
+    })
 }
 
 fn selector(
