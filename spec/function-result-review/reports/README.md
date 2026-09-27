@@ -1,5 +1,5 @@
-# Сохранённые отчёты
+# Archived reports
 
-Подкаталог каждого примера содержит версии `before.ts` и `after.ts`, фактический текстовый отчёт `report.txt`, компактный JSON `compact.json` и полный JSON `full.json`. Ссылки на индексы полного отчёта проверены; пары условий в compact findings сверены с полными потоками на всех 38 булевых назначениях, где это применимо.
+Each case subdirectory contains `before.ts` and `after.ts`, the actual text report `report.txt`, compact JSON `compact.json`, and full JSON evidence `full.json`. References into the full report were checked; compact finding contexts and effects were checked against full flows over all 38 applicable Boolean assignments.
 
-`verification.json` содержит сводные итоги, coverage и размеры. `full-stdout.json` оставался временным артефактом проверки: для хранения полного отчёта сохранён sidecar `full.json`, который использует compact evidence reference.
+`verification.json` records the summary, coverage, and file sizes. `full-stdout.json` was a temporary verification artifact; the saved full report is the `full.json` sidecar referenced by the compact report.

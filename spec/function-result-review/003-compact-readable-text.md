@@ -1,23 +1,23 @@
-# 003 — Сделать краткий текст отчёта компактнее и точнее
+# 003 — Make the short report more concise and precise
 
-Статус: предложения по представлению, по результатам примеров.
+Status: presentation suggestions based on the examples.
 
-## Дублирующиеся строки
+## Repeated lines
 
-В `equal_control` отчёт выводит `Return choice`, строку `Effect: always: 1 -> 1 (Equal)`, затем `Unchanged choices: 1` и `Equal under always: 1`. Это четыре повторяющихся описания одного результата, хотя источник интереса здесь — изменение условия при сохранении возвращаемого значения. Достаточно одной строки об изменившемся контроле и равном результате; перечислять одинаковый выбор в findings и в unchanged summary повторно не нужно.
+For `equal_control`, the report prints a `Return choice` table, `Effect: always: 1 -> 1 (Equal)`, `Unchanged choices: 1`, and `Equal under always: 1`. These repeat the same result four times, although the main point is the changed guard with an unchanged returned value. One line about the changed control and equal result should be enough; avoid repeating the same choice in both findings and the unchanged summary.
 
-В `guard_version` две таблицы отдельно показывают одни и те же варианты `"yes"` и `"no"`, а затем обратные условия в двух строках effect. Их можно представить общей таблицей с двумя областями входов и одной пометкой, что назначения результатов поменялись.
+For `guard_version`, two tables show the same `"yes"` and `"no"` choices under reversed conditions, followed by two effect lines. A single table with both input regions and one note that the result assignments were swapped would be clearer.
 
-## Видимость покрытия и атрибуции
+## Coverage and attribution visibility
 
-Во всех этих примерах анализ и сравнение результатов полные, но `source_alignment` имеет значение `Partial`. Текст этого не показывает, хотя полный JSON сообщает его. Для находок со значением `Different` compact report также часто содержит `attribution_certain: false`. Краткий текст показывает путь к общему файлу доказательств, но не предупреждает, что связь между конкретной правкой и местом возврата не установлена уверенно.
+In all these examples, analysis and result comparison are complete, but `source_alignment` is `Partial`. The text does not show this, while the full JSON does. The compact report also often has `attribution_certain: false` for `Different` findings. The short text links to the evidence file but does not indicate that the specific edit has not been confidently linked to the return site.
 
-Добавить компактное состояние покрытия сопоставления и показывать неуверенную атрибуцию рядом с находкой. Не следует превращать это предупреждение в утверждение, что само сравнение результата неполно: `source_alignment` и `result_comparison` — отдельные измерения.
+Show a concise source-alignment status and indicate uncertain attribution alongside a finding. Keep this separate from result comparison completeness: `source_alignment` and `result_comparison` measure different things.
 
-## Размер свидетельств
+## Evidence size
 
-Текстовые отчёты занимают 160–456 байт, compact JSON — примерно 4–12 КБ, а полный JSON — примерно 15–261 КБ на крошечный пример. Полное дерево зависимостей нужно для аудита и ссылок; для обзора достаточно компактной проекции и sidecar. Если размер начнёт мешать, исследовать представление общих metadata/узлов без потери полноты и воспроизводимости. Это измерение синтетических примеров, не оценка производительности на проекте.
+For these tiny examples, text reports are 160–456 bytes, compact JSON is about 4–12 KB, and full JSON is about 15–261 KB. The full dependency tree is useful for audits and references; the compact projection is enough for an overview, with full evidence in a sidecar. If size becomes a concern, consider representing shared metadata and nodes without losing completeness or reproducibility. These are synthetic example measurements, not a project performance estimate.
 
-## Границы
+## Limits
 
-`expression` без числового домена правильно остаётся `unknown`: компилятор не выводит тип из этой fixture. `known_expression` явно задаёт `input = 4`, анализатор сохраняет `input + 1 → input + 2` с `Changed`, а не делает вычисление до 5 → 6. Это согласуется с контрактом структурного сравнения выражений. Не помечать такой консервативный результат как ошибку отчёта.
+`expression` without a numeric input domain correctly remains `unknown`: the analyzer does not infer the input type from this fixture. `known_expression` explicitly sets `input = 4`; the analyzer reports `input + 1 → input + 2` as `Changed` without evaluating it to `5 → 6`. This matches the structural expression comparison contract. Do not treat this conservative result as a reporting defect.
