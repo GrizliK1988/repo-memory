@@ -1,0 +1,328 @@
+{
+  "assignments": 38,
+  "references": 73,
+  "literal_observations": 68,
+  "gaps": [
+    "short_circuit !flag: ожидается equal, фактически unknown"
+  ],
+  "cases": [
+    {
+      "case": "literal",
+      "regions": 1,
+      "assessments": [
+        "different"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        217,
+        4430,
+        15647
+      ]
+    },
+    {
+      "case": "copy",
+      "regions": 1,
+      "assessments": [
+        "different"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        208,
+        4355,
+        39648
+      ]
+    },
+    {
+      "case": "priority",
+      "regions": 4,
+      "assessments": [
+        "different",
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        270,
+        8377,
+        183800
+      ]
+    },
+    {
+      "case": "guard",
+      "regions": 5,
+      "assessments": [
+        "different",
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        456,
+        11677,
+        260540
+      ]
+    },
+    {
+      "case": "guard_version",
+      "regions": 2,
+      "assessments": [
+        "different"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        344,
+        7600,
+        98333
+      ]
+    },
+    {
+      "case": "early_return",
+      "regions": 2,
+      "assessments": [
+        "different",
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        272,
+        5838,
+        35170
+      ]
+    },
+    {
+      "case": "fallthrough",
+      "regions": 2,
+      "assessments": [
+        "different",
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        273,
+        6092,
+        47910
+      ]
+    },
+    {
+      "case": "short_circuit",
+      "regions": 2,
+      "assessments": [
+        "different",
+        "unknown"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "partial",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        397,
+        5930,
+        66659
+      ]
+    },
+    {
+      "case": "expression",
+      "regions": 1,
+      "assessments": [
+        "unknown"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "partial",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        245,
+        3980,
+        30311
+      ]
+    },
+    {
+      "case": "overwritten",
+      "regions": 1,
+      "assessments": [
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        160,
+        3911,
+        25415
+      ]
+    },
+    {
+      "case": "equal_control",
+      "regions": 1,
+      "assessments": [
+        "equal"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        244,
+        5637,
+        53696
+      ]
+    },
+    {
+      "case": "unknown",
+      "regions": 2,
+      "assessments": [
+        "different",
+        "unknown"
+      ],
+      "coverage": {
+        "before_analysis": "partial",
+        "after_analysis": "partial",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "partial",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        372,
+        6535,
+        60367
+      ]
+    },
+    {
+      "case": "known_expression",
+      "regions": 1,
+      "assessments": [
+        "changed"
+      ],
+      "coverage": {
+        "before_analysis": "complete",
+        "after_analysis": "complete",
+        "source_alignment": "partial",
+        "input_mapping": "complete",
+        "result_comparison": "complete",
+        "presentation": "complete",
+        "analysis_limits_hit": [],
+        "comparison_limits_hit": [],
+        "omitted_groups": 0,
+        "caller_continuation_open": true
+      },
+      "bytes": [
+        256,
+        4485,
+        34914
+      ]
+    }
+  ]
+}

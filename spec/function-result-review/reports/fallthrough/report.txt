@@ -1,0 +1,8 @@
+Function result: result
+Context: !flag
+Return choice | Before | After
+2 | never | always
+undefined | always | never
+Effect: always: undefined -> 2 (Different)
+Unchanged choices: 1
+Evidence: full.json (ifds-function-0473d3d2131faade)

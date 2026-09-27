@@ -1,0 +1,4 @@
+Function result: result
+Unknown under always: result value theory is insufficient
+Coverage: comparison Partial, presentation Complete; 0 groups omitted.
+Evidence: full.json (ifds-function-799bbec329c70359)

@@ -1,0 +1,7 @@
+Function result: result
+Return choice | Before | After
+1 | always | always
+Effect: always: 1 -> 1 (Equal)
+Unchanged choices: 1
+Equal under always: 1
+Evidence: full.json (ifds-function-6ff32ce523487fef)
