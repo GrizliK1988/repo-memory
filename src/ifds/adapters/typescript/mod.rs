@@ -76,6 +76,73 @@ pub struct TypeScriptBindingIndex {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IndexedFunction {
+    pub span: SourceSpan,
+    pub name: Option<String>,
+    pub owner: Option<String>,
+}
+
+/// Index exact ordinary function and arrow spans, including anonymous expressions.
+pub fn index_functions(
+    path: &str,
+    source: &str,
+) -> Result<Vec<IndexedFunction>, TypeScriptAdapterError> {
+    let grammar = grammar_for_path(path)?;
+    let mut parser = Parser::new();
+    let language = match grammar {
+        TypeScriptGrammar::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+        TypeScriptGrammar::Tsx => tree_sitter_typescript::LANGUAGE_TSX,
+    };
+    parser
+        .set_language(&language.into())
+        .map_err(|error| TypeScriptAdapterError::Parser(error.to_string()))?;
+    let tree = parser
+        .parse(source, None)
+        .ok_or_else(|| TypeScriptAdapterError::Parser("parser returned no tree".into()))?;
+    if tree.root_node().has_error() {
+        return Err(TypeScriptAdapterError::Parser(
+            "source contains a syntax error".into(),
+        ));
+    }
+    fn walk(
+        node: Node<'_>,
+        path: &str,
+        source: &str,
+        owner: Option<String>,
+        result: &mut Vec<IndexedFunction>,
+    ) {
+        let text = node_text(node, source).trim_start();
+        let asynchronous = text.strip_prefix("async").is_some_and(|rest| {
+            rest.starts_with(char::is_whitespace) || rest.starts_with('(') || rest.starts_with('<')
+        });
+        let ordinary = matches!(
+            node.kind(),
+            "function_declaration" | "function_expression" | "arrow_function"
+        ) && !asynchronous;
+        let own_name = indexed_function_name(node, source);
+        if ordinary {
+            result.push(IndexedFunction {
+                span: source_span(path, node),
+                name: own_name.clone(),
+                owner: owner.clone(),
+            });
+        }
+        let child_owner = if is_function_like(node.kind()) {
+            own_name.or(owner)
+        } else {
+            owner
+        };
+        let mut cursor = node.walk();
+        for child in node.children(&mut cursor) {
+            walk(child, path, source, child_owner.clone(), result);
+        }
+    }
+    let mut result = Vec::new();
+    walk(tree.root_node(), path, source, None, &mut result);
+    Ok(result)
+}
+
 impl TypeScriptBindingIndex {
     pub fn resolve_selector(
         &self,
@@ -652,6 +719,18 @@ fn function_symbol(node: Node<'_>, source: &str) -> Option<String> {
         return Some(node_text(name, source).to_owned());
     }
     None
+}
+
+fn indexed_function_name(node: Node<'_>, source: &str) -> Option<String> {
+    function_symbol(node, source).or_else(|| {
+        (node.kind() == "function_expression")
+            .then(|| node.parent())
+            .flatten()
+            .filter(|parent| parent.kind() == "variable_declarator")
+            .and_then(|parent| parent.child_by_field_name("name"))
+            .filter(|name| name.kind() == "identifier")
+            .map(|name| node_text(name, source).to_owned())
+    })
 }
 
 fn node_text<'a>(node: Node<'_>, source: &'a str) -> &'a str {

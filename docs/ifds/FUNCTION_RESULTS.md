@@ -53,10 +53,10 @@ mode as a guessed local binding or rewrite user source to insert a result variab
 | Query concept | Required contract |
 | --- | --- |
 | Snapshots and diff | The existing immutable content, diff validation, rename, capability, model-version, and budget rules apply. |
-| Function selector | One snapshot side, repository-relative path, and UTF-8 span identifying an exact function declaration or function expression; optional name and owner assertions detect stale selectors. Names alone are insufficient. |
-| Counterpart | Optional explicit function selector on the other side; otherwise require unique correspondence. Distinguish confirmed function addition/removal from ambiguous matching. |
+| Function selector | One snapshot side, repository-relative path, and UTF-8 span identifying an exact ordinary function declaration, function expression, or arrow; optional name and owner assertions detect stale selectors. Names alone are insufficient. Class and object methods join this target when K031 is delivered. |
+| Counterpart | Optional explicit function selector on the other side; otherwise require unique correspondence using supported file/path, name, and owner evidence. A renamed function needs an explicit counterpart in the first delivery. Automatic rename tracking is a later feature. Distinguish confirmed function addition/removal from ambiguous matching. |
 | Observation | All normal results owned by that function. Returns inside nested function bodies belong to their own procedures. |
-| Entry | The selected function's entry with labeled unknown inputs by default. Record explicit input-domain assumptions and any known values. A later call-context selector may supply actual arguments. |
+| Entry | The selected function's entry with labeled unknown positional inputs by default. Record explicit typed assumption expressions over those inputs and any known values, separately for each snapshot when they differ. A later call-context selector may supply actual arguments. |
 | Input correspondence | For a common call context, pair positional actual arguments by index and map them to each version's formal parameters. This covers renames and reorderings of simple formals without matching their names. Added/removed parameters and default, rest, or destructured forms require supported argument semantics or explicit justified assumptions; otherwise affected comparisons remain unresolved. |
 | Scope | Dependencies needed to explain the result within the declared capabilities and execution context. Following later caller consumers is an explicitly included extension. |
 
@@ -70,9 +70,23 @@ it cannot turn a changed call signature into an unchanged call. A reordered
 formal can receive a different argument even when its name remains unchanged.
 At the default function entry, use symbolic positional argument slots; a resolved
 call context supplies concrete or modeled values for those same slots.
+Represent assumptions as structured expressions with typed operators and operand
+references, not display strings. Retain both versions of an edited assumption,
+their input dependencies, and their provenance as query scope. Expression nodes
+cover positional input references, primitive literals, and the supported K006/K015
+Boolean, arithmetic, and comparison forms. FR001 preserves those nodes and their
+operand roles; FR002 reasons about them only where its declared theory establishes
+feasibility. Other predicates remain visible with unresolved feasibility. An
+assumption edit changes the query domain and is not a source-code change. FR002
+compares established common domains and discloses one-sided or unresolved regions.
 
 Boolean-only examples below declare Boolean entry domains. A TypeScript type
 annotation alone is not proof that every runtime caller satisfies that domain.
+The first function-result delivery selects ordinary declarations, function
+expressions, and arrows. [K031](../../spec/kickoff/031-classes.md) extends this to
+class and object methods with receiver-aware result observations. Automatic
+correspondence for renamed functions belongs to the
+[later rename-tracking feature](../../spec/function-rename-tracking/README.md).
 
 ## 3. Result observations and dependency construction
 
@@ -224,7 +238,7 @@ Provide text, compact JSON, and full evidence modes. The conceptual
 
 | Content | Required facts |
 | --- | --- |
-| Identity and scope | Snapshot pair, selected function and counterpart, target kind, input mapping, entry assumptions, versions, and limits. |
+| Identity and scope | Snapshot pair, selected function and counterpart, target kind, input mapping, typed before/after entry-assumption expressions and their common/one-sided domains, versions, and limits. |
 | Observations | All relevant return sites and normal exits, with conditions, whole expressions, locations, and evidence. |
 | Dependencies | Shared sources, computations, operand roles, controls, and upstream links. |
 | Result regions | Same-input conditions, before/after results, assessment, evidence category, and proof or unknown-reason references. |
@@ -374,6 +388,8 @@ survive an independent unknown region without certifying the unknown region.
 | Recursion and caller continuations | K019/K020 supply finite recursive summaries and explicit enclosing caller context. Propagate a changed result to later caller consumers only within included scope. Recursion convergence does not prove runtime completion. |
 | Exceptions and async results | K023/K024 and later scheduling work own completion semantics. A future observation may distinguish return, throw, fulfillment, and rejection; `finally` can replace a pending return. |
 | Broader value/guard reasoning | K032 adds declared predicate theories and bounded validation. Timeouts remain unknown. Heap/field observations also require the corresponding projection and alias capabilities. |
+| Class and object methods | K031 adds exact method procedure identities, receiver-aware inputs, and result selection. Unresolved dispatch or receiver effects retain an unknown boundary. |
+| Renamed functions | The post-kickoff FRT001 task adds automatic counterpart matching when independent evidence yields one unique function. The first delivery requires an explicit counterpart for a rename. |
 
 These extensions require result-specific acceptance cases when enabled: zero versus
 one-or-more iterations, changed loop exit, two calls without result leakage,

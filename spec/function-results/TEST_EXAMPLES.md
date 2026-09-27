@@ -57,6 +57,22 @@ receives the second argument. In a separate changed-arity variant, add a leading
 parameter and return an additional, otherwise unmapped argument; leave that
 comparison unresolved unless supported call-site evidence establishes its value.
 
+### entry_assumption_expressions
+
+~~~typescript
+// Both snapshots
+function answer(flag: boolean, ready: boolean) { return 1; }
+~~~
+
+Declare the before entry domain as the typed expression `arg0 && arg1` and the
+after entry domain as `arg0`, where `arg0` and `arg1` are positional Boolean
+inputs. Assert that both expression trees, their input references and operand
+roles, and their different snapshot versions survive serialization. FR001 keeps
+both assumptions and their dependencies; FR002 decides the common domain. In a
+separate numeric-input variant, also record an arithmetic predicate such as
+`arg0 + 1 > 0` as a structured expression. If the enabled theory cannot decide its
+feasibility, preserve that predicate and mark the affected coverage unresolved.
+
 ### literal_without_binding
 
 ~~~typescript
@@ -351,6 +367,15 @@ Declare the before domain {false, true}, after domain {true}. Assert equality
 only on the common domain flag = true, disclose false as excluded, and forbid
 a whole-before-domain equality claim.
 
+### entry_assumption_change
+
+Reuse `answer` from entry_assumption_expressions. The before assumption is
+`flag && ready`; the after assumption is `flag`. Assert an equal result only on
+their proven common domain `flag && ready`. Report `flag && !ready` as an
+after-only query domain and `!flag` as outside both query domains. Show the
+before/after assumption expressions as a scope change, without attributing them
+to a source-code edit or comparing an absent before-side result.
+
 ### independent_unknown_region
 
 ~~~typescript
@@ -452,7 +477,8 @@ function status(enabled: boolean, blocked: boolean,
 Run the public analysis, serialize the full report, then reload it. Assert
 semantic equality for target, snapshots, paired inputs, all result regions,
 assessments, dependencies, conditions, evidence, coverage, and limits. Include
-the expression_changed fixture to cover the changed assessment. Repeat with a
+the entry_assumption_change fixture to cover distinct scope expressions and the
+expression_changed fixture to cover the changed assessment. Repeat with a
 partial fixture and ensure unknown reasons and open-scope records survive.
 
 ### text_json_parity
@@ -463,6 +489,9 @@ regions. For expression_changed, both say the return computation changed from
 input + 1 to input + 2 without claiming a numerical difference for all inputs.
 For guard_changes_return, both show flag -> !flag and the corresponding swap
 between "yes" and "no" for the same symbolic input.
+For entry_assumption_change, both show the common `flag && ready` domain and the
+after-only `flag && !ready` domain as a query-scope change, without inventing a
+source-code edit.
 For status, both show when "ok" and "pending" are selected before and after,
 factoring enabled && !blocked into one explicit common context. Both retain the
 context association for every relative selection and effect condition, so the

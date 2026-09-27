@@ -76,6 +76,65 @@ pub fn lower_containing_procedure(
     Ok(result)
 }
 
+/// Lower an already identified function without requiring a selected binding.
+pub fn lower_function_procedure(
+    source: &str,
+    index: &TypeScriptBindingIndex,
+    span: &SourceSpan,
+) -> Result<(ProcedureIr, Vec<Diagnostic>), TypeScriptLoweringError> {
+    if span.path != index.path
+        || !source.is_char_boundary(span.byte_start as usize)
+        || !source.is_char_boundary(span.byte_end as usize)
+    {
+        return Err(TypeScriptLoweringError::Parse(
+            "invalid function span".into(),
+        ));
+    }
+    let mut parser = Parser::new();
+    let language = match index.grammar {
+        TypeScriptGrammar::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+        TypeScriptGrammar::Tsx => tree_sitter_typescript::LANGUAGE_TSX,
+    };
+    parser
+        .set_language(&language.into())
+        .map_err(|error| TypeScriptLoweringError::Parse(error.to_string()))?;
+    let tree = parser
+        .parse(source, None)
+        .ok_or_else(|| TypeScriptLoweringError::Parse("parser returned no tree".into()))?;
+    let root = tree.root_node();
+    if root.has_error() {
+        return Err(TypeScriptLoweringError::Parse(
+            "source contains a syntax error".into(),
+        ));
+    }
+    let start = span.byte_start as usize;
+    let end = span.byte_end as usize;
+    let function = [
+        "function_declaration",
+        "function_expression",
+        "arrow_function",
+    ]
+    .into_iter()
+    .find_map(|kind| find_exact_node(root, start, end, kind))
+    .ok_or_else(|| {
+        TypeScriptLoweringError::Parse("span does not select an ordinary function".into())
+    })?;
+    let function_scope = index
+        .scopes
+        .iter()
+        .find(|scope| {
+            scope.kind == ScopeKind::Function
+                && scope.span.byte_start == span.byte_start
+                && scope.span.byte_end == span.byte_end
+        })
+        .ok_or_else(|| TypeScriptLoweringError::Parse("function scope is missing".into()))?
+        .id;
+    let ordinal = procedure_ordinal(root, function);
+    let mut lowerer = Lowerer::new(source, index, ordinal, function_scope);
+    lowerer.lower(function);
+    lowerer.finish_procedure()
+}
+
 struct Lowerer<'a> {
     source: &'a str,
     index: &'a TypeScriptBindingIndex,
@@ -924,9 +983,20 @@ impl<'a> Lowerer<'a> {
     }
 
     fn finish(
-        mut self,
+        self,
         selected_binding: BindingId,
     ) -> Result<TypeScriptLoweringResult, TypeScriptLoweringError> {
+        let (procedure, diagnostics) = self.finish_procedure()?;
+        Ok(TypeScriptLoweringResult {
+            procedure,
+            selected_binding,
+            diagnostics,
+        })
+    }
+
+    fn finish_procedure(
+        mut self,
+    ) -> Result<(ProcedureIr, Vec<Diagnostic>), TypeScriptLoweringError> {
         let exit = self.peek_id();
         self.nodes.insert(
             exit.clone(),
@@ -958,11 +1028,7 @@ impl<'a> Lowerer<'a> {
             .validate()
             .map_err(|error| TypeScriptLoweringError::InvalidIr(error.to_string()))?;
         self.diagnostics.sort();
-        Ok(TypeScriptLoweringResult {
-            procedure,
-            selected_binding,
-            diagnostics: self.diagnostics,
-        })
+        Ok((procedure, self.diagnostics))
     }
 }
 

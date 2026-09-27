@@ -22,6 +22,8 @@ The planned [function result task set](../function-results/README.md) adds a
 separate target mode after the existing scalar/branch foundation. It reuses these
 language stages and introduces its own result-comparison acceptance gates; it does
 not change completed binding-query contracts or renumber the kickoff tasks.
+K031 extends that function target to class and object methods after FR001 provides
+the base selector.
 
 ## Unit-test convention and completion gate
 

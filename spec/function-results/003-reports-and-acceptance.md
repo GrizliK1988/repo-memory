@@ -19,6 +19,8 @@ Fixture examples: [FR003 acceptance test sketches](TEST_EXAMPLES.md).
   show complete before/after selection conditions for affected return choices,
   factor proven shared guards into an explicit common context for compact output,
   and expose equal and unknown relations with their scope and supporting evidence.
+- Round-trip typed before/after entry-assumption expressions and show changes to
+  query scope and its common/one-sided domains separately from source-code edits.
 - Promote independent end-to-end fixtures for every required example and preserve
   existing binding selectors, APIs, output modes, and fixture interpretation.
 
@@ -30,8 +32,8 @@ from synthetic acceptance cases.
 
 | Test suffix | Required evidence |
 | --- | --- |
-| `api_round_trip` | A real assembled report preserves target, inputs, result regions, relations, evidence, coverage, and uncertainty through serialization. |
-| `text_json_parity` | Text and compact JSON make the same condition/result claims, including complete before/after selection conditions for affected return choices, guard edits with their return consequences, `changed` computations without value evaluation, equal results with changed control, and unresolved comparisons. |
+| `api_round_trip` | A real assembled report preserves target, inputs, typed before/after assumption expressions, result regions, relations, evidence, coverage, and uncertainty through serialization. |
+| `text_json_parity` | Text and compact JSON make the same condition/result claims, including complete before/after selection conditions for affected return choices, guard edits with their return consequences, changed query-scope expressions and one-sided domains, `changed` computations without value evaluation, equal results with changed control, and unresolved comparisons. |
 | `deterministic_evidence` | With deterministic clock/stat inputs, independent processing order preserves canonical output; every compact reference resolves to the exact full report. |
 | `compact_grouping` | The enabled/ready example has one changed-result finding with shared controls; the status example shows one common context, a before/after condition table for `"ok"` and `"pending"`, and a concise effect statement. Context plus relative conditions recovers the complete rules. Proven unchanged choices are summarized, while unknown results and incomplete coverage remain visible. Equivalent facts do not expand per witness. |
 | `attribution_and_scope` | Findings link established contributing edits and source locations; uncertain attribution stays explicit. Open caller context is not rendered as closed value lifecycle. |
