@@ -1,21 +1,21 @@
-# 001 — Показывать доказанные значения, а не только текст `return`
+# 001 — Show proven values, not only `return` text
 
-Статус: наблюдение подтверждено вручную созданными примерами. Изменения реализации не вносились.
+Status: confirmed in manually authored examples. No implementation changes were made.
 
-## Проблема
+## Problem
 
-В `copy` функция возвращает сохранённое значение `saved`, захваченное до перезаписи исходного `x`. Полный отчёт доказывает зависимость от литерала `1` до изменения и `2` после. Короткий отчёт выводит `saved → saved (Different)`. Он верно сообщает отношение, но видимый текст не позволяет понять, почему одинаково выглядящие значения различаются.
+In `copy`, the function returns `saved`, captured before the original `x` is overwritten. The full report proves a dependency on literal `1` before the change and `2` afterward. The short report says `saved → saved (Different)`. The relation is correct, but the visible text does not explain why identical-looking expressions differ.
 
-В `priority` полный отчёт доказывает, что при `a && b` последняя из двух записей меняет итог с `2` на `1`. Короткий текст говорит `x → x (Different)`. Это та же потеря связи между записью, вычисленным значением и прочитанным binding.
+In `priority`, the full report proves that under `a && b`, the last of two writes changes the result from `2` to `1`. The short text says `x → x (Different)`. This also loses the link between the write, its computed value, and the binding read by the return.
 
-В `guard_version` одна и та же причина раскладывается на две отдельные таблицы, поскольку смена результата по `flag` и по `!flag` группируется раздельно. В двух областях показаны взаимно дополняющие перестановки; их можно объяснить одной таблицей.
+In `guard_version`, the same cause is split into two tables because the result changes under `flag` and `!flag` are grouped separately. The tables show complementary swaps that could be explained together.
 
-## Ожидаемое улучшение
+## Suggested improvement
 
-Показывать краткое раскрытие вычисленного примитива, когда оно подтверждено полным отчётом: например, `saved (1) → saved (2)` и `x (2) → x (1)`. Для вычислений, значение которых не доказано, оставлять исходные выражения и relation (`changed` или `unknown`). Сохранять ссылки на исходные возвращаемые выражения и цепочки зависимости.
+Show a concise expansion of the computed primitive when the full report proves it, for example `saved (1) → saved (2)` and `x (2) → x (1)`. For computations whose values are not proven, keep the source expressions and the relation (`changed` or `unknown`). Retain references to the return expressions and dependency chains.
 
-Сгруппировать симметричные области одной смены условия в единую находку: `flag: "yes" → "no"; !flag: "no" → "yes"`. Не объединять области с разными доказательствами без ссылки на каждую из них.
+Group symmetric regions for one guard change into a single finding: `flag: "yes" → "no"; !flag: "no" → "yes"`. Do not combine regions with distinct evidence unless each remains linked.
 
-## Проверка
+## Evidence
 
-В `reports/copy/full.json` dependency возвращаемого `saved` ведёт к литералу `1` в before и `2` в after; поздний `x = 9` не входит в зависимость копии. В `reports/priority/full.json` только пересечение `a && b` различается. Оба compact finding отмечены `Different`, поэтому проблема здесь в объяснении, а не в установленном отношении.
+In `reports/copy/full.json`, the dependency for returned `saved` leads to literal `1` before and `2` after; the later `x = 9` is not part of the copy's dependency. In `reports/priority/full.json`, only the intersection `a && b` differs. Both compact findings are marked `Different`, so the problem is the explanation, not the established relation.

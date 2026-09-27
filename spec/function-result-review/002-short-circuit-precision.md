@@ -1,8 +1,8 @@
-# 002 — Не терять равенство в пропущенном правом операнде `&&`
+# 002 — Preserve equality when `&&` skips its right operand
 
-Статус: воспроизводимая потеря точности в покрытом синтаксисе.
+Status: reproducible loss of precision in supported syntax.
 
-## Пример
+## Example
 
 ```typescript
 // before
@@ -11,12 +11,12 @@ function result(flag) { return flag && "old"; }
 function result(flag) { return flag && "new"; }
 ```
 
-При истинном `flag` отчёт правильно сообщает `"old" → "new" (Different)`. При ложном `flag` короткое замыкание возвращает само значение `flag` в обоих снимках. Эта область семантически равна.
+When `flag` is truthy, the report correctly says `"old" → "new" (Different)`. When `flag` is falsy, short circuiting returns the value of `flag` itself in both snapshots. This region is semantically equal.
 
-Текущий отчёт помечает её `Unknown: result value theory is insufficient` и понижает result comparison coverage до `Partial`. Здесь правая сторона не вычисляется; обе функции возвращают один и тот же спаренный вход. Короткое замыкание и связанный с ним пропуск RHS уже анализируются, поэтому сохранение тождества левого операнда должно оставаться возможным.
+The current report marks it `Unknown: result value theory is insufficient` and downgrades result comparison coverage to `Partial`. The right operand is not evaluated; both functions return the same paired input. Since short circuiting and the skipped RHS are already analyzed, preserving the identity of the left operand should be possible.
 
-## Критерий исправления
+## Acceptance criteria
 
-При falsy `flag` вывести равный результат, сохранив его как значение парного входа либо как эквивалентную подтверждённую форму. При truthy `flag` сохранить доказанное различие. Для настоящей неопределённости value theory и неподдержанных эффектов по-прежнему показывать `unknown`; не повышать покрытие целиком, если остались неизвестные области.
+For falsy `flag`, report an equal result, retaining it as the paired input value or another equivalent proven form. For truthy `flag`, preserve the established difference. Continue to report `unknown` for genuine uncertainty in the value theory or unsupported effects; do not mark overall coverage complete while any region remains unknown.
 
-Исходные полные и компактные отчёты: [`reports/short_circuit`](reports/short_circuit). Независимый truth table и результат автоматической сверки — в [`reports/verification.json`](reports/verification.json).
+The original full and compact reports are in [`reports/short_circuit`](reports/short_circuit). The independent truth table and automated comparison are in [`reports/verification.json`](reports/verification.json).

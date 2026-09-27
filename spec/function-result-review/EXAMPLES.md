@@ -1,12 +1,12 @@
-# Проверка отчётов о результатах функций
+# Function result report review examples
 
-Дата: 2026-09-27. Примеры для уже поддерживаемого синхронного подмножества; `unknown` — контроль границы. Исходники продукта и существующие тесты не меняются.
+Date: 2026-09-27. These examples exercise the currently supported synchronous subset; `unknown` is a boundary case. Product source and existing tests are unchanged.
 
-Ожидания ниже заданы по семантике исходников до запуска анализатора. Параметры намеренно без ограничений: условия означают JS truthiness, а не обязательный Boolean.
+The expectations below were derived from source semantics before running the analyzer. Inputs are intentionally unconstrained: conditions use JavaScript truthiness and are not assumed to be Boolean.
 
-## literal: Замена литерала
+## literal: Literal replacement
 
-Ожидание: Для любых входов 1 → 2: different.
+Expected: 1 → 2 (different) for all inputs.
 
 ### before
 
@@ -24,9 +24,9 @@ function result() {
 }
 ```
 
-## copy: Изменение источника сохранённой копии
+## copy: Changed source of a saved copy
 
-Ожидание: 1 → 2: different. Последующая запись x = 9 не меняет saved.
+Expected: 1 → 2 (different). The later write `x = 9` does not change `saved`.
 
 ### before
 
@@ -50,9 +50,9 @@ function result() {
 }
 ```
 
-## priority: Перестановка условных записей
+## priority: Reordered conditional writes
 
-Ожидание: Только при a && b: 2 → 1. Иначе equal.
+Expected: 2 → 1 only when `a && b`; equal otherwise.
 
 ### before
 
@@ -76,9 +76,9 @@ function result(a, b) {
 }
 ```
 
-## guard: Дополнительное условие после ранних возвратов
+## guard: Added condition after early returns
 
-Ожидание: Только enabled && !blocked && ready && !approved: "ok" → "pending". Остальные входы equal.
+Expected: `"ok"` → `"pending"` only when `enabled && !blocked && ready && !approved`; equal for all other inputs.
 
 ### before
 
@@ -102,9 +102,9 @@ function result(enabled, blocked, ready, approved) {
 }
 ```
 
-## guard_version: Перезапись значения условия
+## guard_version: Overwritten guard value
 
-Ожидание: flag: "yes" → "no"; !flag: "no" → "yes".
+Expected: `flag`: `"yes"` → `"no"`; `!flag`: `"no"` → `"yes"`.
 
 ### before
 
@@ -127,9 +127,9 @@ function result(flag) {
 }
 ```
 
-## early_return: Добавление раннего возврата
+## early_return: Added early return
 
-Ожидание: stop: "normal" → "early"; !stop: equal.
+Expected: `stop`: `"normal"` → `"early"`; `!stop`: equal.
 
 ### before
 
@@ -148,9 +148,9 @@ function result(stop) {
 }
 ```
 
-## fallthrough: Замена неявного undefined
+## fallthrough: Replaced implicit undefined
 
-Ожидание: !flag: undefined → 2; flag: equal.
+Expected: `!flag`: `undefined` → `2`; `flag`: equal.
 
 ### before
 
@@ -169,9 +169,9 @@ function result(flag) {
 }
 ```
 
-## short_circuit: Замена результата правой ветки &&
+## short_circuit: Changed right operand of `&&`
 
-Ожидание: Truthy flag: "old" → "new"; falsy flag: тот же исходный flag, equal (не обязательно false).
+Expected: for truthy `flag`, `"old"` → `"new"`; for falsy `flag`, the same original `flag` value is returned and the result is equal (it need not be `false`).
 
 ### before
 
@@ -189,9 +189,9 @@ function result(flag) {
 }
 ```
 
-## expression: Изменение вычисления
+## expression: Changed computation
 
-Ожидание: changed: input + 1 → input + 2. Не утверждать different для любых JS-входов.
+Expected: `changed`, `input + 1` → `input + 2`. Do not claim `different` for every JavaScript input.
 
 ### before
 
@@ -209,9 +209,9 @@ function result(input) {
 }
 ```
 
-## overwritten: Контроль: изменённая запись убита
+## overwritten: Control: changed write is overwritten
 
-Ожидание: 9 → 9: equal.
+Expected: 9 → 9 (equal).
 
 ### before
 
@@ -233,9 +233,9 @@ function result() {
 }
 ```
 
-## equal_control: Контроль: новое условие с тем же результатом
+## equal_control: Control: changed guard with the same result
 
-Ожидание: 1 → 1: equal на всех входах, изменение управления отдельно.
+Expected: 1 → 1 (equal) for all inputs; report the control change separately.
 
 ### before
 
@@ -255,9 +255,9 @@ function result(flag) {
 }
 ```
 
-## unknown: Контроль: неподдержанный вызов в одной ветке
+## unknown: Control: unsupported call on one branch
 
-Ожидание: flag: 1 → 2 different; !flag: unknown completion; покрытие partial, не unchanged.
+Expected: `flag`: 1 → 2 (different); `!flag`: unknown completion. Coverage is partial, not unchanged.
 
 ### before
 
@@ -279,9 +279,9 @@ function result(flag) {
 }
 ```
 
-## known_expression: Изменение вычисления с известным числовым источником
+## known_expression: Changed computation with a known numeric source
 
-Ожидание: `changed`, вычисление `input + 1 → input + 2`; текущий контракт не требует вычислять арифметику литералов. Семантически 5 → 6.
+Expected: `changed`, computation `input + 1` → `input + 2`; the current contract does not require evaluating arithmetic on literals. The concrete semantic result is 5 → 6.
 
 ### before
 
