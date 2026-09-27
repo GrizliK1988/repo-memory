@@ -1,0 +1,9 @@
+Function result: result
+Context: flag
+Return choice | Before | After
+1 | always | never
+2 | never | always
+Effect: always: 1 -> 2 (Different)
+Unknown under !flag: an unresolved call may prevent normal completion
+Coverage: comparison Partial, presentation Complete; 0 groups omitted.
+Evidence: full.json (ifds-function-a4c6c19726cfb6b3)

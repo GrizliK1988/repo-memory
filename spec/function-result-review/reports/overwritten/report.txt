@@ -1,0 +1,4 @@
+Function result: result
+Unchanged choices: x
+Equal under always: x
+Evidence: full.json (ifds-function-ea296cf53d631aeb)

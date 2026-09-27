@@ -1,0 +1,7 @@
+Function result: result
+Return choice | Before | After
+"early" | never | stop
+"normal" | always | !stop
+Effect: stop: "normal" -> "early" (Different)
+Equal under !stop: "normal"
+Evidence: full.json (ifds-function-c4607f809083110d)

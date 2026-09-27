@@ -1,0 +1,10 @@
+Function result: result
+Context: enabled && !blocked
+Return choice | Before | After
+"ok" | ready | ready && approved
+"pending" | !ready | !ready || !approved
+Effect: ready && !approved: "ok" -> "pending" (Different)
+Unchanged choices: "blocked", "disabled"
+Equal under enabled && !blocked && !ready: "pending"
+Equal under enabled && !blocked && ready && approved: "ok"
+Evidence: full.json (ifds-function-4375681d2efa9eca)

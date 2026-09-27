@@ -1,0 +1,8 @@
+Function result: result
+Return choice | Before | After
+flag && "new" | never | always
+flag && "old" | always | never
+Effect: flag: flag && "old" -> flag && "new" (Different)
+Unknown under !flag: result value theory is insufficient
+Coverage: comparison Partial, presentation Complete; 0 groups omitted.
+Evidence: full.json (ifds-function-c2205e988a486d24)

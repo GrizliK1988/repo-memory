@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "full_report_id": "ifds-function-9aafc217d0eeaee8",
+  "evidence_file": "full.json",
+  "snapshots": [
+    {
+      "side": "before",
+      "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+      "content_id": "fnv1a64-6e627efe23a0cd2a"
+    },
+    {
+      "side": "after",
+      "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+      "content_id": "fnv1a64-4b65bb8b64e92e4e"
+    }
+  ],
+  "selected_function": {
+    "snapshot": {
+      "side": "before",
+      "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+      "content_id": "fnv1a64-6e627efe23a0cd2a"
+    },
+    "declaration": {
+      "path": "snippet.ts",
+      "byte_start": 0,
+      "byte_end": 82,
+      "start_line": 1,
+      "end_line": 6
+    },
+    "expected_name": "result",
+    "expected_enclosing_symbol": null
+  },
+  "counterpart": {
+    "snapshot": {
+      "side": "after",
+      "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+      "content_id": "fnv1a64-4b65bb8b64e92e4e"
+    },
+    "declaration": {
+      "path": "snippet.ts",
+      "byte_start": 0,
+      "byte_end": 82,
+      "start_line": 1,
+      "end_line": 6
+    },
+    "expected_name": "result",
+    "expected_enclosing_symbol": null
+  },
+  "input_names": [
+    "a",
+    "b"
+  ],
+  "before_entry": {
+    "domains": {},
+    "known_values": {},
+    "assumptions": []
+  },
+  "after_entry": {
+    "domains": {},
+    "known_values": {},
+    "assumptions": []
+  },
+  "function_presence": "both",
+  "common_domain_status": "present",
+  "common_domain": [
+    {
+      "values": {}
+    }
+  ],
+  "before_only_domain": [],
+  "after_only_domain": [],
+  "unresolved_domain": [],
+  "before_flow": [
+    {
+      "flow": {
+        "region": {
+          "values": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+                "content_id": "fnv1a64-6e627efe23a0cd2a"
+              },
+              "local": 8589934611
+            },
+            "path_index": 0
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+                "content_id": "fnv1a64-6e627efe23a0cd2a"
+              },
+              "local": 8589934611
+            },
+            "path_index": 1
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+                "content_id": "fnv1a64-6e627efe23a0cd2a"
+              },
+              "local": 8589934611
+            },
+            "path_index": 2
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-6e627efe23a0cd2a",
+                "content_id": "fnv1a64-6e627efe23a0cd2a"
+              },
+              "local": 8589934611
+            },
+            "path_index": 3
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      "evidence": [
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.before.observations",
+          "index": 0
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.before.observations",
+          "index": 1
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.before.observations",
+          "index": 2
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.before.observations",
+          "index": 3
+        }
+      ]
+    }
+  ],
+  "after_flow": [
+    {
+      "flow": {
+        "region": {
+          "values": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+                "content_id": "fnv1a64-4b65bb8b64e92e4e"
+              },
+              "local": 8589934611
+            },
+            "path_index": 0
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+                "content_id": "fnv1a64-4b65bb8b64e92e4e"
+              },
+              "local": 8589934611
+            },
+            "path_index": 1
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+                "content_id": "fnv1a64-4b65bb8b64e92e4e"
+              },
+              "local": 8589934611
+            },
+            "path_index": 2
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-4b65bb8b64e92e4e",
+                "content_id": "fnv1a64-4b65bb8b64e92e4e"
+              },
+              "local": 8589934611
+            },
+            "path_index": 3
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      "evidence": [
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.after.observations",
+          "index": 0
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.after.observations",
+          "index": 1
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.after.observations",
+          "index": 2
+        },
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "analysis.after.observations",
+          "index": 3
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "context": {
+        "values": {}
+      },
+      "choices": [
+        {
+          "result": "x",
+          "before": [
+            {
+              "values": {}
+            }
+          ],
+          "after": [
+            {
+              "values": {}
+            }
+          ]
+        }
+      ],
+      "effect": [
+        {
+          "values": {
+            "0": true,
+            "1": true
+          }
+        }
+      ],
+      "before_result": "x",
+      "after_result": "x",
+      "assessment": "different",
+      "control_changed": true,
+      "value_dependency_changed": true,
+      "return_structure_changed": true,
+      "evidence": [
+        {
+          "report_id": "ifds-function-9aafc217d0eeaee8",
+          "section": "comparison.regions",
+          "index": 3
+        }
+      ]
+    }
+  ],
+  "equal_regions": [
+    {
+      "region": {
+        "values": {
+          "0": false,
+          "1": false
+        }
+      },
+      "before_result": "x",
+      "after_result": "x",
+      "assessment": "equal",
+      "reason": null,
+      "evidence": {
+        "report_id": "ifds-function-9aafc217d0eeaee8",
+        "section": "comparison.regions",
+        "index": 0
+      }
+    },
+    {
+      "region": {
+        "values": {
+          "0": false,
+          "1": true
+        }
+      },
+      "before_result": "x",
+      "after_result": "x",
+      "assessment": "equal",
+      "reason": null,
+      "evidence": {
+        "report_id": "ifds-function-9aafc217d0eeaee8",
+        "section": "comparison.regions",
+        "index": 1
+      }
+    },
+    {
+      "region": {
+        "values": {
+          "0": true,
+          "1": false
+        }
+      },
+      "before_result": "x",
+      "after_result": "x",
+      "assessment": "equal",
+      "reason": null,
+      "evidence": {
+        "report_id": "ifds-function-9aafc217d0eeaee8",
+        "section": "comparison.regions",
+        "index": 2
+      }
+    }
+  ],
+  "unknown_regions": [],
+  "unchanged_choices": [],
+  "coverage": {
+    "before_analysis": "complete",
+    "after_analysis": "complete",
+    "source_alignment": "partial",
+    "input_mapping": "complete",
+    "result_comparison": "complete",
+    "presentation": "complete",
+    "analysis_limits_hit": [],
+    "comparison_limits_hit": [],
+    "omitted_groups": 0,
+    "caller_continuation_open": true
+  }
+}

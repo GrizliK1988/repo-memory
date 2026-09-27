@@ -1,0 +1,8 @@
+Function result: result
+Return choice | Before | After
+x | always | always
+Effect: a && b: x -> x (Different)
+Equal under !a && !b: x
+Equal under !a && b: x
+Equal under a && !b: x
+Evidence: full.json (ifds-function-9aafc217d0eeaee8)

@@ -1,0 +1,6 @@
+Function result: result
+Return choice | Before | After
+input + 1 | always | never
+input + 2 | never | always
+Effect: always: input + 1 -> input + 2 (Changed)
+Evidence: full.json (ifds-function-f21bf44552e50b8f)

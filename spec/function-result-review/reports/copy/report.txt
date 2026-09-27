@@ -1,0 +1,5 @@
+Function result: result
+Return choice | Before | After
+saved | always | always
+Effect: always: saved -> saved (Different)
+Evidence: full.json (ifds-function-2c0b3176cf4e161d)

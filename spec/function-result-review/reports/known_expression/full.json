@@ -1,0 +1,1055 @@
+{
+  "schema_version": 1,
+  "analysis": {
+    "schema_version": 3,
+    "query": {
+      "before": {
+        "id": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+          "content_id": "fnv1a64-e3a5c86d3e96acdb"
+        },
+        "repository_id": "local-example"
+      },
+      "after": {
+        "id": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-23393863970f6222",
+          "content_id": "fnv1a64-23393863970f6222"
+        },
+        "repository_id": "local-example"
+      },
+      "diff": {
+        "before_content_id": "fnv1a64-e3a5c86d3e96acdb",
+        "after_content_id": "fnv1a64-23393863970f6222",
+        "changes": [
+          {
+            "kind": "modified",
+            "before_path": "snippet.ts",
+            "after_path": "snippet.ts",
+            "before_content_id": "fnv1a64-e3a5c86d3e96acdb",
+            "after_content_id": "fnv1a64-23393863970f6222"
+          }
+        ]
+      },
+      "selected_function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+          "content_id": "fnv1a64-e3a5c86d3e96acdb"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 58,
+          "start_line": 1,
+          "end_line": 4
+        },
+        "expected_name": "result",
+        "expected_enclosing_symbol": null
+      },
+      "counterpart": null,
+      "before_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "after_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "capabilities": {
+        "stage": 1,
+        "capabilities": [
+          "straight_line"
+        ],
+        "version": "stage-1"
+      },
+      "summaries": [],
+      "limits": {
+        "time_ms": 120000,
+        "memory_bytes": 4294967296,
+        "processed_path_edges": 1000000,
+        "witnesses_per_relation": 3,
+        "output_nodes": 100000
+      }
+    },
+    "counterpart_status": "matched",
+    "input_correspondence": [],
+    "input_mapping_coverage": "complete",
+    "before": {
+      "function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+          "content_id": "fnv1a64-e3a5c86d3e96acdb"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 58,
+          "start_line": 1,
+          "end_line": 4
+        },
+        "expected_name": "result",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+          "content_id": "fnv1a64-e3a5c86d3e96acdb"
+        },
+        "local": 2
+      },
+      "parameters": [],
+      "parameter_names": [],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+              "content_id": "fnv1a64-e3a5c86d3e96acdb"
+            },
+            "local": 8589934599
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 39,
+            "byte_end": 56,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "effective_condition": null,
+          "guards": [],
+          "value": {
+            "kind": "expression",
+            "text": "input + 1",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 46,
+              "byte_end": 55,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                  "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                },
+                "local": 8589934598
+              },
+              "role": null,
+              "operation": "compute:Add",
+              "literal": null,
+              "operator": {
+                "kind": "add"
+              },
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                      "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                    },
+                    "local": 8589934596
+                  },
+                  "role": {
+                    "kind": "operand",
+                    "index": 0
+                  },
+                  "operation": "read",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                          "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                        },
+                        "local": 8589934596
+                      },
+                      "role": null,
+                      "operation": "binding_value",
+                      "literal": null,
+                      "operator": null,
+                      "origin": null,
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                              "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                            },
+                            "local": 8589934595
+                          },
+                          "role": null,
+                          "operation": "write",
+                          "literal": null,
+                          "operator": null,
+                          "origin": {
+                            "kind": "write",
+                            "value": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                                "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                              },
+                              "local": 8589934595
+                            }
+                          },
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "before",
+                                  "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                                  "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                                },
+                                "local": 8589934594
+                              },
+                              "role": null,
+                              "operation": "literal",
+                              "literal": {
+                                "kind": "number",
+                                "value": "4"
+                              },
+                              "operator": null,
+                              "origin": {
+                                "kind": "write",
+                                "value": {
+                                  "snapshot": {
+                                    "side": "before",
+                                    "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                                    "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                                  },
+                                  "local": 8589934594
+                                }
+                              },
+                              "inputs": [],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                },
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                      "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                    },
+                    "local": 8589934597
+                  },
+                  "role": {
+                    "kind": "operand",
+                    "index": 1
+                  },
+                  "operation": "literal",
+                  "literal": {
+                    "kind": "number",
+                    "value": "1"
+                  },
+                  "operator": null,
+                  "origin": {
+                    "kind": "write",
+                    "value": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                        "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                      },
+                      "local": 8589934597
+                    }
+                  },
+                  "inputs": [],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    },
+    "after": {
+      "function": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-23393863970f6222",
+          "content_id": "fnv1a64-23393863970f6222"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 58,
+          "start_line": 1,
+          "end_line": 4
+        },
+        "expected_name": "result",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-23393863970f6222",
+          "content_id": "fnv1a64-23393863970f6222"
+        },
+        "local": 2
+      },
+      "parameters": [],
+      "parameter_names": [],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-23393863970f6222",
+              "content_id": "fnv1a64-23393863970f6222"
+            },
+            "local": 8589934599
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 39,
+            "byte_end": 56,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "effective_condition": null,
+          "guards": [],
+          "value": {
+            "kind": "expression",
+            "text": "input + 2",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 46,
+              "byte_end": 55,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-23393863970f6222",
+                  "content_id": "fnv1a64-23393863970f6222"
+                },
+                "local": 8589934598
+              },
+              "role": null,
+              "operation": "compute:Add",
+              "literal": null,
+              "operator": {
+                "kind": "add"
+              },
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-23393863970f6222",
+                      "content_id": "fnv1a64-23393863970f6222"
+                    },
+                    "local": 8589934596
+                  },
+                  "role": {
+                    "kind": "operand",
+                    "index": 0
+                  },
+                  "operation": "read",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-23393863970f6222",
+                          "content_id": "fnv1a64-23393863970f6222"
+                        },
+                        "local": 8589934596
+                      },
+                      "role": null,
+                      "operation": "binding_value",
+                      "literal": null,
+                      "operator": null,
+                      "origin": null,
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-23393863970f6222",
+                              "content_id": "fnv1a64-23393863970f6222"
+                            },
+                            "local": 8589934595
+                          },
+                          "role": null,
+                          "operation": "write",
+                          "literal": null,
+                          "operator": null,
+                          "origin": {
+                            "kind": "write",
+                            "value": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-23393863970f6222",
+                                "content_id": "fnv1a64-23393863970f6222"
+                              },
+                              "local": 8589934595
+                            }
+                          },
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "after",
+                                  "revision": "local-after-fnv1a64-23393863970f6222",
+                                  "content_id": "fnv1a64-23393863970f6222"
+                                },
+                                "local": 8589934594
+                              },
+                              "role": null,
+                              "operation": "literal",
+                              "literal": {
+                                "kind": "number",
+                                "value": "4"
+                              },
+                              "operator": null,
+                              "origin": {
+                                "kind": "write",
+                                "value": {
+                                  "snapshot": {
+                                    "side": "after",
+                                    "revision": "local-after-fnv1a64-23393863970f6222",
+                                    "content_id": "fnv1a64-23393863970f6222"
+                                  },
+                                  "local": 8589934594
+                                }
+                              },
+                              "inputs": [],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                },
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-23393863970f6222",
+                      "content_id": "fnv1a64-23393863970f6222"
+                    },
+                    "local": 8589934597
+                  },
+                  "role": {
+                    "kind": "operand",
+                    "index": 1
+                  },
+                  "operation": "literal",
+                  "literal": {
+                    "kind": "number",
+                    "value": "2"
+                  },
+                  "operator": null,
+                  "origin": {
+                    "kind": "write",
+                    "value": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-23393863970f6222",
+                        "content_id": "fnv1a64-23393863970f6222"
+                      },
+                      "local": 8589934597
+                    }
+                  },
+                  "inputs": [],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    }
+  },
+  "comparison": {
+    "function_presence": "both",
+    "before_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "after_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "before_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+            "content_id": "fnv1a64-e3a5c86d3e96acdb"
+          },
+          "local": 8589934599
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 39,
+          "byte_end": 56,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "effective_condition": null,
+        "guards": [],
+        "value": {
+          "kind": "expression",
+          "text": "input + 1",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 46,
+            "byte_end": 55,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                "content_id": "fnv1a64-e3a5c86d3e96acdb"
+              },
+              "local": 8589934598
+            },
+            "role": null,
+            "operation": "compute:Add",
+            "literal": null,
+            "operator": {
+              "kind": "add"
+            },
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                    "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                  },
+                  "local": 8589934596
+                },
+                "role": {
+                  "kind": "operand",
+                  "index": 0
+                },
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                        "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                      },
+                      "local": 8589934596
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                            "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                          },
+                          "local": 8589934595
+                        },
+                        "role": null,
+                        "operation": "write",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "write",
+                          "value": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                              "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                            },
+                            "local": 8589934595
+                          }
+                        },
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                                "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                              },
+                              "local": 8589934594
+                            },
+                            "role": null,
+                            "operation": "literal",
+                            "literal": {
+                              "kind": "number",
+                              "value": "4"
+                            },
+                            "operator": null,
+                            "origin": {
+                              "kind": "write",
+                              "value": {
+                                "snapshot": {
+                                  "side": "before",
+                                  "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                                  "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                                },
+                                "local": 8589934594
+                              }
+                            },
+                            "inputs": [],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              },
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                    "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                  },
+                  "local": 8589934597
+                },
+                "role": {
+                  "kind": "operand",
+                  "index": 1
+                },
+                "operation": "literal",
+                "literal": {
+                  "kind": "number",
+                  "value": "1"
+                },
+                "operator": null,
+                "origin": {
+                  "kind": "write",
+                  "value": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                      "content_id": "fnv1a64-e3a5c86d3e96acdb"
+                    },
+                    "local": 8589934597
+                  }
+                },
+                "inputs": [],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "after_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-23393863970f6222",
+            "content_id": "fnv1a64-23393863970f6222"
+          },
+          "local": 8589934599
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 39,
+          "byte_end": 56,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "effective_condition": null,
+        "guards": [],
+        "value": {
+          "kind": "expression",
+          "text": "input + 2",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 46,
+            "byte_end": 55,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-23393863970f6222",
+                "content_id": "fnv1a64-23393863970f6222"
+              },
+              "local": 8589934598
+            },
+            "role": null,
+            "operation": "compute:Add",
+            "literal": null,
+            "operator": {
+              "kind": "add"
+            },
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-23393863970f6222",
+                    "content_id": "fnv1a64-23393863970f6222"
+                  },
+                  "local": 8589934596
+                },
+                "role": {
+                  "kind": "operand",
+                  "index": 0
+                },
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-23393863970f6222",
+                        "content_id": "fnv1a64-23393863970f6222"
+                      },
+                      "local": 8589934596
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-23393863970f6222",
+                            "content_id": "fnv1a64-23393863970f6222"
+                          },
+                          "local": 8589934595
+                        },
+                        "role": null,
+                        "operation": "write",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "write",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-23393863970f6222",
+                              "content_id": "fnv1a64-23393863970f6222"
+                            },
+                            "local": 8589934595
+                          }
+                        },
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-23393863970f6222",
+                                "content_id": "fnv1a64-23393863970f6222"
+                              },
+                              "local": 8589934594
+                            },
+                            "role": null,
+                            "operation": "literal",
+                            "literal": {
+                              "kind": "number",
+                              "value": "4"
+                            },
+                            "operator": null,
+                            "origin": {
+                              "kind": "write",
+                              "value": {
+                                "snapshot": {
+                                  "side": "after",
+                                  "revision": "local-after-fnv1a64-23393863970f6222",
+                                  "content_id": "fnv1a64-23393863970f6222"
+                                },
+                                "local": 8589934594
+                              }
+                            },
+                            "inputs": [],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              },
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-23393863970f6222",
+                    "content_id": "fnv1a64-23393863970f6222"
+                  },
+                  "local": 8589934597
+                },
+                "role": {
+                  "kind": "operand",
+                  "index": 1
+                },
+                "operation": "literal",
+                "literal": {
+                  "kind": "number",
+                  "value": "2"
+                },
+                "operator": null,
+                "origin": {
+                  "kind": "write",
+                  "value": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-23393863970f6222",
+                      "content_id": "fnv1a64-23393863970f6222"
+                    },
+                    "local": 8589934597
+                  }
+                },
+                "inputs": [],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "common_domain_status": "present",
+    "common_domain": [
+      {
+        "values": {}
+      }
+    ],
+    "before_only_domain": [],
+    "after_only_domain": [],
+    "outside_both_domain": [],
+    "unresolved_domain": [],
+    "before_flow": [
+      {
+        "region": {
+          "values": {}
+        },
+        "result": "input + 1",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                "content_id": "fnv1a64-e3a5c86d3e96acdb"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "after_flow": [
+      {
+        "region": {
+          "values": {}
+        },
+        "result": "input + 2",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-23393863970f6222",
+                "content_id": "fnv1a64-23393863970f6222"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "regions": [
+      {
+        "region": {
+          "values": {}
+        },
+        "before_result": "input + 1",
+        "after_result": "input + 2",
+        "before_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-e3a5c86d3e96acdb",
+                "content_id": "fnv1a64-e3a5c86d3e96acdb"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "after_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-23393863970f6222",
+                "content_id": "fnv1a64-23393863970f6222"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "assessment": "changed",
+        "evidence": "supported",
+        "proof": "changed_computation",
+        "control_changed": false,
+        "value_dependency_changed": true,
+        "return_structure_changed": true,
+        "unknown_reason": null
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "source_alignment_coverage": "partial",
+    "comparison_coverage": "complete",
+    "limits_hit": []
+  },
+  "findings": [
+    {
+      "assessment": "changed",
+      "before_result": "input + 1",
+      "after_result": "input + 2",
+      "regions": [
+        0
+      ],
+      "control_changed": false,
+      "value_dependency_changed": true,
+      "return_structure_changed": true,
+      "before_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 39,
+          "byte_end": 56,
+          "start_line": 3,
+          "end_line": 3
+        }
+      ],
+      "after_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 39,
+          "byte_end": 56,
+          "start_line": 3,
+          "end_line": 3
+        }
+      ],
+      "attribution_certain": true
+    }
+  ]
+}

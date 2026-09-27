@@ -1,0 +1,10 @@
+Function result: result
+Return choice | Before | After
+"no" | !flag | flag
+"yes" | flag | !flag
+Effect: !flag: "no" -> "yes" (Different)
+Return choice | Before | After
+"no" | !flag | flag
+"yes" | flag | !flag
+Effect: flag: "yes" -> "no" (Different)
+Evidence: full.json (ifds-function-5a4665167deb8198)

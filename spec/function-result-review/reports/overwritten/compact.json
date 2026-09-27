@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "full_report_id": "ifds-function-ea296cf53d631aeb",
+  "evidence_file": "full.json",
+  "snapshots": [
+    {
+      "side": "before",
+      "revision": "local-before-fnv1a64-5f3235bf9b30dfab",
+      "content_id": "fnv1a64-5f3235bf9b30dfab"
+    },
+    {
+      "side": "after",
+      "revision": "local-after-fnv1a64-d66124066f4375e4",
+      "content_id": "fnv1a64-d66124066f4375e4"
+    }
+  ],
+  "selected_function": {
+    "snapshot": {
+      "side": "before",
+      "revision": "local-before-fnv1a64-5f3235bf9b30dfab",
+      "content_id": "fnv1a64-5f3235bf9b30dfab"
+    },
+    "declaration": {
+      "path": "snippet.ts",
+      "byte_start": 0,
+      "byte_end": 55,
+      "start_line": 1,
+      "end_line": 5
+    },
+    "expected_name": "result",
+    "expected_enclosing_symbol": null
+  },
+  "counterpart": {
+    "snapshot": {
+      "side": "after",
+      "revision": "local-after-fnv1a64-d66124066f4375e4",
+      "content_id": "fnv1a64-d66124066f4375e4"
+    },
+    "declaration": {
+      "path": "snippet.ts",
+      "byte_start": 0,
+      "byte_end": 55,
+      "start_line": 1,
+      "end_line": 5
+    },
+    "expected_name": "result",
+    "expected_enclosing_symbol": null
+  },
+  "input_names": [],
+  "before_entry": {
+    "domains": {},
+    "known_values": {},
+    "assumptions": []
+  },
+  "after_entry": {
+    "domains": {},
+    "known_values": {},
+    "assumptions": []
+  },
+  "function_presence": "both",
+  "common_domain_status": "present",
+  "common_domain": [
+    {
+      "values": {}
+    }
+  ],
+  "before_only_domain": [],
+  "after_only_domain": [],
+  "unresolved_domain": [],
+  "before_flow": [
+    {
+      "flow": {
+        "region": {
+          "values": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-5f3235bf9b30dfab",
+                "content_id": "fnv1a64-5f3235bf9b30dfab"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      "evidence": [
+        {
+          "report_id": "ifds-function-ea296cf53d631aeb",
+          "section": "analysis.before.observations",
+          "index": 0
+        }
+      ]
+    }
+  ],
+  "after_flow": [
+    {
+      "flow": {
+        "region": {
+          "values": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-d66124066f4375e4",
+                "content_id": "fnv1a64-d66124066f4375e4"
+              },
+              "local": 8589934599
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      "evidence": [
+        {
+          "report_id": "ifds-function-ea296cf53d631aeb",
+          "section": "analysis.after.observations",
+          "index": 0
+        }
+      ]
+    }
+  ],
+  "findings": [],
+  "equal_regions": [
+    {
+      "region": {
+        "values": {}
+      },
+      "before_result": "x",
+      "after_result": "x",
+      "assessment": "equal",
+      "reason": null,
+      "evidence": {
+        "report_id": "ifds-function-ea296cf53d631aeb",
+        "section": "comparison.regions",
+        "index": 0
+      }
+    }
+  ],
+  "unknown_regions": [],
+  "unchanged_choices": [
+    "x"
+  ],
+  "coverage": {
+    "before_analysis": "complete",
+    "after_analysis": "complete",
+    "source_alignment": "partial",
+    "input_mapping": "complete",
+    "result_comparison": "complete",
+    "presentation": "complete",
+    "analysis_limits_hit": [],
+    "comparison_limits_hit": [],
+    "omitted_groups": 0,
+    "caller_continuation_open": true
+  }
+}
