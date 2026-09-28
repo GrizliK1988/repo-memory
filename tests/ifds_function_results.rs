@@ -379,8 +379,17 @@ fn changed_guard_versions_and_write_order() {
             .iter()
             .all(|region| region.assessment == ResultAssessment::Different)
     );
-    assert_eq!(compact.findings.len(), 2);
-    let (full, _) = reports(
+    assert_eq!(compact.findings.len(), 1);
+    assert_eq!(compact.findings[0].effects.len(), 2);
+    assert_eq!(
+        compact
+            .render_text(&full)
+            .matches("Return choice | Before | After")
+            .count(),
+        1
+    );
+    compact.validate_with_full(&full).unwrap();
+    let (full, compact) = reports(
         "function priority(a: boolean, b: boolean) { let result = 0; if (a) result = 1; if (b) result = 2; return result; }",
         "function priority(a: boolean, b: boolean) { let result = 0; if (b) result = 2; if (a) result = 1; return result; }",
         empty.clone(),
@@ -395,4 +404,10 @@ fn changed_guard_versions_and_write_order() {
                     && region.assessment == ResultAssessment::Different
             )
     );
+    assert!(
+        compact
+            .render_text(&full)
+            .contains("a && b: result (2) -> result (1) (Different)")
+    );
+    compact.validate_with_full(&full).unwrap();
 }

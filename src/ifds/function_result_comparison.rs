@@ -941,6 +941,72 @@ fn group_flows(slots: &[u32], atoms: &[FlowAtom]) -> Vec<SnapshotResultFlow> {
     output
 }
 
+/// Refine already established side flows by their selected return observation.
+/// This changes presentation granularity, not the domain or value assessment.
+pub(crate) fn split_result_flows(
+    analysis: &FunctionResultAnalysis,
+    side: &Option<FunctionSnapshotResult>,
+    flows: &[SnapshotResultFlow],
+) -> Vec<SnapshotResultFlow> {
+    let Some(side) = side else {
+        return flows.to_vec();
+    };
+    let slots = collect_slots(analysis);
+    if slots.len() > 12 {
+        return flows.to_vec();
+    }
+    let mut output = Vec::new();
+    for flow in flows {
+        if flow.observations.len() <= 1 || flow.completion != Coverage::Complete {
+            output.push(flow.clone());
+            continue;
+        }
+        let mut groups: BTreeMap<ResultObservationRef, Vec<Vec<bool>>> = BTreeMap::new();
+        let mut unresolved = false;
+        for mask in 0..(1_usize << slots.len()) {
+            let bits: Vec<_> = (0..slots.len())
+                .map(|index| mask & (1 << index) != 0)
+                .collect();
+            let values: BTreeMap<_, _> = slots.iter().copied().zip(bits.iter().copied()).collect();
+            if !flow
+                .region
+                .values
+                .iter()
+                .all(|(slot, value)| values.get(slot) == Some(value))
+            {
+                continue;
+            }
+            let selection = select_observation(side, &values);
+            if let Some(item) = selection.observation.filter(|_| !selection.unresolved) {
+                let reference = observation_ref(item);
+                if flow.observations.contains(&reference) {
+                    groups.entry(reference).or_default().push(bits);
+                    continue;
+                }
+            }
+            unresolved = true;
+            break;
+        }
+        if unresolved {
+            output.push(flow.clone());
+            continue;
+        }
+        for (reference, bits) in groups {
+            for region in grouped_domains(&slots, &bits) {
+                output.push(SnapshotResultFlow {
+                    region,
+                    observations: vec![reference.clone()],
+                    ..flow.clone()
+                });
+            }
+        }
+    }
+    output.sort_by(|a, b| {
+        (&a.region.values, &a.observations).cmp(&(&b.region.values, &b.observations))
+    });
+    output
+}
+
 /// Compare supported normal results under the paired-input domain.
 /// The two side flows remain available even when that domain has no intersection.
 pub fn compare_function_results(analysis: &FunctionResultAnalysis) -> FunctionResultComparison {

@@ -294,6 +294,16 @@ references resolve into that exact report and snapshot pair. Reuse the compact
 report's deterministic IDs, sharing, and evidence principles without requiring a
 selected binding or silently changing `VariableSourceReport`.
 
+Compact results preserve the source expression and an optional typed primitive
+value established for the whole feasible region. Copies may therefore display
+`saved (1) -> saved (2)` while arithmetic expressions retain their established
+`changed` or `unknown` assessments without evaluation. Return choices account
+for value identity as well as expression text. Symmetric effects of a proven
+common guard inversion share one finding while retaining separate directional
+results, regions, and evidence. Dependency source positions support concise
+links from returns to contributing writes. These structures use full report
+schema 2, analysis schema 4, and compact schema 2.
+
 When the before and after entry domains do not intersect, show the guarded
 normal-result flow for each snapshot under its own assumptions, then state that
 there are no common inputs. Keep each flow's result expressions, dependencies,

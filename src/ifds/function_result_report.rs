@@ -8,8 +8,12 @@ use super::snapshots::{AnalysisEnvironment, SnapshotProvider};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 1;
-pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 1;
+mod values;
+use values::*;
+pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
+
+pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 2;
+pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -53,7 +57,7 @@ impl FunctionResultReport {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FunctionChoiceConditions {
-    pub result: String,
+    pub result: PresentedResult,
     /// These regions are relative to their enclosing finding's common context.
     pub before: Vec<BooleanRegion>,
     pub after: Vec<BooleanRegion>,
@@ -66,21 +70,21 @@ pub struct CompactResultFinding {
     pub choices: Vec<FunctionChoiceConditions>,
     /// The same-input effect regions are relative to `context`.
     pub effect: Vec<BooleanRegion>,
-    pub before_result: Option<String>,
-    pub after_result: Option<String>,
+    pub effects: Vec<CompactResultRegion>,
     pub assessment: ResultAssessment,
     pub control_changed: bool,
     pub value_dependency_changed: bool,
     pub return_structure_changed: bool,
     pub evidence: Vec<EvidenceRef>,
+    pub attribution_certain: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct CompactResultRegion {
     pub region: BooleanRegion,
-    pub before_result: Option<String>,
-    pub after_result: Option<String>,
+    pub before_result: Option<PresentedResult>,
+    pub after_result: Option<PresentedResult>,
     pub assessment: ResultAssessment,
     pub reason: Option<String>,
     pub evidence: EvidenceRef,
@@ -90,6 +94,7 @@ pub struct CompactResultRegion {
 #[serde(deny_unknown_fields)]
 pub struct CompactSideFlow {
     pub flow: SnapshotResultFlow,
+    pub result: Option<PresentedResult>,
     pub evidence: Vec<EvidenceRef>,
 }
 
@@ -131,7 +136,7 @@ pub struct FunctionResultCompactReport {
     pub findings: Vec<CompactResultFinding>,
     pub equal_regions: Vec<CompactResultRegion>,
     pub unknown_regions: Vec<CompactResultRegion>,
-    pub unchanged_choices: Vec<String>,
+    pub unchanged_choices: Vec<PresentedResult>,
     pub coverage: FunctionReportCoverage,
 }
 
@@ -388,6 +393,7 @@ fn compact_flows(
         .iter()
         .map(|flow| CompactSideFlow {
             flow: flow.clone(),
+            result: present_result(id, section, side, &flow.observations, &flow.result),
             evidence: flow
                 .observations
                 .iter()
@@ -400,13 +406,16 @@ fn compact_flows(
         .collect()
 }
 
-fn choice_regions(flows: &[SnapshotResultFlow], result: &str) -> Vec<BooleanRegion> {
+fn choice_regions(flows: &[CompactSideFlow], identity: &str) -> Vec<BooleanRegion> {
     let mut regions: Vec<_> = flows
         .iter()
         .filter(|flow| {
-            flow.result.as_deref() == Some(result) && flow.completion == Coverage::Complete
+            flow.result
+                .as_ref()
+                .is_some_and(|result| result.identity == identity)
+                && flow.flow.completion == Coverage::Complete
         })
-        .map(|flow| flow.region.clone())
+        .map(|flow| flow.flow.region.clone())
         .collect();
     regions.sort_by(|a, b| a.values.cmp(&b.values));
     regions.dedup();
@@ -480,75 +489,199 @@ fn relative(regions: Vec<BooleanRegion>, context: &BooleanRegion) -> Vec<Boolean
         .collect()
 }
 
+fn guard_origins(
+    full: &FunctionResultReport,
+    region: &ComparedResultRegion,
+) -> (
+    BTreeSet<super::model::NodeId>,
+    BTreeSet<super::model::NodeId>,
+) {
+    let sites = |side: &Option<FunctionSnapshotResult>, refs: &[ResultObservationRef]| {
+        refs.iter()
+            .filter_map(|reference| observation(side, reference))
+            .flat_map(|(_, item)| item.guards.iter().map(|guard| guard.branch.clone()))
+            .collect()
+    };
+    (
+        sites(&full.analysis.before, &region.before_observations),
+        sites(&full.analysis.after, &region.after_observations),
+    )
+}
+
 pub fn compact_function_result_report(
     full: &FunctionResultReport,
     options: FunctionPresentationOptions,
 ) -> FunctionResultCompactReport {
     let id = report_id(full);
     let comparison = &full.comparison;
-    let mut all_findings = Vec::new();
-    let mut affected_choices = BTreeSet::new();
+    let before_flow = compact_flows(
+        &id,
+        "analysis.before.observations",
+        &full.analysis.before,
+        &split_result_flows(
+            &full.analysis,
+            &full.analysis.before,
+            &comparison.before_flow,
+        ),
+    );
+    let after_flow = compact_flows(
+        &id,
+        "analysis.after.observations",
+        &full.analysis.after,
+        &split_result_flows(&full.analysis, &full.analysis.after, &comparison.after_flow),
+    );
+    let mut result_choices: BTreeMap<String, PresentedResult> = BTreeMap::new();
+    for flow in before_flow.iter().chain(&after_flow) {
+        if flow.flow.completion == Coverage::Complete
+            && let Some(result) = &flow.result
+        {
+            result_choices
+                .entry(result.identity.clone())
+                .and_modify(|target| merge_result(target, result))
+                .or_insert_with(|| result.clone());
+        }
+    }
     let has_changed_result = full.findings.iter().any(|finding| {
         !matches!(
             finding.assessment,
             ResultAssessment::Equal | ResultAssessment::Unknown
         )
     });
+    let mut groups: BTreeMap<String, (Vec<CompactResultRegion>, &FunctionResultFinding)> =
+        BTreeMap::new();
+    let mut affected_choices = BTreeSet::new();
+    let mut affected_expressions = BTreeSet::new();
     for finding in &full.findings {
         if finding.assessment == ResultAssessment::Unknown
             || (has_changed_result && finding.assessment == ResultAssessment::Equal)
         {
             continue;
         }
-        let choices: BTreeSet<String> =
-            [finding.before_result.clone(), finding.after_result.clone()]
+        for index in &finding.regions {
+            let effect = compact_region(full, &id, *index);
+            let identities: Vec<_> = [&effect.before_result, &effect.after_result]
                 .into_iter()
-                .flatten()
+                .map(|result| result.as_ref().map(|result| &result.identity))
                 .collect();
-        if finding.assessment != ResultAssessment::Equal {
-            affected_choices.extend(choices.iter().cloned());
+            let region = &comparison.regions[*index];
+            let origins = guard_origins(full, region);
+            let key = serde_json::to_string(&(
+                identities,
+                origins,
+                finding.assessment,
+                finding.control_changed,
+                finding.value_dependency_changed,
+                finding.return_structure_changed,
+            ))
+            .unwrap();
+            if finding.assessment != ResultAssessment::Equal {
+                for result in [&effect.before_result, &effect.after_result]
+                    .into_iter()
+                    .flatten()
+                {
+                    affected_choices.insert(result.identity.clone());
+                    affected_expressions.insert(result.expression.clone());
+                }
+            }
+            groups
+                .entry(key)
+                .or_insert_with(|| (Vec::new(), finding))
+                .0
+                .push(effect);
         }
-        let mut complete = Vec::new();
-        for result in choices {
-            complete.extend(choice_regions(&comparison.before_flow, &result));
-            complete.extend(choice_regions(&comparison.after_flow, &result));
+    }
+    let mut grouped: Vec<_> = groups.into_values().collect();
+    let mut candidates: BTreeMap<String, usize> = BTreeMap::new();
+    let mut merged = BTreeSet::new();
+    for index in 0..grouped.len() {
+        let (effects, finding) = &grouped[index];
+        if effects.len() != 1 || !finding.control_changed {
+            continue;
         }
-        let context = common_context(&complete);
-        let mut choices: Vec<_> = [finding.before_result.clone(), finding.after_result.clone()]
-            .into_iter()
+        let effect = &effects[0];
+        let (Some(before), Some(after)) = (&effect.before_result, &effect.after_result) else {
+            continue;
+        };
+        let mut pair = [&before.identity, &after.identity];
+        pair.sort();
+        let region = &comparison.regions[effect.evidence.index];
+        let origins = guard_origins(full, region);
+        let key = serde_json::to_string(&(
+            pair,
+            origins,
+            finding.assessment,
+            finding.value_dependency_changed,
+            finding.return_structure_changed,
+        ))
+        .unwrap();
+        if let Some(&previous) = candidates.get(&key) {
+            if grouped[previous].0.len() == 1
+                && symmetric_guard(full, &grouped[previous].0[0], effect)
+            {
+                let effects = effects.clone();
+                grouped[previous].0.extend(effects);
+                merged.insert(index);
+            }
+        } else {
+            candidates.insert(key, index);
+        }
+    }
+    let mut all_findings = Vec::new();
+    for (index, (mut effects, finding)) in grouped.into_iter().enumerate() {
+        if merged.contains(&index) {
+            continue;
+        }
+        effects.sort_by(|a, b| a.region.values.cmp(&b.region.values));
+        let identities: BTreeSet<_> = effects
+            .iter()
+            .flat_map(|effect| [&effect.before_result, &effect.after_result])
             .flatten()
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .map(|result| FunctionChoiceConditions {
-                before: relative(choice_regions(&comparison.before_flow, &result), &context),
-                after: relative(choice_regions(&comparison.after_flow, &result), &context),
-                result,
+            .map(|result| result.identity.clone())
+            .collect();
+        let complete: Vec<_> = identities
+            .iter()
+            .flat_map(|identity| {
+                choice_regions(&before_flow, identity)
+                    .into_iter()
+                    .chain(choice_regions(&after_flow, identity))
             })
             .collect();
-        choices.sort_by(|a, b| a.result.cmp(&b.result));
+        let context = common_context(&complete);
+        let choices = identities
+            .iter()
+            .filter_map(|identity| {
+                result_choices
+                    .get(identity)
+                    .map(|result| FunctionChoiceConditions {
+                        result: result.clone(),
+                        before: relative(choice_regions(&before_flow, identity), &context),
+                        after: relative(choice_regions(&after_flow, identity), &context),
+                    })
+            })
+            .collect();
         let effect = relative(
-            finding
-                .regions
-                .iter()
-                .map(|index| comparison.regions[*index].region.clone())
-                .collect(),
+            effects.iter().map(|effect| effect.region.clone()).collect(),
             &context,
         );
+        for item in &mut effects {
+            for slot in context.values.keys() {
+                item.region.values.remove(slot);
+            }
+        }
         all_findings.push(CompactResultFinding {
             context,
             choices,
             effect,
-            before_result: finding.before_result.clone(),
-            after_result: finding.after_result.clone(),
+            evidence: effects
+                .iter()
+                .map(|effect| effect.evidence.clone())
+                .collect(),
+            effects,
             assessment: finding.assessment,
             control_changed: finding.control_changed,
             value_dependency_changed: finding.value_dependency_changed,
             return_structure_changed: finding.return_structure_changed,
-            evidence: finding
-                .regions
-                .iter()
-                .map(|index| reference(&id, "comparison.regions", *index))
-                .collect(),
+            attribution_certain: finding.attribution_certain,
         });
     }
     let all_count = all_findings.len();
@@ -560,49 +693,30 @@ pub fn compact_function_result_report(
         .enumerate()
         .filter(|(_, region)| {
             region.assessment == ResultAssessment::Equal
-                && (affected_choices.is_empty()
+                && (affected_expressions.is_empty()
                     || region
                         .before_result
                         .as_ref()
-                        .is_some_and(|r| affected_choices.contains(r)))
+                        .is_some_and(|expression| affected_expressions.contains(expression)))
         })
-        .map(|(index, region)| CompactResultRegion {
-            region: region.region.clone(),
-            before_result: region.before_result.clone(),
-            after_result: region.after_result.clone(),
-            assessment: region.assessment,
-            reason: None,
-            evidence: reference(&id, "comparison.regions", index),
-        })
+        .map(|(index, _)| compact_region(full, &id, index))
         .collect();
     let unknown_regions = comparison
         .regions
         .iter()
         .enumerate()
         .filter(|(_, region)| region.assessment == ResultAssessment::Unknown)
-        .map(|(index, region)| CompactResultRegion {
-            region: region.region.clone(),
-            before_result: region.before_result.clone(),
-            after_result: region.after_result.clone(),
-            assessment: region.assessment,
-            reason: region.unknown_reason.clone(),
-            evidence: reference(&id, "comparison.regions", index),
-        })
-        .collect();
-    let all_choices: BTreeSet<String> = comparison
-        .before_flow
-        .iter()
-        .chain(&comparison.after_flow)
-        .filter_map(|flow| flow.result.clone())
+        .map(|(index, _)| compact_region(full, &id, index))
         .collect();
     let unchanged_choices = if comparison.comparison_coverage == Coverage::Complete {
-        all_choices
+        result_choices
             .into_iter()
-            .filter(|result| {
-                !affected_choices.contains(result)
-                    && choice_regions(&comparison.before_flow, result)
-                        == choice_regions(&comparison.after_flow, result)
+            .filter(|(identity, _)| {
+                !affected_choices.contains(identity)
+                    && choice_regions(&before_flow, identity)
+                        == choice_regions(&after_flow, identity)
             })
+            .map(|(_, result)| result)
             .collect()
     } else {
         Vec::new()
@@ -651,18 +765,8 @@ pub fn compact_function_result_report(
         before_only_domain: comparison.before_only_domain.clone(),
         after_only_domain: comparison.after_only_domain.clone(),
         unresolved_domain: comparison.unresolved_domain.clone(),
-        before_flow: compact_flows(
-            &id,
-            "analysis.before.observations",
-            &full.analysis.before,
-            &comparison.before_flow,
-        ),
-        after_flow: compact_flows(
-            &id,
-            "analysis.after.observations",
-            &full.analysis.after,
-            &comparison.after_flow,
-        ),
+        before_flow,
+        after_flow,
         findings: all_findings,
         equal_regions,
         unknown_regions,
@@ -944,7 +1048,9 @@ impl FunctionResultCompactReport {
                 lines.push(format!(
                     "Before {}: {} ({:?})",
                     region_text(&flow.flow.region, names),
-                    flow.flow.result.as_deref().unwrap_or("unknown"),
+                    flow.result
+                        .as_ref()
+                        .map_or_else(|| "unknown".into(), PresentedResult::display),
                     flow.flow.completion
                 ));
             }
@@ -952,7 +1058,9 @@ impl FunctionResultCompactReport {
                 lines.push(format!(
                     "After {}: {} ({:?})",
                     region_text(&flow.flow.region, names),
-                    flow.flow.result.as_deref().unwrap_or("unknown"),
+                    flow.result
+                        .as_ref()
+                        .map_or_else(|| "unknown".into(), PresentedResult::display),
                     flow.flow.completion
                 ));
             }
@@ -962,7 +1070,9 @@ impl FunctionResultCompactReport {
                 lines.push(format!(
                     "  {}: {} ({:?})",
                     region_text(&flow.flow.region, names),
-                    flow.flow.result.as_deref().unwrap_or("unknown"),
+                    flow.result
+                        .as_ref()
+                        .map_or_else(|| "unknown".into(), PresentedResult::display),
                     flow.flow.completion
                 ));
             }
@@ -971,7 +1081,9 @@ impl FunctionResultCompactReport {
                 lines.push(format!(
                     "  {}: {} ({:?})",
                     region_text(&flow.flow.region, names),
-                    flow.flow.result.as_deref().unwrap_or("unknown"),
+                    flow.result
+                        .as_ref()
+                        .map_or_else(|| "unknown".into(), PresentedResult::display),
                     flow.flow.completion
                 ));
             }
@@ -989,30 +1101,51 @@ impl FunctionResultCompactReport {
                 for choice in &finding.choices {
                     lines.push(format!(
                         "{} | {} | {}",
-                        choice.result,
+                        choice.result.display(),
                         regions_text(&choice.before, names),
                         regions_text(&choice.after, names)
                     ));
                 }
-                lines.push(format!(
-                    "Effect: {}: {} -> {} ({:?})",
-                    regions_text(&finding.effect, names),
-                    finding.before_result.as_deref().unwrap_or("unknown"),
-                    finding.after_result.as_deref().unwrap_or("unknown"),
-                    finding.assessment
-                ));
+                for effect in &finding.effects {
+                    lines.push(format!(
+                        "Effect: {}: {} -> {} ({:?})",
+                        region_text(&effect.region, names),
+                        effect
+                            .before_result
+                            .as_ref()
+                            .map_or_else(|| "unknown".into(), PresentedResult::display),
+                        effect
+                            .after_result
+                            .as_ref()
+                            .map_or_else(|| "unknown".into(), PresentedResult::display),
+                        effect.assessment
+                    ));
+                    for result in [&effect.before_result, &effect.after_result]
+                        .into_iter()
+                        .flatten()
+                    {
+                        lines.extend(source_text(result));
+                    }
+                }
             }
             if !self.unchanged_choices.is_empty() {
                 lines.push(format!(
                     "Unchanged choices: {}",
-                    self.unchanged_choices.join(", ")
+                    self.unchanged_choices
+                        .iter()
+                        .map(PresentedResult::display)
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ));
             }
             for equal in &self.equal_regions {
                 lines.push(format!(
                     "Equal under {}: {}",
                     region_text(&equal.region, names),
-                    equal.before_result.as_deref().unwrap_or("unknown")
+                    equal
+                        .before_result
+                        .as_ref()
+                        .map_or_else(|| "unknown".into(), PresentedResult::display)
                 ));
             }
             for unknown in &self.unknown_regions {
@@ -1145,6 +1278,383 @@ mod tests {
             FunctionEntry::default(),
             FunctionEntry::default(),
         )
+    }
+
+    fn review(name: &str) -> (FunctionResultReport, FunctionResultCompactReport) {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("spec/function-result-review/reports")
+            .join(name);
+        let before = std::fs::read_to_string(root.join("before.ts")).unwrap();
+        let after = std::fs::read_to_string(root.join("after.ts")).unwrap();
+        let full = assemble_function_result_report(analyze(
+            &before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        compact.validate_with_full(&full).unwrap();
+        (full, compact)
+    }
+
+    #[test]
+    fn ifds_fr003_proven_copy_and_priority() {
+        let (full, compact) = review("copy");
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("saved (1) -> saved (2) (Different)"),
+            "{text}"
+        );
+        assert!(!text.contains("(9)"));
+        assert!(text.contains("Before return saved at src/fixture.ts:5; contributing writes: src/fixture.ts:3, src/fixture.ts:2"), "{text}");
+        assert!(text.contains("After return saved at src/fixture.ts:5; contributing writes: src/fixture.ts:3, src/fixture.ts:2"), "{text}");
+        assert!(
+            !text.contains("src/fixture.ts:4"),
+            "the later overwrite is not a source: {text}"
+        );
+        let effect = &compact.findings[0].effects[0];
+        for (result, expected) in [(&effect.before_result, "1"), (&effect.after_result, "2")] {
+            let result = result.as_ref().unwrap();
+            assert_eq!(
+                result.proven_value,
+                Some(FunctionKnownValue::Number {
+                    value: expected.into()
+                })
+            );
+            assert_eq!(
+                result.evidence[0]
+                    .dependencies
+                    .iter()
+                    .filter(|dependency| dependency.operation == "write")
+                    .count(),
+                2
+            );
+        }
+        let (full, compact) = review("priority");
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("a && b: x (2) -> x (1) (Different)"),
+            "{text}"
+        );
+        assert!(text.contains("x (1) | a && !b | a"), "{text}");
+        assert_eq!(
+            text.matches("contributing writes: src/fixture.ts:4")
+                .count(),
+            2,
+            "{text}"
+        );
+        assert!(text.contains("x (2) | b | !a && b"), "{text}");
+        assert!(text.contains("Equal under !a && !b: x (0)"), "{text}");
+        assert!(text.contains("Equal under a && !b: x (1)"), "{text}");
+        assert!(text.contains("Equal under !a && b: x (2)"), "{text}");
+        assert_eq!(compact.findings.len(), 1);
+    }
+
+    #[test]
+    fn ifds_fr003_proven_values_and_boundaries() {
+        for name in [
+            "literal",
+            "fallthrough",
+            "overwritten",
+            "expression",
+            "known_expression",
+            "unknown",
+        ] {
+            let (full, compact) = review(name);
+            let text = compact.render_text(&full);
+            match name {
+                "literal" => {
+                    assert!(text.contains("1 -> 2 (Different)"), "{text}");
+                    assert!(!text.contains("1 (1)"));
+                }
+                "fallthrough" => {
+                    assert!(text.contains("undefined -> 2 (Different)"), "{text}");
+                    assert!(!text.contains("undefined (undefined)"));
+                }
+                "overwritten" => assert!(text.contains("x (9)"), "{text}"),
+                "expression" => {
+                    assert!(text.contains("Unknown under"), "{text}");
+                    assert_eq!(
+                        compact.unknown_regions[0]
+                            .before_result
+                            .as_ref()
+                            .unwrap()
+                            .proven_value,
+                        None
+                    );
+                }
+                "known_expression" => {
+                    assert!(text.contains("input + 1 -> input + 2 (Changed)"), "{text}");
+                    assert!(!text.contains("(4)"));
+                    assert!(!text.contains("(5)"));
+                }
+                "unknown" => {
+                    assert!(text.contains("1 -> 2 (Different)"), "{text}");
+                    assert!(text.contains("Unknown under !flag"), "{text}");
+                    assert_eq!(compact.coverage.result_comparison, Coverage::Partial);
+                    assert_eq!(
+                        compact.unknown_regions[0]
+                            .before_result
+                            .as_ref()
+                            .unwrap()
+                            .proven_value,
+                        None
+                    );
+                }
+                _ => unreachable!(),
+            }
+        }
+        let mut entry = FunctionEntry::default();
+        entry
+            .known_values
+            .insert(0, FunctionKnownValue::Number { value: "4".into() });
+        let full = assemble_function_result_report(analyze(
+            "function result(input) { return input; }",
+            "function result(input) { const saved = input; return saved; }",
+            entry.clone(),
+            entry,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("input (4)"), "{text}");
+        assert!(text.contains("saved (4)"), "{text}");
+        let full = assemble_function_result_report(analyze(
+            "function result(flag: boolean) { if (flag) return flag; return flag; }",
+            "function result(flag: boolean) { if (flag) return flag; return flag; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(
+            compact.before_flow.iter().all(|flow| flow
+                .result
+                .as_ref()
+                .unwrap()
+                .proven_value
+                .is_none())
+        );
+    }
+
+    #[test]
+    fn ifds_fr003_symmetric_guard_evidence() {
+        let (full, compact) = review("guard_version");
+        assert_eq!(compact.findings.len(), 1, "{compact:#?}");
+        assert_eq!(compact.findings[0].effects.len(), 2);
+        let text = compact.render_text(&full);
+        assert_eq!(
+            text.matches("Return choice | Before | After").count(),
+            1,
+            "{text}"
+        );
+        assert!(
+            text.contains("!flag: \"no\" -> \"yes\" (Different)"),
+            "{text}"
+        );
+        assert!(
+            text.contains("flag: \"yes\" -> \"no\" (Different)"),
+            "{text}"
+        );
+        assert_ne!(
+            compact.findings[0].effects[0].evidence,
+            compact.findings[0].effects[1].evidence
+        );
+
+        // Identical tables in disjoint outer branches come from two distinct edits.
+        let before = "function result(outer, flag) { if (outer) { if (flag) return 'yes'; return 'no'; } if (flag) return 'yes'; return 'no'; }";
+        let after = "function result(outer, flag) { if (outer) { if (!flag) return 'yes'; return 'no'; } if (!flag) return 'yes'; return 'no'; }";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(compact.findings.len() >= 2, "{compact:#?}");
+        for finding in &compact.findings {
+            let regions: Vec<_> = finding
+                .effects
+                .iter()
+                .map(|effect| &full.comparison.regions[effect.evidence.index].region.values)
+                .collect();
+            assert!(
+                regions
+                    .iter()
+                    .all(|region| region.get(&0) == regions[0].get(&0)),
+                "{finding:#?}"
+            );
+        }
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn ifds_fr003_typed_value_validation() {
+        let (full, compact) = review("copy");
+        assert_eq!(full.schema_version, 2);
+        assert_eq!(full.analysis.schema_version, 4);
+        assert_eq!(compact.schema_version, 2);
+        assert_eq!(
+            FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap(),
+            compact
+        );
+        let mut corrupted = compact.clone();
+        corrupted.findings[0].effects[0]
+            .before_result
+            .as_mut()
+            .unwrap()
+            .proven_value = Some(FunctionKnownValue::Number { value: "9".into() });
+        assert!(corrupted.validate_with_full(&full).is_err());
+        let mut corrupted = compact.clone();
+        corrupted.findings[0].effects[0]
+            .before_result
+            .as_mut()
+            .unwrap()
+            .evidence[0]
+            .dependencies[0]
+            .path
+            .push(usize::MAX);
+        assert!(corrupted.validate_with_full(&full).is_err());
+        let mut old = serde_json::to_value(&compact).unwrap();
+        let mut corrupted = compact.clone();
+        corrupted.findings[0].effects[0]
+            .before_result
+            .as_mut()
+            .unwrap()
+            .evidence[0]
+            .dependencies[0]
+            .span
+            .as_mut()
+            .unwrap()
+            .start_line = 4;
+        assert!(corrupted.validate_with_full(&full).is_err());
+        old["schema_version"] = 1.into();
+        assert!(
+            FunctionResultCompactReport::from_json(&serde_json::to_vec(&old).unwrap()).is_err()
+        );
+        let mut old_full = serde_json::to_value(&full).unwrap();
+        old_full["schema_version"] = 1.into();
+        assert!(FunctionResultReport::from_json(&serde_json::to_vec(&old_full).unwrap()).is_err());
+        old_full["schema_version"] = 2.into();
+        old_full["analysis"]["schema_version"] = 3.into();
+        assert!(FunctionResultReport::from_json(&serde_json::to_vec(&old_full).unwrap()).is_err());
+
+        let mut domain = FunctionEntry::default();
+        domain.domains.insert(0, PrimitiveDomain::Number);
+        let full = assemble_function_result_report(analyze(
+            "function result(p) { return p; }",
+            "function result(p) { return 1; }",
+            domain.clone(),
+            domain,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let effect = &compact.findings[0].effects[0];
+        assert_eq!(effect.before_result.as_ref().unwrap().proven_value, None);
+        assert_eq!(
+            effect.after_result.as_ref().unwrap().proven_value,
+            Some(FunctionKnownValue::Number { value: "1".into() })
+        );
+        assert!(compact.render_text(&full).contains("p -> 1 (Changed)"));
+    }
+
+    #[test]
+    fn ifds_fr003_primitive_annotations_and_symbolic_copies() {
+        for (literal, expected) in [
+            ("true", FunctionKnownValue::Boolean { value: true }),
+            (
+                "'a\"b'",
+                FunctionKnownValue::String {
+                    value: "a\"b".into(),
+                },
+            ),
+            ("null", FunctionKnownValue::Null),
+        ] {
+            let source = format!("function result() {{ const saved = {literal}; return saved; }}");
+            let full = assemble_function_result_report(analyze(
+                &source,
+                &source,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            assert!(
+                !compact.equal_regions.is_empty(),
+                "{literal}: {:#?}",
+                full.comparison
+            );
+            assert_eq!(
+                compact.equal_regions[0]
+                    .before_result
+                    .as_ref()
+                    .unwrap()
+                    .proven_value,
+                Some(expected)
+            );
+            compact.validate_with_full(&full).unwrap();
+            if literal.starts_with('\'') {
+                assert!(compact.render_text(&full).contains("saved (\"a\\\"b\")"));
+            }
+        }
+        let mut entry = FunctionEntry::default();
+        entry.known_values.insert(0, FunctionKnownValue::Undefined);
+        let full = assemble_function_result_report(analyze(
+            "function result(input) { const saved = input; return saved; }",
+            "function result(input) { const saved = input; return saved; }",
+            entry.clone(),
+            entry,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(compact.render_text(&full).contains("saved (undefined)"));
+
+        let mut domain = FunctionEntry::default();
+        domain
+            .domains
+            .extend([(0, PrimitiveDomain::String), (1, PrimitiveDomain::String)]);
+        let full = assemble_function_result_report(analyze(
+            "function result(p, q) { const saved = p; return saved; }",
+            "function result(p, q) { const saved = q; return saved; }",
+            domain.clone(),
+            domain,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(compact.unchanged_choices.is_empty());
+        assert_eq!(compact.findings[0].choices.len(), 2);
+        let effect = &compact.findings[0].effects[0];
+        assert_ne!(
+            effect.before_result.as_ref().unwrap().identity,
+            effect.after_result.as_ref().unwrap().identity
+        );
+        assert!(
+            compact
+                .render_text(&full)
+                .contains("saved -> saved (Changed)")
+        );
+
+        let full = assemble_function_result_report(analyze(
+            "function result(flag) { if (flag) return 'yes'; return 'no'; }",
+            "function result(flag) { if (flag) return 'no'; return 'yes'; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert_eq!(
+            compact.findings.len(),
+            2,
+            "swapped labels do not establish a guard change"
+        );
+        let (full, compact) = review("guard_version");
+        let omitted =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        assert_eq!(omitted.coverage.omitted_groups, 1);
+        assert_eq!(omitted.coverage.presentation, Coverage::Partial);
+        omitted.validate_with_full(&full).unwrap();
+        let mut permuted = full.analysis.clone();
+        permuted.before.as_mut().unwrap().observations.reverse();
+        permuted.after.as_mut().unwrap().observations.reverse();
+        let reordered = assemble_function_result_report(permuted);
+        assert_eq!(
+            compact,
+            compact_function_result_report(&reordered, FunctionPresentationOptions::default())
+        );
     }
 
     #[test]
@@ -1326,7 +1836,14 @@ mod tests {
             compact.findings[0].effect[0].values,
             BTreeMap::from([(2, true), (3, false)])
         );
-        assert_eq!(compact.unchanged_choices, ["\"blocked\"", "\"disabled\""]);
+        assert_eq!(
+            compact
+                .unchanged_choices
+                .iter()
+                .map(PresentedResult::display)
+                .collect::<Vec<_>>(),
+            ["\"blocked\"", "\"disabled\""]
+        );
         let text = compact.render_text(&full);
         assert!(
             text.contains("\"pending\" | !ready | !ready || !approved"),

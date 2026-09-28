@@ -4,6 +4,8 @@ Reproducible comparisons for the currently supported synchronous subset: literal
 
 Each case directory contains `before.ts`, `after.ts`, a text report, compact JSON, and full JSON evidence. The compact report references the adjacent `full.json`; all references were checked. The text and compact reports were saved after running the command below. In `compact.json`, the evidence path is normalized to the local `full.json`; the text report's absolute temporary path is replaced with a relative one. The reports' semantic fields are preserved.
 
+These reports preserve the output before implementing 001. The [001 implementation review](001-implementation.md) contains regenerated text and current schema information. When rerunning current code, use a fresh evidence sidecar rather than overwriting the archived `full.json`; the CLI rejects an existing sidecar with different content.
+
 Run from a case directory:
 
 ```sh
