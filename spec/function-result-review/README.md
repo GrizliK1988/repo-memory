@@ -34,4 +34,12 @@ For compact or full JSON, replace `text` with `compact-json` or `full-json`. The
 
 The [semantic expectations and sources](EXAMPLES.md) cover every case. Findings and presentation suggestions are documented separately in [001](001-report-values-and-attribution.md), [002](002-short-circuit-precision.md), and [003](003-compact-readable-text.md).
 
+[003](003-compact-readable-text.md#agreed-scope) is scoped to text output and its
+documentation, preserving JSON structures and versions. Its presentation
+requirements and acceptance criteria are implemented and verified; see the
+[implementation review](003-implementation.md) and [parity checks](003-verification.json).
+Evidence size reduction is tracked separately in [004](004-evidence-size.md);
+its representation and compatibility requirements remain to be clarified before
+implementation.
+
 Schema and reference checks, truth tables, test results, and file sizes are recorded in [verification.json](reports/verification.json). These reports are not implementation-generated golden expectations; expected behavior was derived independently from the source examples.

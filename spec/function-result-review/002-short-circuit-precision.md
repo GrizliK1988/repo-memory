@@ -39,7 +39,7 @@ For the original example, retain two proven regions: falsy `flag` returns the sa
 
 ### Presentation and structured evidence
 
-Omit proven `Equal` regions from the text output. For the original example, the effect should communicate only:
+Omit ordinary proven `Equal` regions from the text output. [003](003-compact-readable-text.md) adds a concise exception for established control changes with equal results and a scoped summary for fully equal results; it does not restore ordinary equal-region listings. For the original example, the effect should communicate only:
 
 ```text
 when flag is truthy: "old" -> "new" (Different)

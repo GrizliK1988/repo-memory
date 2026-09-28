@@ -141,7 +141,10 @@ fn known_value(
     supported_literal(&value).then_some(value)
 }
 
-fn dependency_key(dependency: &ResultDependency, side: &FunctionSnapshotResult) -> Option<String> {
+pub(super) fn dependency_key(
+    dependency: &ResultDependency,
+    side: &FunctionSnapshotResult,
+) -> Option<String> {
     if dependency.unresolved {
         return None;
     }
@@ -291,7 +294,7 @@ pub(super) fn compact_region(
     }
 }
 
-fn input_guard(
+pub(super) fn input_guard(
     dependency: &ResultDependency,
     side: &FunctionSnapshotResult,
 ) -> Option<(u32, bool)> {
