@@ -550,7 +550,6 @@ pub fn compact_function_result_report(
     let mut groups: BTreeMap<String, (Vec<CompactResultRegion>, &FunctionResultFinding)> =
         BTreeMap::new();
     let mut affected_choices = BTreeSet::new();
-    let mut affected_expressions = BTreeSet::new();
     for finding in &full.findings {
         if finding.assessment == ResultAssessment::Unknown
             || (has_changed_result && finding.assessment == ResultAssessment::Equal)
@@ -580,7 +579,6 @@ pub fn compact_function_result_report(
                     .flatten()
                 {
                     affected_choices.insert(result.identity.clone());
-                    affected_expressions.insert(result.expression.clone());
                 }
             }
             groups
@@ -691,14 +689,7 @@ pub fn compact_function_result_report(
         .regions
         .iter()
         .enumerate()
-        .filter(|(_, region)| {
-            region.assessment == ResultAssessment::Equal
-                && (affected_expressions.is_empty()
-                    || region
-                        .before_result
-                        .as_ref()
-                        .is_some_and(|expression| affected_expressions.contains(expression)))
-        })
+        .filter(|(_, region)| region.assessment == ResultAssessment::Equal)
         .map(|(index, _)| compact_region(full, &id, index))
         .collect();
     let unknown_regions = comparison
@@ -836,6 +827,24 @@ fn regions_text(regions: &[BooleanRegion], names: &[String]) -> String {
         })
         .collect::<Vec<_>>()
         .join(" || ")
+}
+
+fn truthiness_text(region: &BooleanRegion, names: &[String]) -> String {
+    if region.values.is_empty() {
+        return "always".into();
+    }
+    region
+        .values
+        .iter()
+        .map(|(slot, value)| {
+            let name = names
+                .get(*slot as usize)
+                .cloned()
+                .unwrap_or_else(|| format!("arg{slot}"));
+            format!("{name} is {}", if *value { "truthy" } else { "falsy" })
+        })
+        .collect::<Vec<_>>()
+        .join(" && ")
 }
 
 fn assumption_text(expr: &AssumptionExpr, names: &[String]) -> String {
@@ -1093,33 +1102,57 @@ impl FunctionResultCompactReport {
                 lines.push("Common input feasibility is unresolved.".into());
             }
             for finding in &self.findings {
+                if finding.assessment == ResultAssessment::Equal {
+                    continue;
+                }
+                let selected_values = finding.effects.iter().all(|effect| {
+                    selected_operand_text(&effect.before_result, &full.analysis.before).is_some()
+                        && selected_operand_text(&effect.after_result, &full.analysis.after)
+                            .is_some()
+                });
                 let context = region_text(&finding.context, names);
-                if !finding.context.values.is_empty() {
+                if !selected_values && !finding.context.values.is_empty() {
                     lines.push(format!("Context: {context}"));
                 }
-                lines.push("Return choice | Before | After".into());
-                for choice in &finding.choices {
-                    lines.push(format!(
-                        "{} | {} | {}",
-                        choice.result.display(),
-                        regions_text(&choice.before, names),
-                        regions_text(&choice.after, names)
-                    ));
+                if !selected_values {
+                    lines.push("Return choice | Before | After".into());
+                    for choice in &finding.choices {
+                        lines.push(format!(
+                            "{} | {} | {}",
+                            choice.result.display(),
+                            regions_text(&choice.before, names),
+                            regions_text(&choice.after, names)
+                        ));
+                    }
                 }
                 for effect in &finding.effects {
-                    lines.push(format!(
-                        "Effect: {}: {} -> {} ({:?})",
-                        region_text(&effect.region, names),
-                        effect
-                            .before_result
-                            .as_ref()
-                            .map_or_else(|| "unknown".into(), PresentedResult::display),
-                        effect
-                            .after_result
-                            .as_ref()
-                            .map_or_else(|| "unknown".into(), PresentedResult::display),
-                        effect.assessment
-                    ));
+                    if selected_values {
+                        let mut condition = effect.region.clone();
+                        condition.values.extend(&finding.context.values);
+                        lines.push(format!(
+                            "when {}: {} -> {} ({:?})",
+                            truthiness_text(&condition, names),
+                            selected_operand_text(&effect.before_result, &full.analysis.before)
+                                .unwrap(),
+                            selected_operand_text(&effect.after_result, &full.analysis.after)
+                                .unwrap(),
+                            effect.assessment
+                        ));
+                    } else {
+                        lines.push(format!(
+                            "Effect: {}: {} -> {} ({:?})",
+                            region_text(&effect.region, names),
+                            effect
+                                .before_result
+                                .as_ref()
+                                .map_or_else(|| "unknown".into(), PresentedResult::display),
+                            effect
+                                .after_result
+                                .as_ref()
+                                .map_or_else(|| "unknown".into(), PresentedResult::display),
+                            effect.assessment
+                        ));
+                    }
                     for result in [&effect.before_result, &effect.after_result]
                         .into_iter()
                         .flatten()
@@ -1127,26 +1160,6 @@ impl FunctionResultCompactReport {
                         lines.extend(source_text(result));
                     }
                 }
-            }
-            if !self.unchanged_choices.is_empty() {
-                lines.push(format!(
-                    "Unchanged choices: {}",
-                    self.unchanged_choices
-                        .iter()
-                        .map(PresentedResult::display)
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                ));
-            }
-            for equal in &self.equal_regions {
-                lines.push(format!(
-                    "Equal under {}: {}",
-                    region_text(&equal.region, names),
-                    equal
-                        .before_result
-                        .as_ref()
-                        .map_or_else(|| "unknown".into(), PresentedResult::display)
-                ));
             }
             for unknown in &self.unknown_regions {
                 lines.push(format!(
@@ -1298,6 +1311,52 @@ mod tests {
     }
 
     #[test]
+    fn ifds_fr003_short_circuit_identity_report() {
+        let (full, compact) = review("short_circuit");
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("when flag is truthy: \"old\" -> \"new\" (Different)"),
+            "{text}"
+        );
+        assert!(!text.contains("Equal"), "{text}");
+        assert!(!text.contains("Unknown"), "{text}");
+        assert!(!text.contains("Return choice"), "{text}");
+        assert!(!text.contains("flag &&"), "{text}");
+        assert_eq!(compact.equal_regions.len(), 1);
+        assert_eq!(
+            compact.equal_regions[0].region.values,
+            BTreeMap::from([(0, false)])
+        );
+        assert_eq!(compact.coverage.result_comparison, Coverage::Complete);
+        let equal = &full.comparison.regions[compact.equal_regions[0].evidence.index];
+        assert_eq!(equal.proof, Some(ResultProof::PairedInputIdentity));
+        assert_eq!(equal.before_result.as_deref(), Some("flag && \"old\""));
+        assert_eq!(
+            compact.equal_regions[0]
+                .before_result
+                .as_ref()
+                .unwrap()
+                .expression,
+            "flag && \"old\""
+        );
+        compact.validate_with_full(&full).unwrap();
+
+        // Unaffected results remain in JSON even when their source expressions
+        // are unrelated to the changed branch's expressions.
+        let full = assemble_function_result_report(enabled());
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert_eq!(
+            compact.equal_regions.len(),
+            full.comparison
+                .regions
+                .iter()
+                .filter(|region| region.assessment == ResultAssessment::Equal)
+                .count()
+        );
+        assert!(!compact.render_text(&full).contains("Equal"));
+    }
+
+    #[test]
     fn ifds_fr003_proven_copy_and_priority() {
         let (full, compact) = review("copy");
         let text = compact.render_text(&full);
@@ -1344,9 +1403,9 @@ mod tests {
             "{text}"
         );
         assert!(text.contains("x (2) | b | !a && b"), "{text}");
-        assert!(text.contains("Equal under !a && !b: x (0)"), "{text}");
-        assert!(text.contains("Equal under a && !b: x (1)"), "{text}");
-        assert!(text.contains("Equal under !a && b: x (2)"), "{text}");
+        assert!(!text.contains("Equal under"), "{text}");
+        assert!(!text.contains("Unchanged choices"), "{text}");
+        assert_eq!(compact.equal_regions.len(), 3);
         assert_eq!(compact.findings.len(), 1);
     }
 
@@ -1371,7 +1430,17 @@ mod tests {
                     assert!(text.contains("undefined -> 2 (Different)"), "{text}");
                     assert!(!text.contains("undefined (undefined)"));
                 }
-                "overwritten" => assert!(text.contains("x (9)"), "{text}"),
+                "overwritten" => {
+                    assert!(!text.contains("x (9)"), "{text}");
+                    assert_eq!(
+                        compact.equal_regions[0]
+                            .before_result
+                            .as_ref()
+                            .unwrap()
+                            .display(),
+                        "x (9)"
+                    );
+                }
                 "expression" => {
                     assert!(text.contains("Unknown under"), "{text}");
                     assert_eq!(
@@ -1416,8 +1485,10 @@ mod tests {
         ));
         let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
         let text = compact.render_text(&full);
-        assert!(text.contains("input (4)"), "{text}");
-        assert!(text.contains("saved (4)"), "{text}");
+        assert!(!text.contains("(4)"), "{text}");
+        let equal = &compact.equal_regions[0];
+        assert_eq!(equal.before_result.as_ref().unwrap().display(), "input (4)");
+        assert_eq!(equal.after_result.as_ref().unwrap().display(), "saved (4)");
         let full = assemble_function_result_report(analyze(
             "function result(flag: boolean) { if (flag) return flag; return flag; }",
             "function result(flag: boolean) { if (flag) return flag; return flag; }",
@@ -1591,7 +1662,15 @@ mod tests {
             );
             compact.validate_with_full(&full).unwrap();
             if literal.starts_with('\'') {
-                assert!(compact.render_text(&full).contains("saved (\"a\\\"b\")"));
+                assert_eq!(
+                    compact.equal_regions[0]
+                        .before_result
+                        .as_ref()
+                        .unwrap()
+                        .display(),
+                    "saved (\"a\\\"b\")"
+                );
+                assert!(!compact.render_text(&full).contains("saved"));
             }
         }
         let mut entry = FunctionEntry::default();
@@ -1603,7 +1682,15 @@ mod tests {
             entry,
         ));
         let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
-        assert!(compact.render_text(&full).contains("saved (undefined)"));
+        assert_eq!(
+            compact.equal_regions[0]
+                .before_result
+                .as_ref()
+                .unwrap()
+                .display(),
+            "saved (undefined)"
+        );
+        assert!(!compact.render_text(&full).contains("saved"));
 
         let mut domain = FunctionEntry::default();
         domain

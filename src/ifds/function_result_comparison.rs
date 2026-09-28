@@ -342,6 +342,14 @@ fn assess(
     before_entry: &FunctionEntry,
     after_entry: &FunctionEntry,
 ) -> (ResultAssessment, Option<ResultProof>) {
+    // Identity of a paired input needs no value evaluation or primitive type.
+    // Selection, normal completion and correspondence are checked by the caller.
+    if matches!((before, after), (ValueTerm::Input(a), ValueTerm::Input(b)) if a == b) {
+        return (
+            ResultAssessment::Equal,
+            Some(ResultProof::PairedInputIdentity),
+        );
+    }
     let before = normalized_known_term(before, before_entry);
     let after = normalized_known_term(after, after_entry);
     if let (ValueTerm::Literal(a), ValueTerm::Literal(b)) = (&before, &after) {
@@ -404,6 +412,21 @@ fn bool_term(
         ValueTerm::Literal(FunctionKnownValue::Null | FunctionKnownValue::Undefined) => Some(false),
         ValueTerm::Compute(PrimitiveOperator::LogicalNot, inputs) if inputs.len() == 1 => {
             Some(!bool_term(&inputs[0], values, entry)?)
+        }
+        ValueTerm::Compute(PrimitiveOperator::IsNullish, inputs) if inputs.len() == 1 => {
+            match normalized_known_term(&inputs[0], entry) {
+                ValueTerm::Literal(value) => Some(matches!(
+                    value,
+                    FunctionKnownValue::Null | FunctionKnownValue::Undefined
+                )),
+                term => match term_type(&term, entry, entry) {
+                    Some(PrimitiveDomain::Nullish) => Some(true),
+                    Some(_) => Some(false),
+                    // Truthy values are non-nullish; falsy alone is insufficient.
+                    None if bool_term(&term, values, entry) == Some(true) => Some(false),
+                    None => None,
+                },
+            }
         }
         ValueTerm::Compute(PrimitiveOperator::StrictEqual, inputs)
             if inputs.len() == 2
@@ -1503,6 +1526,243 @@ mod tests {
             before_entry,
             after_entry,
         ))
+    }
+
+    #[test]
+    fn ifds_fr002_untyped_paired_input_identity() {
+        for (before, after) in [
+            (
+                "function result(flag) { return flag; }",
+                "function result(renamed) { const copy = renamed; return copy; }",
+            ),
+            (
+                "function result(flag, other) { const saved = flag; flag = other; return saved; }",
+                "function result(flag, other) { return flag; }",
+            ),
+        ] {
+            let result = compare_sources(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            assert_eq!(result.regions.len(), 1, "{result:#?}");
+            assert_eq!(result.regions[0].assessment, ResultAssessment::Equal);
+            assert_eq!(
+                result.regions[0].proof,
+                Some(ResultProof::PairedInputIdentity)
+            );
+            assert_eq!(result.comparison_coverage, Coverage::Complete);
+        }
+
+        for after in [
+            "function result(p, q) { return q; }",
+            "function result(p, q) { p = q; return p; }",
+            "function result(p, q) { return p + 1; }",
+            "function result(p, q) { mystery(); return p; }",
+        ] {
+            let result = compare_sources(
+                "function result(p, q) { return p; }",
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            assert_eq!(
+                result.regions[0].assessment,
+                ResultAssessment::Unknown,
+                "{after}: {result:#?}"
+            );
+            assert_eq!(result.comparison_coverage, Coverage::Partial);
+        }
+        let mut analysis = analyze_sources(
+            "function result(p) { return p; }",
+            "function result(p) { return p; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        analysis.input_mapping_coverage = Coverage::Partial;
+        assert_eq!(
+            compare_function_results(&analysis).regions[0].assessment,
+            ResultAssessment::Unknown
+        );
+    }
+
+    #[test]
+    fn ifds_fr002_short_circuit_input_identity() {
+        for (operator, skip_when) in [("&&", false), ("||", true)] {
+            for prefix in ["", "const saved = flag; "] {
+                let left = if prefix.is_empty() { "flag" } else { "saved" };
+                let before = format!(
+                    "function result(flag) {{ {prefix}return {left} {operator} \"old\"; }}"
+                );
+                let after = format!(
+                    "function result(flag) {{ {prefix}return {left} {operator} \"new\"; }}"
+                );
+                let result = compare_sources(
+                    &before,
+                    &after,
+                    FunctionEntry::default(),
+                    FunctionEntry::default(),
+                );
+                assert_eq!(result.regions.len(), 2, "{result:#?}");
+                for region in &result.regions {
+                    let skips = region.region.values == BTreeMap::from([(0, skip_when)]);
+                    assert_eq!(
+                        region.assessment,
+                        if skips {
+                            ResultAssessment::Equal
+                        } else {
+                            ResultAssessment::Different
+                        }
+                    );
+                    if skips {
+                        assert_eq!(region.proof, Some(ResultProof::PairedInputIdentity));
+                    }
+                }
+                assert_eq!(result.comparison_coverage, Coverage::Complete);
+            }
+        }
+        let result = compare_sources(
+            "function result(a, b) { return a && (b || \"old\"); }",
+            "function result(a, b) { return a && (b || \"new\"); }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        for (condition, expected) in [
+            (BTreeMap::from([(0, false)]), ResultAssessment::Equal),
+            (
+                BTreeMap::from([(0, true), (1, true)]),
+                ResultAssessment::Equal,
+            ),
+            (
+                BTreeMap::from([(0, true), (1, false)]),
+                ResultAssessment::Different,
+            ),
+        ] {
+            assert!(
+                result.regions.iter().any(
+                    |region| region.region.values == condition && region.assessment == expected
+                ),
+                "{result:#?}"
+            );
+        }
+        assert_eq!(result.comparison_coverage, Coverage::Complete);
+    }
+
+    #[test]
+    fn ifds_fr002_nullish_operand_selection() {
+        let before = "function result(flag) { const saved = flag; return saved ?? \"old\"; }";
+        let after = "function result(flag) { const saved = flag; return saved ?? \"new\"; }";
+        for domain in [
+            PrimitiveDomain::Boolean,
+            PrimitiveDomain::Number,
+            PrimitiveDomain::String,
+            PrimitiveDomain::Nullish,
+        ] {
+            let scope = entry(&[(0, domain)]);
+            let result = compare_sources(before, after, scope.clone(), scope);
+            let expected = if domain == PrimitiveDomain::Nullish {
+                ResultAssessment::Different
+            } else {
+                ResultAssessment::Equal
+            };
+            assert!(!result.regions.is_empty());
+            assert!(
+                result
+                    .regions
+                    .iter()
+                    .all(|region| region.assessment == expected),
+                "{domain:?}: {result:#?}"
+            );
+            assert_eq!(result.comparison_coverage, Coverage::Complete);
+        }
+        for value in [
+            FunctionKnownValue::Boolean { value: false },
+            FunctionKnownValue::Number { value: "0".into() },
+            FunctionKnownValue::String {
+                value: String::new(),
+            },
+            FunctionKnownValue::Null,
+            FunctionKnownValue::Undefined,
+        ] {
+            let expected = if matches!(
+                value,
+                FunctionKnownValue::Null | FunctionKnownValue::Undefined
+            ) {
+                ResultAssessment::Different
+            } else {
+                ResultAssessment::Equal
+            };
+            let mut scope = FunctionEntry::default();
+            scope.known_values.insert(0, value.clone());
+            let result = compare_sources(before, after, scope.clone(), scope);
+            assert!(!result.regions.is_empty());
+            assert!(
+                result
+                    .regions
+                    .iter()
+                    .all(|region| region.assessment == expected),
+                "{value:?}: {result:#?}"
+            );
+            assert_eq!(result.comparison_coverage, Coverage::Complete);
+        }
+        let result = compare_sources(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        assert!(
+            result
+                .regions
+                .iter()
+                .any(|region| region.region.values == BTreeMap::from([(0, true)])
+                    && region.assessment == ResultAssessment::Equal),
+            "{result:#?}"
+        );
+        assert!(result.regions.iter().any(|region| region.region.values
+            == BTreeMap::from([(0, false)])
+            && region.assessment == ResultAssessment::Unknown));
+        assert_eq!(result.comparison_coverage, Coverage::Partial);
+    }
+
+    #[test]
+    fn ifds_fr002_skipped_call_input_identity() {
+        for (operator, skip_when) in [("&&", false), ("||", true)] {
+            let before = format!("function result(flag) {{ return flag {operator} \"old\"; }}");
+            let after = format!("function result(flag) {{ return flag {operator} mystery(); }}");
+            let result = compare_sources(
+                &before,
+                &after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            assert_eq!(result.regions.len(), 2, "{result:#?}");
+            for region in &result.regions {
+                let skipped = region.region.values == BTreeMap::from([(0, skip_when)]);
+                assert_eq!(
+                    region.assessment,
+                    if skipped {
+                        ResultAssessment::Equal
+                    } else {
+                        ResultAssessment::Unknown
+                    },
+                    "{region:#?}"
+                );
+                if skipped {
+                    assert_eq!(region.proof, Some(ResultProof::PairedInputIdentity));
+                } else {
+                    assert!(
+                        region
+                            .unknown_reason
+                            .as_deref()
+                            .unwrap()
+                            .contains("unresolved call")
+                    );
+                }
+            }
+            assert_eq!(result.comparison_coverage, Coverage::Partial);
+        }
     }
 
     #[test]

@@ -63,6 +63,39 @@ impl PresentedResult {
     }
 }
 
+/// Display a proven selected literal while retaining the original expression in
+/// JSON. Only transparent operand selection permits this abbreviated text.
+pub(super) fn selected_operand_text(
+    result: &Option<PresentedResult>,
+    side: &Option<FunctionSnapshotResult>,
+) -> Option<String> {
+    fn selected(dependency: &ResultDependency) -> bool {
+        if dependency.unresolved {
+            return false;
+        }
+        if matches!(
+            dependency.operator,
+            Some(PrimitiveOperator::ValueJoin { .. })
+        ) {
+            return dependency.inputs.len() == 1;
+        }
+        transparent(dependency) && dependency.inputs.len() == 1 && selected(&dependency.inputs[0])
+    }
+    let result = result.as_ref()?;
+    let value = result.proven_value.as_ref()?;
+    let side = side.as_ref()?;
+    (!result.evidence.is_empty()
+        && result.evidence.iter().all(|evidence| {
+            side.observations
+                .get(evidence.observation.index)
+                .is_some_and(|observation| match &observation.value {
+                    ResultValue::Expression { dependency, .. } => selected(dependency),
+                    ResultValue::Undefined => false,
+                })
+        }))
+    .then(|| primitive_text(value))
+}
+
 fn supported_literal(value: &FunctionKnownValue) -> bool {
     match value {
         FunctionKnownValue::Number { value } => value
