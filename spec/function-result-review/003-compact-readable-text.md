@@ -6,7 +6,7 @@ Status: presentation suggestions based on the examples.
 
 For `equal_control`, the report prints a `Return choice` table, `Effect: always: 1 -> 1 (Equal)`, `Unchanged choices: 1`, and `Equal under always: 1`. These repeat the same result four times, although the main point is the changed guard with an unchanged returned value. One line about the changed control and equal result should be enough; avoid repeating the same choice in both findings and the unchanged summary.
 
-For `guard_version`, two tables show the same `"yes"` and `"no"` choices under reversed conditions, followed by two effect lines. A single table with both input regions and one note that the result assignments were swapped would be clearer.
+For `guard_version`, two tables show the same `"yes"` and `"no"` choices under reversed conditions, followed by two effect lines. A single table with both input regions and one note that the result assignments were swapped would be clearer. This grouping is now owned by the agreed requirements in [001](001-report-values-and-attribution.md#symmetric-guard-effects); 003 retains the other readability work.
 
 ## Coverage and attribution visibility
 

@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::fmt;
 
-pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 3;
+pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -143,6 +143,7 @@ pub struct InputCorrespondence {
 #[serde(deny_unknown_fields)]
 pub struct ResultDependency {
     pub node: NodeId,
+    pub span: Option<SourceSpan>,
     pub role: Option<ComputeInputRole>,
     pub operation: String,
     pub literal: Option<FunctionKnownValue>,
@@ -1261,6 +1262,11 @@ impl DependencyWalker<'_> {
         if !self.visiting.insert(key.clone()) {
             return ResultDependency {
                 node: at.clone(),
+                span: self
+                    .procedure
+                    .nodes
+                    .get(at)
+                    .and_then(|node| node.span.clone()),
                 role,
                 operation: "cycle".into(),
                 literal: None,
@@ -1338,6 +1344,7 @@ impl DependencyWalker<'_> {
         };
         ResultDependency {
             node: id.clone(),
+            span: node.span.clone(),
             role,
             operation,
             literal: match &node.operation {
@@ -1404,7 +1411,7 @@ impl DependencyWalker<'_> {
                     let writer_inputs = sources.iter()
                         .map(|source| self.trace(source, &node.id, None)).collect();
                     inputs.push(ResultDependency {
-                        node: node.id.clone(), role: None, operation: "write".into(),
+                        node: node.id.clone(), span: node.span.clone(), role: None, operation: "write".into(),
                         literal: None, operator: None,
                         origin: Some(Source::Write(write.clone())), inputs: writer_inputs,
                         unresolved: false,
@@ -1412,7 +1419,7 @@ impl DependencyWalker<'_> {
                 }
             } else if self.procedure.parameters.iter().any(|parameter|
                 parameter.binding == *binding && parameter.entry_definition == write) {
-                inputs.push(ResultDependency { node: self.procedure.entry.clone(), role: None,
+                inputs.push(ResultDependency { node: self.procedure.entry.clone(), span: self.procedure.nodes[&self.procedure.entry].span.clone(), role: None,
                     operation: "positional_input".into(), origin: Some(Source::FunctionInput(binding.clone())),
                     literal: None, operator: None,
                     inputs: Vec::new(), unresolved: false });
@@ -1429,6 +1436,7 @@ impl DependencyWalker<'_> {
             // syntactic parameter dependency without claiming its value survived.
             inputs.push(ResultDependency {
                 node: self.procedure.entry.clone(),
+                span: self.procedure.nodes[&self.procedure.entry].span.clone(),
                 role: None,
                 operation: "possible_positional_input".into(),
                 literal: None,
@@ -1441,6 +1449,11 @@ impl DependencyWalker<'_> {
         let unresolved = inputs.is_empty();
         ResultDependency {
             node: at.clone(),
+            span: self
+                .procedure
+                .nodes
+                .get(at)
+                .and_then(|node| node.span.clone()),
             role,
             operation: "binding_value".into(),
             literal: None,
