@@ -218,8 +218,8 @@ while leaving its supported return consequence unexplained.
 The first comparison theory must support truthiness of stable paired positional
 inputs in pure conditions, negation, supported conjunction/disjunction and branch
 composition, primitive literal
-equality/inequality, identity of a paired unchanged primitive input or copy,
-and structural identity of the same supported pure deterministic expression
+equality/inequality, identity of a paired unchanged input or copy without requiring
+a declared primitive type, and structural identity of the same supported pure deterministic expression
 over paired primitive inputs. This last rule establishes equality without
 evaluating the expression; unknown coercions or effects invalidate it.
 Evaluate only the supported operations with defined language semantics. Primitive
@@ -227,8 +227,16 @@ result equality is an observational comparison of type and value, not JavaScript
 strict equality. If special numeric values are modeled, use SameValue semantics:
 NaN equals NaN and positive and negative zero differ. The first delivery need not
 model those special values; until it does, their relations are unknown. Unsupported
-numeric reasoning, coercions, object identity, or expression equivalence stays
-unknown. Broader predicate theories remain owned by K032.
+numeric reasoning, coercions, independent object identity, or expression
+equivalence stays unknown. Broader predicate theories remain owned by K032.
+
+Paired input identity proves return of the same unchanged supplied value without
+evaluating it. It applies to direct returns, copies, and the selected operands of
+`&&`, `||`, and `??` where selection is established. It requires proven input
+correspondence and normal completion on both sides; names and source text alone
+do not establish it. This does not extend numeric evaluation or equivalence of
+computations over unrestricted inputs. A skipped unsupported RHS call does not
+invalidate this proof, while an unresolved call that executes still does.
 
 Keep condition identities tied to binding/value versions and caller context.
 Reason over typed conditions and expressions, not display-string substitutions.
@@ -293,6 +301,14 @@ contains both dependency graphs, comparison derivations, and diagnostics. Compac
 references resolve into that exact report and snapshot pair. Reuse the compact
 report's deterministic IDs, sharing, and evidence principles without requiring a
 selected binding or silently changing `VariableSourceReport`.
+
+Text omits proven equal regions and unchanged choices. Compact and full JSON
+retain all equal comparison regions and their evidence, including regions
+unrelated to changed result expressions. Unknown regions and incomplete coverage
+remain visible in every format. For proven operand selection, text can show the
+selected literal instead of repeating the whole expression, while JSON preserves
+the original expression. Truthiness conditions use `truthy`/`falsy` when written
+in words rather than implying a strict Boolean equality.
 
 Compact results preserve the source expression and an optional typed primitive
 value established for the whole feasible region. Copies may therefore display
@@ -401,7 +417,7 @@ independently of the analyzer.
 | Equivalent return shape | `return flag ? 1 : 2;` -> `if (flag) return 1; return 2;` | Equal results for all paired inputs under symbolic truthiness despite changed observation structure. |
 | Overwritten source | `let x = p; x = 3; return x;` -> replace `p` with `q` | Result remains 3; the killed initializer is not a reaching result source. |
 | Copy survives overwrite | `let x = 1; const y = x; x = 3; return y;` -> initializer 1 becomes 2 | Result changes 1 -> 2 through `y`. |
-| Same result input | `return p;` -> `const copy = p; return copy;` | Equal for the same paired primitive input, with changed intermediate structure. |
+| Same result input | `return p;` -> `const copy = p; return copy;` | Equal for the same paired unchanged input without a type declaration, with changed intermediate structure. |
 | Computation changes | `return p + 1;` -> `return p + 2;` | Report `changed` with both whole expressions and the edited operand; no numeric evaluation or claim of unequal values is required. |
 | Guard inversion selects a different return | `if (flag) return "yes"; return "no";` -> `if (!flag) return "yes"; return "no";` | Show `flag -> !flag` and the resulting switch of return values for the same paired input's truthiness, without running the condition or declaring its type. |
 | Guard version changes | `let g = flag; if (g) return 1; return 2;` -> insert `g = !g` before the condition | Track the new value of `g`; result selection reverses for Boolean `flag`. |

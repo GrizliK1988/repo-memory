@@ -1,7 +1,8 @@
 # FR002 — Conditions and result comparison
 
 Status: implemented for the first subset, including symbolic truthiness of
-unrestricted paired inputs in pure guards.
+unrestricted paired inputs in pure guards and identity of unchanged paired
+inputs/copies without a declared primitive type.
 
 Dependencies: [FR001](001-function-query-and-slice.md),
 [K011](../kickoff/011-node-alignment.md), [K012](../kickoff/012-flow-comparison.md).
@@ -58,6 +59,12 @@ Fixture examples: [FR002 acceptance test sketches](TEST_EXAMPLES.md).
   Keep a condition edit visible even when its return effect is equal; claim a
   changed result only where both normal returns and the shared input region are
   established. Effects or unstable reads remain unresolved.
+- Returning the same unchanged paired input or its copy proves equality without
+  requiring a primitive domain or evaluating the input. Apply this to proven
+  selected operands of `&&`, `||`, and `??` as well. Input correspondence and
+  normal completion must still be established. A skipped unsupported RHS call
+  does not taint the skipped region. Unknown computations or calls that execute
+  remain unresolved. See [review 002](../function-result-review/002-short-circuit-precision.md).
 
 Excludes universal expression equivalence, general numeric solving, whole-program
 behavioral equivalence, and claims that a concrete witness proves a larger region.

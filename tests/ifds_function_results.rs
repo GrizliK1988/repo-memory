@@ -118,6 +118,109 @@ fn assert_region(
 }
 
 #[test]
+fn short_circuit_identity_reports_and_skipped_calls() {
+    for (operator, skipped) in [("&&", false), ("||", true)] {
+        let before = format!("function result(flag) {{ return flag {operator} \"old\"; }}");
+        for rhs in ["\"new\"", "mystery()"] {
+            let after = format!("function result(flag) {{ return flag {operator} {rhs}; }}");
+            let (full, compact) = reports(
+                &before,
+                &after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            let text = compact.render_text(&full);
+            assert_region(
+                &full,
+                &[(0, skipped)],
+                &format!("flag {operator} \"old\""),
+                &format!("flag {operator} {rhs}"),
+                ResultAssessment::Equal,
+            );
+            assert_eq!(compact.equal_regions.len(), 1);
+            assert!(!text.contains("Equal"), "{text}");
+            assert!(!text.contains("Unchanged choices"), "{text}");
+            if rhs == "mystery()" {
+                assert_eq!(compact.coverage.result_comparison, Coverage::Partial);
+                assert_eq!(compact.unknown_regions.len(), 1);
+                assert_eq!(
+                    compact.unknown_regions[0].region.values,
+                    BTreeMap::from([(0, !skipped)])
+                );
+                assert!(text.contains("Unknown under"), "{text}");
+                assert!(text.contains("unresolved call"), "{text}");
+            } else {
+                assert_eq!(compact.coverage.result_comparison, Coverage::Complete);
+                assert!(compact.unknown_regions.is_empty());
+                let condition = if skipped { "falsy" } else { "truthy" };
+                assert!(
+                    text.contains(&format!(
+                        "when flag is {condition}: \"old\" -> \"new\" (Different)"
+                    )),
+                    "{text}"
+                );
+                assert!(!text.contains("Return choice"), "{text}");
+            }
+            compact.validate_with_full(&full).unwrap();
+            let decoded_full = repo_memory::ifds::FunctionResultReport::from_json(
+                &serde_json::to_vec(&full).unwrap(),
+            )
+            .unwrap();
+            let decoded_compact = repo_memory::ifds::FunctionResultCompactReport::from_json(
+                &serde_json::to_vec(&compact).unwrap(),
+            )
+            .unwrap();
+            assert_eq!(decoded_full, full);
+            assert_eq!(decoded_compact, compact);
+            decoded_compact.validate_with_full(&decoded_full).unwrap();
+        }
+    }
+    // Unlike &&, ?? skips its RHS for non-nullish falsy inputs as well.
+    for value in [
+        FunctionKnownValue::Boolean { value: false },
+        FunctionKnownValue::Number { value: "0".into() },
+        FunctionKnownValue::String {
+            value: String::new(),
+        },
+        FunctionKnownValue::Null,
+        FunctionKnownValue::Undefined,
+    ] {
+        let calls = matches!(
+            value,
+            FunctionKnownValue::Null | FunctionKnownValue::Undefined
+        );
+        let mut scope = FunctionEntry::default();
+        scope.known_values.insert(0, value);
+        let (full, compact) = reports(
+            "function result(flag) { return flag ?? \"old\"; }",
+            "function result(flag) { return flag ?? mystery(); }",
+            scope.clone(),
+            scope,
+        );
+        if calls {
+            assert_eq!(compact.coverage.result_comparison, Coverage::Partial);
+            assert!(compact.equal_regions.is_empty());
+            assert_eq!(compact.unknown_regions.len(), 1);
+            assert!(compact.render_text(&full).contains("unresolved call"));
+        } else {
+            assert_eq!(compact.coverage.result_comparison, Coverage::Complete);
+            assert_eq!(compact.equal_regions.len(), 1);
+            assert!(compact.unknown_regions.is_empty());
+            assert!(
+                full.analysis
+                    .after
+                    .as_ref()
+                    .unwrap()
+                    .unknown_boundaries
+                    .is_empty()
+            );
+            assert!(!compact.render_text(&full).contains("Equal"));
+        }
+        compact.validate_with_full(&full).unwrap();
+    }
+}
+
+#[test]
 fn independently_authored_guard_and_status_cases() {
     let (full, compact) = reports(
         include_str!("ifds/function_result_cases/guard_added/before.ts"),

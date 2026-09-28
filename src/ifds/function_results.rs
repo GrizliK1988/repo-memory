@@ -874,6 +874,7 @@ fn eval_dependency(
     dependency: &ResultDependency,
     procedure: &ProcedureIr,
     values: &BTreeMap<u32, EvalValue>,
+    entry: &FunctionEntry,
 ) -> Option<EvalValue> {
     if let Some(Source::FunctionInput(binding)) = &dependency.origin {
         let index = procedure
@@ -907,10 +908,14 @@ fn eval_dependency(
                 dependency
                     .inputs
                     .get(index)
-                    .and_then(|value| eval_dependency(value, procedure, values))
+                    .and_then(|value| eval_dependency(value, procedure, values, entry))
             };
             match operator {
                 PrimitiveOperator::LogicalNot => eval_unary(AssumptionUnary::Not, input(0)?),
+                PrimitiveOperator::IsNullish => input(0)
+                    .map(|value| matches!(value, EvalValue::Null | EvalValue::Undefined))
+                    .or_else(|| dependency_nullish(dependency.inputs.first()?, procedure, entry))
+                    .map(EvalValue::Boolean),
                 PrimitiveOperator::UnaryPlus => eval_unary(AssumptionUnary::Plus, input(0)?),
                 PrimitiveOperator::UnaryMinus => eval_unary(AssumptionUnary::Minus, input(0)?),
                 PrimitiveOperator::ValueJoin { .. } => input(0),
@@ -932,10 +937,50 @@ fn eval_dependency(
             }
         }
         _ if dependency.inputs.len() == 1 => {
-            eval_dependency(&dependency.inputs[0], procedure, values)
+            eval_dependency(&dependency.inputs[0], procedure, values, entry)
         }
         _ => None,
     }
+}
+
+/// Nullishness of an unchanged input/copy follows from its declared domain;
+/// proving this does not require evaluating an arbitrary number or string.
+fn dependency_nullish(
+    dependency: &ResultDependency,
+    procedure: &ProcedureIr,
+    entry: &FunctionEntry,
+) -> Option<bool> {
+    if dependency.unresolved {
+        return None;
+    }
+    if let Some(Source::FunctionInput(binding)) = &dependency.origin {
+        let index = procedure
+            .parameters
+            .iter()
+            .find(|parameter| &parameter.binding == binding)?
+            .index;
+        return entry
+            .domains
+            .get(&index)
+            .map(|domain| *domain == PrimitiveDomain::Nullish);
+    }
+    if let Some(literal) = &dependency.literal {
+        return Some(matches!(
+            literal,
+            FunctionKnownValue::Null | FunctionKnownValue::Undefined
+        ));
+    }
+    if (matches!(
+        dependency.operation.as_str(),
+        "read" | "write" | "binding_value"
+    ) || matches!(
+        dependency.operator,
+        Some(PrimitiveOperator::ValueJoin { .. })
+    )) && dependency.inputs.len() == 1
+    {
+        return dependency_nullish(&dependency.inputs[0], procedure, entry);
+    }
+    None
 }
 
 fn entry_viability(
@@ -993,7 +1038,7 @@ fn entry_viability(
             visiting: BTreeSet::new(),
         };
         for guard in walker.guards(state) {
-            match eval_dependency(&guard.condition, procedure, &values) {
+            match eval_dependency(&guard.condition, procedure, &values, entry) {
                 Some(value) if value.truthy() != guard.outcome => {
                     rejected = true;
                     break;
