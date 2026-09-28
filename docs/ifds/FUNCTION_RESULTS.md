@@ -279,10 +279,10 @@ insufficient when its return consequence is established.
 For each affected return choice, show its complete selection condition before
 and after the edit, including unchanged enclosing guards that constrain when
 the choice is reachable. Then show the same-input region where the selected
-result changes. In compact text and JSON, summarize other return choices as
-unchanged when their conditions and results are proven unchanged; retain their
-details in full evidence. If coverage is partial, do not summarize unexamined
-choices as unchanged.
+result changes. Compact JSON retains other return choices as unchanged when
+their conditions and results are proven unchanged; text follows the omission and
+summary policy below. Retain their details in full evidence. If coverage is
+partial, do not summarize unexamined choices as unchanged.
 
 For compact presentation, factor a proven common condition out of the affected
 selection rules and display it once as an explicit context. Present a table of
@@ -302,7 +302,36 @@ references resolve into that exact report and snapshot pair. Reuse the compact
 report's deterministic IDs, sharing, and evidence principles without requiring a
 selected binding or silently changing `VariableSourceReport`.
 
-Text omits proven equal regions and unchanged choices. Compact and full JSON
+Text omits ordinary proven equal regions and unchanged choices. An established
+control change with an equal result is an exception: show one concise line with
+the concrete before/after guard, equal result, and applicable common-input scope.
+Establish guard correspondence from dependencies on paired inputs, not source
+labels or result equality alone. Use an unambiguous recorded source condition
+when available; identify a resolved condition explicitly when it is reconstructed
+from dependencies. If correspondence is unresolved, report the established
+control change with that uncertainty instead of inventing a guard pair. Do not
+repeat the equal result in a table, effect line, or unchanged summary. Equal
+findings with only dependency/return-structure changes remain hidden in text.
+
+When every common-input comparison region is proven equal, the common domain is
+established and nonempty, analysis/input mapping/comparison/presentation are
+complete, and no control change is established, show one `Normal results
+unchanged` summary scoped to the common inputs and recorded entry assumptions.
+An empty visible finding list is insufficient. Unknown regions, unresolved
+feasibility/correspondence, missing counterparts, and limits or omissions
+preventing completeness disallow this summary. Source-alignment incompleteness
+alone does not invalidate proven result equality. Preserve existing choice tables
+for changed results and the selected-operand exception below.
+
+Always display result-comparison and source-alignment coverage independently,
+adding other non-complete coverage dimensions and omitted-group counts when
+applicable. Keep analysis, comparison, and presentation limits distinct. Mark each
+visible finding with `Edit attribution uncertain` once when its existing
+attribution flag is false, including grouped effects and equal-control findings.
+This concerns the link to a specific edit and does not weaken an established
+result assessment or value dependency.
+
+Compact and full JSON
 retain all equal comparison regions and their evidence, including regions
 unrelated to changed result expressions. Unknown regions and incomplete coverage
 remain visible in every format. For proven operand selection, text can show the

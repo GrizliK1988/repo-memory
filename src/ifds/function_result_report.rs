@@ -8,7 +8,9 @@ use super::snapshots::{AnalysisEnvironment, SnapshotProvider};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
+mod text;
 mod values;
+use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
 
@@ -1044,6 +1046,11 @@ impl FunctionResultCompactReport {
                 "After only: {}",
                 regions_text(&self.after_only_domain, names)
             ));
+        } else if self.before_entry != FunctionEntry::default() {
+            lines.push(format!(
+                "Entry scope: {}",
+                entry_text(&self.before_entry, names)
+            ));
         }
         if self.function_presence != FunctionPresence::Both {
             let status = match self.function_presence {
@@ -1101,6 +1108,13 @@ impl FunctionResultCompactReport {
             if self.common_domain_status == CommonDomainStatus::Unresolved {
                 lines.push("Common input feasibility is unresolved.".into());
             }
+            lines.extend(equal_control_lines(self, full));
+            if normal_results_unchanged(self, full) {
+                lines.push(format!(
+                    "Normal results unchanged on common inputs: {} (under the recorded entry assumptions).",
+                    regions_text(&self.common_domain, names)
+                ));
+            }
             for finding in &self.findings {
                 if finding.assessment == ResultAssessment::Equal {
                     continue;
@@ -1113,6 +1127,9 @@ impl FunctionResultCompactReport {
                 let context = region_text(&finding.context, names);
                 if !selected_values && !finding.context.values.is_empty() {
                     lines.push(format!("Context: {context}"));
+                }
+                if !finding.attribution_certain {
+                    lines.push("Edit attribution uncertain".into());
                 }
                 if !selected_values {
                     lines.push("Return choice | Before | After".into());
@@ -1161,7 +1178,17 @@ impl FunctionResultCompactReport {
                     }
                 }
             }
+            let mut marked_unknown_findings = BTreeSet::new();
             for unknown in &self.unknown_regions {
+                for (index, finding) in full.findings.iter().enumerate() {
+                    if finding.assessment == ResultAssessment::Unknown
+                        && finding.regions.contains(&unknown.evidence.index)
+                        && !finding.attribution_certain
+                        && marked_unknown_findings.insert(index)
+                    {
+                        lines.push("Edit attribution uncertain".into());
+                    }
+                }
                 lines.push(format!(
                     "Unknown under {}: {}",
                     region_text(&unknown.region, names),
@@ -1169,16 +1196,7 @@ impl FunctionResultCompactReport {
                 ));
             }
         }
-        if self.coverage.result_comparison != Coverage::Complete
-            || self.coverage.presentation != Coverage::Complete
-        {
-            lines.push(format!(
-                "Coverage: comparison {:?}, presentation {:?}; {} groups omitted.",
-                self.coverage.result_comparison,
-                self.coverage.presentation,
-                self.coverage.omitted_groups
-            ));
-        }
+        lines.push(coverage_text(&self.coverage));
         lines.push(format!(
             "Evidence: {} ({})",
             self.evidence_file, self.full_report_id
@@ -1353,7 +1371,9 @@ mod tests {
                 .filter(|region| region.assessment == ResultAssessment::Equal)
                 .count()
         );
-        assert!(!compact.render_text(&full).contains("Equal"));
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Equal under"), "{text}");
+        assert!(!text.contains("Unchanged choices"), "{text}");
     }
 
     #[test]
@@ -1407,6 +1427,301 @@ mod tests {
         assert!(!text.contains("Unchanged choices"), "{text}");
         assert_eq!(compact.equal_regions.len(), 3);
         assert_eq!(compact.findings.len(), 1);
+    }
+
+    #[test]
+    fn ifds_fr003_readable_equal_control() {
+        let (full, compact) = review("equal_control");
+        let before_full = serde_json::to_vec(&full).unwrap();
+        let before_compact = serde_json::to_vec(&compact).unwrap();
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("Control: flag -> !flag; result remains 1 (Equal)"),
+            "{text}"
+        );
+        assert_eq!(text.matches("Control:").count(), 1, "{text}");
+        assert_eq!(
+            text.matches("Edit attribution uncertain").count(),
+            1,
+            "{text}"
+        );
+        for absent in [
+            "Return choice",
+            "Effect:",
+            "Equal under",
+            "Unchanged choices",
+            "Normal results unchanged",
+        ] {
+            assert!(!text.contains(absent), "{text}");
+        }
+        assert!(
+            text.contains("Coverage: result comparison Complete; source alignment Partial"),
+            "{text}"
+        );
+        assert_eq!(before_full, serde_json::to_vec(&full).unwrap());
+        assert_eq!(before_compact, serde_json::to_vec(&compact).unwrap());
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn ifds_fr003_scoped_and_unresolved_equal_control() {
+        for (before, after, concrete) in [
+            (
+                "function result(enabled, flag) { if (enabled) { if (flag) return 1; return 1; } return 2; }",
+                "function result(enabled, flag) { if (enabled) { if (!flag) return 1; return 1; } return 2; }",
+                true,
+            ),
+            (
+                "function result(flag, ready) { if (flag) return 1; return 1; }",
+                "function result(flag, ready) { if (ready) return 1; return 1; }",
+                false,
+            ),
+            (
+                "function result(flag) { if (flag) return 1; return 1; }",
+                "function result(renamed) { if (!renamed) return 1; return 1; }",
+                true,
+            ),
+            (
+                "function result(flag, other) { if (flag) return 1; if (other) return 1; return 1; }",
+                "function result(flag, other) { if (other) return 1; if (!flag) return 1; return 1; }",
+                false,
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert!(text.contains("(Equal)"), "{text}");
+            assert!(!text.contains("Normal results unchanged"), "{text}");
+            if concrete {
+                assert!(text.contains("Control:"), "{text}");
+                assert!(!text.contains("correspondence unresolved"), "{text}");
+                if before.contains("enabled") {
+                    assert!(
+                        text.contains("under enabled in the common input scope"),
+                        "{text}"
+                    );
+                    assert!(!text.contains("under always"), "{text}");
+                } else {
+                    assert!(text.contains("flag -> !renamed"), "{text}");
+                }
+            } else {
+                assert!(
+                    text.contains("Control changed (guard correspondence unresolved)"),
+                    "{text}"
+                );
+                assert!(!text.contains("flag -> ready"), "{text}");
+            }
+            compact.validate_with_full(&full).unwrap();
+        }
+    }
+
+    #[test]
+    fn ifds_fr003_complete_unchanged_summary() {
+        let (full, compact) = review("overwritten");
+        let text = compact.render_text(&full);
+        assert_eq!(
+            text.matches("Normal results unchanged").count(),
+            1,
+            "{text}"
+        );
+        assert!(text.contains("on common inputs: always"), "{text}");
+        assert!(text.contains("source alignment Partial"), "{text}");
+        assert!(!text.contains("Equal under"), "{text}");
+        assert!(!text.contains("Unchanged choices"), "{text}");
+
+        let mut entry = FunctionEntry::default();
+        entry
+            .known_values
+            .insert(0, FunctionKnownValue::Boolean { value: true });
+        let full = assemble_function_result_report(analyze(
+            "function result(flag) { return flag; }",
+            "function result(flag) { const copy = flag; return copy; }",
+            entry.clone(),
+            entry,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("Entry scope:"), "{text}");
+        assert!(text.contains("flag = Boolean { value: true }"), "{text}");
+        assert!(text.contains("Normal results unchanged"), "{text}");
+        assert!(!text.contains("(Equal)"), "{text}");
+    }
+
+    #[test]
+    fn ifds_fr003_equal_control_alongside_changed_results() {
+        let before =
+            "function result(mode, flag) { if (mode) { if (flag) return 1; return 1; } return 2; }";
+        let after = "function result(mode, flag) { if (mode) { if (!flag) return 1; return 1; } return 3; }";
+        let analysis = analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        let full = assemble_function_result_report(analysis.clone());
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(
+            compact
+                .findings
+                .iter()
+                .all(|finding| finding.assessment != ResultAssessment::Equal)
+        );
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("Control: resolved: flag -> resolved: !flag"),
+            "{text}"
+        );
+        assert!(
+            text.contains("result remains 1 (Equal) under mode"),
+            "{text}"
+        );
+        assert!(text.contains("2 -> 3 (Different)"), "{text}");
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        let mut reordered = analysis;
+        reordered.before.as_mut().unwrap().observations.reverse();
+        reordered.after.as_mut().unwrap().observations.reverse();
+        let reordered_full = assemble_function_result_report(reordered);
+        let reordered_compact =
+            compact_function_result_report(&reordered_full, FunctionPresentationOptions::default());
+        assert_eq!(compact, reordered_compact);
+        assert_eq!(text, reordered_compact.render_text(&reordered_full));
+    }
+
+    #[test]
+    fn ifds_fr003_no_false_unchanged_summary() {
+        let analysis = analyze(
+            "function result(flag) { if (flag) return 1; return 2; }",
+            "function result(flag) { if (flag) return 1; return 2; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        let full = assemble_function_result_report_with_comparison_limit(analysis, 1);
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .all(|region| region.assessment == ResultAssessment::Equal)
+        );
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(text.contains("result comparison Partial"), "{text}");
+        assert!(
+            text.contains("comparison limits: comparison_assignments"),
+            "{text}"
+        );
+
+        let (full, _) = review("equal_control");
+        let compact =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(!text.contains("Control:"), "{text}");
+        assert!(
+            text.contains("presentation Partial; 1 groups omitted"),
+            "{text}"
+        );
+        assert!(text.contains("Evidence:"), "{text}");
+
+        for name in ["unknown", "expression"] {
+            let (full, compact) = review(name);
+            let text = compact.render_text(&full);
+            assert!(!text.contains("Normal results unchanged"), "{text}");
+            assert!(text.contains("Unknown under"), "{text}");
+        }
+    }
+
+    #[test]
+    fn ifds_fr003_unknown_and_presence_summary_boundaries() {
+        let full = assemble_function_result_report(analyze(
+            "function result() { return 1; }",
+            "",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("Function removed"), "{text}");
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+
+        let mut before = FunctionEntry::default();
+        before
+            .known_values
+            .insert(0, FunctionKnownValue::Boolean { value: true });
+        let mut after = before.clone();
+        after
+            .known_values
+            .insert(0, FunctionKnownValue::Boolean { value: false });
+        let full = assemble_function_result_report(analyze(
+            "function result(flag) { return 1; }",
+            "function result(flag) { return 1; }",
+            before,
+            after,
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("No common inputs"), "{text}");
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(!text.contains("(Equal)"), "{text}");
+
+        let mut analysis = analyze(
+            "function result(flag) { return flag; }",
+            "function result(flag) { return flag; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        analysis.input_correspondence.clear();
+        analysis.input_mapping_coverage = Coverage::Partial;
+        let full = assemble_function_result_report(analysis);
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(text.contains("input mapping Partial"), "{text}");
+        assert!(text.contains("Unknown under"), "{text}");
+    }
+
+    #[test]
+    fn ifds_fr003_attribution_marker_per_finding() {
+        for name in ["copy", "guard_version", "unknown", "known_expression"] {
+            let (full, compact) = review(name);
+            let text = compact.render_text(&full);
+            let expected = compact
+                .findings
+                .iter()
+                .filter(|finding| {
+                    finding.assessment != ResultAssessment::Equal && !finding.attribution_certain
+                })
+                .count()
+                + full
+                    .findings
+                    .iter()
+                    .filter(|finding| {
+                        finding.assessment == ResultAssessment::Unknown
+                            && !finding.attribution_certain
+                    })
+                    .count();
+            assert_eq!(
+                text.matches("Edit attribution uncertain").count(),
+                expected,
+                "{name}: {text}"
+            );
+            if name == "guard_version" {
+                assert_eq!(expected, 1);
+                assert_eq!(text.matches("(Different)").count(), 2, "{text}");
+            }
+            compact.validate_with_full(&full).unwrap();
+        }
+        let (full, compact) = review("literal");
+        assert!(compact.findings[0].attribution_certain);
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Edit attribution uncertain"), "{text}");
+        assert!(text.contains("1 -> 2 (Different)"), "{text}");
     }
 
     #[test]
@@ -1978,7 +2293,7 @@ mod tests {
         assert!(
             compact
                 .render_text(&full)
-                .contains("Coverage: comparison Partial")
+                .contains("Coverage: result comparison Partial")
         );
         let full = assemble_function_result_report(analyze(
             "function value(flag: boolean) { if (flag) return 1; mystery(); return 1; }",

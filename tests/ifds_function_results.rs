@@ -353,6 +353,65 @@ fn independent_result_shapes_and_uncertainty() {
 }
 
 #[test]
+fn readable_review_text_preserves_structured_evidence() {
+    for (before, after, expected, forbidden) in [
+        (
+            "function result(flag) { if (flag) return 1; return 1; }",
+            "function result(flag) { if (!flag) return 1; return 1; }",
+            "Control: flag -> !flag; result remains 1 (Equal)",
+            "Normal results unchanged",
+        ),
+        (
+            "function result() { let x = 1; x = 9; return x; }",
+            "function result() { let x = 2; x = 9; return x; }",
+            "Normal results unchanged on common inputs: always",
+            "Unchanged choices",
+        ),
+        (
+            "function result(flag) { if (flag) return 1; mystery(); return 3; }",
+            "function result(flag) { if (flag) return 2; mystery(); return 3; }",
+            "Unknown under !flag: an unresolved call may prevent normal completion",
+            "Normal results unchanged",
+        ),
+    ] {
+        let (full, compact) = reports(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        let text = compact.render_text(&full);
+        assert!(text.contains(expected), "{text}");
+        assert!(!text.contains(forbidden), "{text}");
+        assert_eq!(text.matches("Coverage:").count(), 1, "{text}");
+        assert!(text.contains("source alignment Partial"), "{text}");
+        assert!(text.contains("Evidence:"), "{text}");
+        let restored_full =
+            repo_memory::ifds::FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap())
+                .unwrap();
+        let restored_compact = repo_memory::ifds::FunctionResultCompactReport::from_json(
+            &serde_json::to_vec(&compact).unwrap(),
+        )
+        .unwrap();
+        restored_compact.validate_with_full(&restored_full).unwrap();
+        assert_eq!(restored_compact.render_text(&restored_full), text);
+        assert_eq!(restored_full, full);
+        assert_eq!(restored_compact, compact);
+        assert_eq!(full.schema_version, 2);
+        assert_eq!(full.analysis.schema_version, 4);
+        assert_eq!(compact.schema_version, 2);
+        assert_eq!(
+            compact.equal_regions.len(),
+            full.comparison
+                .regions
+                .iter()
+                .filter(|region| region.assessment == ResultAssessment::Equal)
+                .count()
+        );
+    }
+}
+
+#[test]
 fn no_common_inputs_keep_separate_flows() {
     let mut before = FunctionEntry::default();
     before.domains.insert(0, PrimitiveDomain::Boolean);
