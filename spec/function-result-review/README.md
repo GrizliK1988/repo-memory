@@ -38,8 +38,13 @@ The [semantic expectations and sources](EXAMPLES.md) cover every case. Findings 
 documentation, preserving JSON structures and versions. Its presentation
 requirements and acceptance criteria are implemented and verified; see the
 [implementation review](003-implementation.md) and [parity checks](003-verification.json).
-Evidence size reduction is tracked separately in [004](004-evidence-size.md);
-its representation and compatibility requirements remain to be clarified before
-implementation.
+[004 — Make the human report more compact](004-evidence-size.md) records the
+agreed next text-only improvement: concise function reports by default, detailed
+text on request, selective choice tables, key contributing writes, and explicit
+control changes. It supersedes the earlier JSON-size proposal and is implemented
+and verified; see its [implementation review](004-implementation.md) and
+[measurements and parity checks](004-verification.json).
+Binding human reports are tracked separately in
+[005](005-binding-human-report.md).
 
 Schema and reference checks, truth tables, test results, and file sizes are recorded in [verification.json](reports/verification.json). These reports are not implementation-generated golden expectations; expected behavior was derived independently from the source examples.

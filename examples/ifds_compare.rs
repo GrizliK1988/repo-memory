@@ -20,7 +20,7 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--format text|compact-json|full-json] [--evidence-out <path>]";
+    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]";
     if arguments.len() < 3 {
         return Err(usage.into());
     }
@@ -30,9 +30,14 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut after_function_name = None;
     let mut format = "text";
     let mut evidence_out = None;
+    let mut verbose = false;
     let mut index = if binding_name.is_some() { 3 } else { 2 };
     while index < arguments.len() {
         match arguments[index].as_str() {
+            "--verbose" => {
+                verbose = true;
+                index += 1;
+            }
             "--function" if index + 1 < arguments.len() => {
                 function_name = Some(arguments[index + 1].as_str());
                 index += 2;
@@ -59,6 +64,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         || (after_function_name.is_some() && function_name.is_none())
     {
         return Err(usage.into());
+    }
+    if verbose && (function_name.is_none() || format != "text") {
+        return Err("--verbose requires a function target and --format text".into());
     }
     let before = std::fs::read(before_path)?;
     let after = std::fs::read(after_path)?;
@@ -176,7 +184,14 @@ fn run() -> Result<(), Box<dyn Error>> {
         if format == "compact-json" {
             println!("{}", serde_json::to_string_pretty(&compact)?);
         } else {
-            println!("{}", compact.render_text(&report));
+            println!(
+                "{}",
+                if verbose {
+                    compact.render_verbose_text(&report)
+                } else {
+                    compact.render_text(&report)
+                }
+            );
         }
         return Ok(());
     }

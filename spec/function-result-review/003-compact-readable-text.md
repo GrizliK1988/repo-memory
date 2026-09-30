@@ -10,9 +10,11 @@ that output. Preserve the full and compact JSON structures and their schema
 versions, as well as result assessments, proofs, coverage facts, and evidence
 references. Text continues to derive from the existing structured facts.
 
-Evidence size reduction is a separate task:
-[004 — Reduce evidence size without losing information](004-evidence-size.md).
 The requirements below record the agreed and implemented presentation decisions.
+The subsequent [004 — Make the human report more compact](004-evidence-size.md)
+changes the default choice-table and source-detail policies in a later text-only
+task, following the user's clarified intent. Its earlier JSON-size proposal has
+been superseded; 003's verification remains the implemented baseline.
 
 ## Agreed equal-result control-change exception
 
@@ -129,7 +131,7 @@ from partial source alignment, and do not change the attribution algorithm.
 
 ## Evidence size
 
-For these tiny archived examples, text reports are 160–456 bytes, compact JSON is about 4–12 KB, and full JSON is about 15–261 KB. These are synthetic example measurements, not a project performance estimate or a baseline for the current schemas. The full dependency tree remains available in the evidence sidecar. Investigation and reduction of repeated metadata and nodes belong to [004](004-evidence-size.md), outside this task.
+For these tiny archived examples, text reports are 160–456 bytes, compact JSON is about 4–12 KB, and full JSON is about 15–261 KB. These are synthetic example measurements, not a project performance estimate or a baseline for the current schemas. The full dependency tree remains available in the evidence sidecar. JSON metadata/node deduplication is outside the agreed reporting work; [004](004-evidence-size.md) now targets further human-text concision instead.
 
 ## Limits
 

@@ -47,6 +47,16 @@ and `--evidence-out <path>` options. Text and compact JSON save a separately
 versioned full function-result report. Simple guards use symbolic JavaScript
 truthiness, so the command does not require a Boolean input declaration.
 
+Function text is concise by default: simple replacements appear once, with key
+contributing-write positions. Conditional choice tables remain where they explain
+selection rules, and control changes, uncertainty, coverage, and the evidence link
+remain visible. Add `--verbose` for the detailed function text, including simple
+choice tables and full contributing-write lists. This flag requires a function
+target and text format; binding reports retain their existing presentation.
+
+The public API provides `render_text(&full)` and `render_verbose_text(&full)` on
+`FunctionResultCompactReport`. Both consume the same structured facts and evidence.
+
 Replace the two paths
 with your own `.ts` or `.tsx` files and `x` with a declaration name that occurs once
 in each file. The example analyzes the selected binding's containing procedure.

@@ -1015,8 +1015,18 @@ impl FunctionResultCompactReport {
     }
 
     pub fn render_text(&self, full: &FunctionResultReport) -> String {
+        self.render_text_with_detail(full, false)
+    }
+
+    /// The detailed presentation retained from the 003 renderer.
+    pub fn render_verbose_text(&self, full: &FunctionResultReport) -> String {
+        self.render_text_with_detail(full, true)
+    }
+
+    fn render_text_with_detail(&self, full: &FunctionResultReport, verbose: bool) -> String {
         debug_assert!(self.validate_with_full(full).is_ok());
         let names = &self.input_names;
+        let control_pair = changed_guard_pair(full);
         let mut lines = vec![format!(
             "Function result: {}",
             self.selected_function
@@ -1108,7 +1118,12 @@ impl FunctionResultCompactReport {
             if self.common_domain_status == CommonDomainStatus::Unresolved {
                 lines.push("Common input feasibility is unresolved.".into());
             }
-            lines.extend(equal_control_lines(self, full));
+            lines.extend(equal_control_lines(
+                self,
+                full,
+                control_pair.as_ref(),
+                verbose,
+            ));
             if normal_results_unchanged(self, full) {
                 lines.push(format!(
                     "Normal results unchanged on common inputs: {} (under the recorded entry assumptions).",
@@ -1124,14 +1139,25 @@ impl FunctionResultCompactReport {
                         && selected_operand_text(&effect.after_result, &full.analysis.after)
                             .is_some()
                 });
+                let show_choices = !selected_values && (verbose || conditional_choices(finding));
                 let context = region_text(&finding.context, names);
-                if !selected_values && !finding.context.values.is_empty() {
+                if !selected_values
+                    && (verbose || show_choices)
+                    && !finding.context.values.is_empty()
+                {
                     lines.push(format!("Context: {context}"));
                 }
                 if !finding.attribution_certain {
                     lines.push("Edit attribution uncertain".into());
                 }
-                if !selected_values {
+                if !verbose && finding.control_changed {
+                    lines.push(control_text(
+                        full,
+                        finding.effects.iter().map(|effect| effect.evidence.index),
+                        control_pair.as_ref(),
+                    ));
+                }
+                if show_choices {
                     lines.push("Return choice | Before | After".into());
                     for choice in &finding.choices {
                         lines.push(format!(
@@ -1156,9 +1182,13 @@ impl FunctionResultCompactReport {
                             effect.assessment
                         ));
                     } else {
+                        let mut condition = effect.region.clone();
+                        if !verbose && !show_choices {
+                            condition.values.extend(&finding.context.values);
+                        }
                         lines.push(format!(
                             "Effect: {}: {} -> {} ({:?})",
-                            region_text(&effect.region, names),
+                            region_text(&condition, names),
                             effect
                                 .before_result
                                 .as_ref()
@@ -1170,12 +1200,17 @@ impl FunctionResultCompactReport {
                             effect.assessment
                         ));
                     }
-                    for result in [&effect.before_result, &effect.after_result]
-                        .into_iter()
-                        .flatten()
-                    {
-                        lines.extend(source_text(result));
+                    if verbose {
+                        for result in [&effect.before_result, &effect.after_result]
+                            .into_iter()
+                            .flatten()
+                        {
+                            lines.extend(source_text(result));
+                        }
                     }
+                }
+                if !verbose {
+                    lines.extend(key_source_text(finding, full));
                 }
             }
             let mut marked_unknown_findings = BTreeSet::new();
@@ -1183,10 +1218,18 @@ impl FunctionResultCompactReport {
                 for (index, finding) in full.findings.iter().enumerate() {
                     if finding.assessment == ResultAssessment::Unknown
                         && finding.regions.contains(&unknown.evidence.index)
-                        && !finding.attribution_certain
                         && marked_unknown_findings.insert(index)
                     {
-                        lines.push("Edit attribution uncertain".into());
+                        if !finding.attribution_certain {
+                            lines.push("Edit attribution uncertain".into());
+                        }
+                        if !verbose && finding.control_changed {
+                            lines.push(control_text(
+                                full,
+                                finding.regions.iter().copied(),
+                                control_pair.as_ref(),
+                            ));
+                        }
                     }
                 }
                 lines.push(format!(
@@ -1329,6 +1372,139 @@ mod tests {
     }
 
     #[test]
+    fn ifds_fr004_short_replacements_and_verbose_details() {
+        for name in [
+            "literal",
+            "copy",
+            "known_expression",
+            "fallthrough",
+            "short_circuit",
+        ] {
+            let (full, compact) = review(name);
+            let full_bytes = serde_json::to_vec(&full).unwrap();
+            let compact_bytes = serde_json::to_vec(&compact).unwrap();
+            let short = compact.render_text(&full);
+            let verbose = compact.render_verbose_text(&full);
+            assert!(!short.contains("Return choice"), "{name}: {short}");
+            assert!(!short.contains(" return "), "{name}: {short}");
+            for text in [&short, &verbose] {
+                assert_eq!(text.matches("Coverage:").count(), 1, "{text}");
+                assert_eq!(text.matches("Evidence:").count(), 1, "{text}");
+            }
+            if name != "short_circuit" {
+                assert!(verbose.contains("Return choice"), "{name}: {verbose}");
+                assert!(short.len() < verbose.len(), "{name}: {short}");
+            }
+            if name == "copy" {
+                assert!(
+                    short.contains("saved (1) -> saved (2) (Different)"),
+                    "{short}"
+                );
+                assert!(
+                    short.contains("Before contributing writes: src/fixture.ts:2"),
+                    "{short}"
+                );
+                assert!(
+                    short.contains("After contributing writes: src/fixture.ts:2"),
+                    "{short}"
+                );
+                assert!(!short.contains("src/fixture.ts:3"), "{short}");
+                assert!(!short.contains("src/fixture.ts:4"), "{short}");
+                assert!(
+                    verbose.contains("src/fixture.ts:3, src/fixture.ts:2"),
+                    "{verbose}"
+                );
+            }
+            assert_eq!(full_bytes, serde_json::to_vec(&full).unwrap());
+            assert_eq!(compact_bytes, serde_json::to_vec(&compact).unwrap());
+            compact.validate_with_full(&full).unwrap();
+        }
+    }
+
+    #[test]
+    fn ifds_fr004_keeps_computations_and_multiple_value_origins() {
+        let before = "function result() {\nlet a = 1;\nlet b = 2;\nlet computed = a + b;\nconst saved = computed;\na = 99;\nreturn saved;\n}";
+        let after = before.replace("a = 1", "a = 3");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        for side in ["Before", "After"] {
+            assert!(text.contains(&format!("{side} contributing writes: src/fixture.ts:2, src/fixture.ts:3, src/fixture.ts:4")), "{text}");
+        }
+        assert!(!text.contains("src/fixture.ts:5"), "{text}");
+        assert!(!text.contains("src/fixture.ts:6"), "{text}");
+        assert!(!text.contains("Return choice"), "{text}");
+        assert!(text.contains("(Changed)"), "{text}");
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn ifds_fr004_conditional_swap_deduplicates_sources_and_preserves_control() {
+        let before = "function result(flag) {\nlet one = 1;\nlet two = 2;\nif (flag) return one;\nreturn two;\n}";
+        let after = before.replace("if (flag)", "if (!flag)");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert_eq!(compact.findings.len(), 1);
+        assert_eq!(text.matches("Return choice").count(), 1, "{text}");
+        assert_eq!(text.matches("Effect:").count(), 2, "{text}");
+        assert_eq!(text.matches("Control: flag -> !flag").count(), 1, "{text}");
+        assert_eq!(
+            text.matches("Edit attribution uncertain").count(),
+            1,
+            "{text}"
+        );
+        for side in ["Before", "After"] {
+            assert_eq!(
+                text.matches(&format!(
+                    "{side} contributing writes: src/fixture.ts:2, src/fixture.ts:3"
+                ))
+                .count(),
+                1,
+                "{text}"
+            );
+        }
+        assert_eq!(text, compact.render_text(&full));
+        let restored_full =
+            FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap()).unwrap();
+        let restored_compact =
+            FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap();
+        assert_eq!(text, restored_compact.render_text(&restored_full));
+    }
+
+    #[test]
+    fn ifds_fr004_summarizes_scoped_equal_choices_without_losing_changed_selection() {
+        let (full, compact) = review("priority");
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("results unchanged (Equal) under !a || !b in the common input scope"),
+            "{text}"
+        );
+        assert!(
+            text.contains("a && b: x (2) -> x (1) (Different)"),
+            "{text}"
+        );
+        assert!(text.contains("x (1) | a && !b | a"), "{text}");
+        assert!(text.contains("x (2) | b | !a && b"), "{text}");
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(
+            text.len() < compact.render_verbose_text(&full).len(),
+            "{text}"
+        );
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
     fn ifds_fr003_short_circuit_identity_report() {
         let (full, compact) = review("short_circuit");
         let text = compact.render_text(&full);
@@ -1379,7 +1555,7 @@ mod tests {
     #[test]
     fn ifds_fr003_proven_copy_and_priority() {
         let (full, compact) = review("copy");
-        let text = compact.render_text(&full);
+        let text = compact.render_verbose_text(&full);
         assert!(
             text.contains("saved (1) -> saved (2) (Different)"),
             "{text}"
@@ -1410,7 +1586,7 @@ mod tests {
             );
         }
         let (full, compact) = review("priority");
-        let text = compact.render_text(&full);
+        let text = compact.render_verbose_text(&full);
         assert!(
             text.contains("a && b: x (2) -> x (1) (Different)"),
             "{text}"

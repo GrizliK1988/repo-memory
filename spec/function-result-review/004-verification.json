@@ -1,0 +1,412 @@
+{
+  "task": "004: concise function human reports",
+  "baseline_commit": "c012ef8761a78bfaad7e699034d5555823b1c457",
+  "normalization": "Text evidence paths and compact evidence_file normalize to full.json only for portable measurements/hashes. Parity checks compare actual bytes with the same fresh sidecar path.",
+  "measurement_scope": "13 synthetic archived source pairs; current query defaults; not a project performance estimate.",
+  "binding_normalization": "Existing binding stats.elapsed_ms and its derived report IDs vary between executions. Controls normalize only elapsed_ms, report/full_report IDs, and their occurrences in human_summary/evidence_file, plus temporary sidecar paths.",
+  "totals": {
+    "before": {
+      "bytes": 4893,
+      "lines": 101
+    },
+    "short": {
+      "bytes": 4326,
+      "lines": 88
+    },
+    "verbose": {
+      "bytes": 4893,
+      "lines": 101
+    }
+  },
+  "cases": [
+    {
+      "case": "copy",
+      "full_report_id": "ifds-function-c1143f1c678a1ce3",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "3e894810e02e44ae10f9c88537499fa816d897c9a3db209295616980d213eb42",
+      "compact_normalized_sha256": "dc2f1810ef87426d6ec1e79deeaad261718882b2b76bcd64b35cafe15eaf9576",
+      "before": {
+        "bytes": 472,
+        "lines": 10,
+        "text": "Function result: result\nEdit attribution uncertain\nReturn choice | Before | After\nsaved (1) | always | never\nsaved (2) | never | always\nEffect: always: saved (1) -> saved (2) (Different)\nBefore return saved at snippet.ts:5; contributing writes: snippet.ts:3, snippet.ts:2\nAfter return saved at snippet.ts:5; contributing writes: snippet.ts:3, snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1143f1c678a1ce3)\n"
+      },
+      "short": {
+        "bytes": 299,
+        "lines": 7,
+        "text": "Function result: result\nEdit attribution uncertain\nEffect: always: saved (1) -> saved (2) (Different)\nBefore contributing writes: snippet.ts:2\nAfter contributing writes: snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1143f1c678a1ce3)\n"
+      },
+      "verbose": {
+        "bytes": 472,
+        "lines": 10,
+        "text": "Function result: result\nEdit attribution uncertain\nReturn choice | Before | After\nsaved (1) | always | never\nsaved (2) | never | always\nEffect: always: saved (1) -> saved (2) (Different)\nBefore return saved at snippet.ts:5; contributing writes: snippet.ts:3, snippet.ts:2\nAfter return saved at snippet.ts:5; contributing writes: snippet.ts:3, snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1143f1c678a1ce3)\n"
+      }
+    },
+    {
+      "case": "early_return",
+      "full_report_id": "ifds-function-dd502e03f5f90a07",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "ac4484962969038dc702d1de0bdef77e812d745d2ecce8e4a3b39a598884c0bc",
+      "compact_normalized_sha256": "5f8eb0e1dd5a0a569e8ac4dcc69a21eb635d74640c1e64aebe684340621dea2c",
+      "before": {
+        "bytes": 442,
+        "lines": 9,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"normal\" (Equal) under !stop in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nReturn choice | Before | After\n\"early\" | never | stop\n\"normal\" | always | !stop\nEffect: stop: \"normal\" -> \"early\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-dd502e03f5f90a07)\n"
+      },
+      "short": {
+        "bytes": 492,
+        "lines": 10,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"normal\" (Equal) under !stop in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nControl changed (guard correspondence unresolved)\nReturn choice | Before | After\n\"early\" | never | stop\n\"normal\" | always | !stop\nEffect: stop: \"normal\" -> \"early\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-dd502e03f5f90a07)\n"
+      },
+      "verbose": {
+        "bytes": 442,
+        "lines": 9,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"normal\" (Equal) under !stop in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nReturn choice | Before | After\n\"early\" | never | stop\n\"normal\" | always | !stop\nEffect: stop: \"normal\" -> \"early\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-dd502e03f5f90a07)\n"
+      }
+    },
+    {
+      "case": "equal_control",
+      "full_report_id": "ifds-function-c1627061de216565",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "c4acad58b4ac63eed2edeefe31a5f111ed76b9d16f038cccdf008d04cd18b9d1",
+      "compact_normalized_sha256": "3471e0328087db720e6db4332789d61dbd2232bea8c1b3a8e56e851925da78b4",
+      "before": {
+        "bytes": 256,
+        "lines": 4,
+        "text": "Function result: result\nControl: flag -> !flag; result remains 1 (Equal) under always in the common input scope; Edit attribution uncertain\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1627061de216565)\n"
+      },
+      "short": {
+        "bytes": 256,
+        "lines": 4,
+        "text": "Function result: result\nControl: flag -> !flag; result remains 1 (Equal) under always in the common input scope; Edit attribution uncertain\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1627061de216565)\n"
+      },
+      "verbose": {
+        "bytes": 256,
+        "lines": 4,
+        "text": "Function result: result\nControl: flag -> !flag; result remains 1 (Equal) under always in the common input scope; Edit attribution uncertain\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-c1627061de216565)\n"
+      }
+    },
+    {
+      "case": "expression",
+      "full_report_id": "ifds-function-49f5f1bbdb6dd94b",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "a73349f49d6f1b9e2ba5a9945f5fd89bf645668d5b30e990e075778aab9a5df7",
+      "compact_normalized_sha256": "022d90958df9918ce4ce0a59c4d3e3c3eaffb0144d4828db06f6880855a5b271",
+      "before": {
+        "bytes": 197,
+        "lines": 4,
+        "text": "Function result: result\nUnknown under always: result value theory is insufficient\nCoverage: result comparison Partial; source alignment Partial\nEvidence: full.json (ifds-function-49f5f1bbdb6dd94b)\n"
+      },
+      "short": {
+        "bytes": 197,
+        "lines": 4,
+        "text": "Function result: result\nUnknown under always: result value theory is insufficient\nCoverage: result comparison Partial; source alignment Partial\nEvidence: full.json (ifds-function-49f5f1bbdb6dd94b)\n"
+      },
+      "verbose": {
+        "bytes": 197,
+        "lines": 4,
+        "text": "Function result: result\nUnknown under always: result value theory is insufficient\nCoverage: result comparison Partial; source alignment Partial\nEvidence: full.json (ifds-function-49f5f1bbdb6dd94b)\n"
+      }
+    },
+    {
+      "case": "fallthrough",
+      "full_report_id": "ifds-function-3ec23b63948b2cba",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "c5b8043bddde1e5472ddc24d1b84a83eb99c9b7d12bf1b45590165c17221e46c",
+      "compact_normalized_sha256": "949d66135db6ab54ddc25cde40df827799897fb143158c79b7a2117b56d79244",
+      "before": {
+        "bytes": 302,
+        "lines": 9,
+        "text": "Function result: result\nContext: !flag\nEdit attribution uncertain\nReturn choice | Before | After\n2 | never | always\nundefined | always | never\nEffect: always: undefined -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-3ec23b63948b2cba)\n"
+      },
+      "short": {
+        "bytes": 209,
+        "lines": 5,
+        "text": "Function result: result\nEdit attribution uncertain\nEffect: !flag: undefined -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-3ec23b63948b2cba)\n"
+      },
+      "verbose": {
+        "bytes": 302,
+        "lines": 9,
+        "text": "Function result: result\nContext: !flag\nEdit attribution uncertain\nReturn choice | Before | After\n2 | never | always\nundefined | always | never\nEffect: always: undefined -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-3ec23b63948b2cba)\n"
+      }
+    },
+    {
+      "case": "guard",
+      "full_report_id": "ifds-function-516461b3d9ed51a8",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "7a636ea68b318fb46106246fb8c98b324ae49288babefbfb95c2b64d3ab23d3e",
+      "compact_normalized_sha256": "b453788895f7d455dc26664702d2a611a28d1c77ebb3200c646cb73f396cfa8c",
+      "before": {
+        "bytes": 713,
+        "lines": 11,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"ok\" (Equal) under enabled && !blocked && ready && approved in the common input scope; Edit attribution uncertain\nControl changed (guard correspondence unresolved); result remains \"pending\" (Equal) under enabled && !blocked && !ready in the common input scope; Edit attribution uncertain\nContext: enabled && !blocked\nEdit attribution uncertain\nReturn choice | Before | After\n\"ok\" | ready | ready && approved\n\"pending\" | !ready | !ready || !approved\nEffect: ready && !approved: \"ok\" -> \"pending\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-516461b3d9ed51a8)\n"
+      },
+      "short": {
+        "bytes": 763,
+        "lines": 12,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"ok\" (Equal) under enabled && !blocked && ready && approved in the common input scope; Edit attribution uncertain\nControl changed (guard correspondence unresolved); result remains \"pending\" (Equal) under enabled && !blocked && !ready in the common input scope; Edit attribution uncertain\nContext: enabled && !blocked\nEdit attribution uncertain\nControl changed (guard correspondence unresolved)\nReturn choice | Before | After\n\"ok\" | ready | ready && approved\n\"pending\" | !ready | !ready || !approved\nEffect: ready && !approved: \"ok\" -> \"pending\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-516461b3d9ed51a8)\n"
+      },
+      "verbose": {
+        "bytes": 713,
+        "lines": 11,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains \"ok\" (Equal) under enabled && !blocked && ready && approved in the common input scope; Edit attribution uncertain\nControl changed (guard correspondence unresolved); result remains \"pending\" (Equal) under enabled && !blocked && !ready in the common input scope; Edit attribution uncertain\nContext: enabled && !blocked\nEdit attribution uncertain\nReturn choice | Before | After\n\"ok\" | ready | ready && approved\n\"pending\" | !ready | !ready || !approved\nEffect: ready && !approved: \"ok\" -> \"pending\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-516461b3d9ed51a8)\n"
+      }
+    },
+    {
+      "case": "guard_version",
+      "full_report_id": "ifds-function-a598f5826cd9b5c6",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "99d6d1752ef78ffcd88df2ffcd78c864a7ce92dfe6a73f5a7e8e59e6517412ca",
+      "compact_normalized_sha256": "83226f18008469449c84f8c850ec4fc23080817abc1ff23998cb0c892dcfb748",
+      "before": {
+        "bytes": 320,
+        "lines": 9,
+        "text": "Function result: result\nEdit attribution uncertain\nReturn choice | Before | After\n\"no\" | !flag | flag\n\"yes\" | flag | !flag\nEffect: !flag: \"no\" -> \"yes\" (Different)\nEffect: flag: \"yes\" -> \"no\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-a598f5826cd9b5c6)\n"
+      },
+      "short": {
+        "bytes": 371,
+        "lines": 10,
+        "text": "Function result: result\nEdit attribution uncertain\nControl: g (resolved: flag) -> g (resolved: !flag)\nReturn choice | Before | After\n\"no\" | !flag | flag\n\"yes\" | flag | !flag\nEffect: !flag: \"no\" -> \"yes\" (Different)\nEffect: flag: \"yes\" -> \"no\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-a598f5826cd9b5c6)\n"
+      },
+      "verbose": {
+        "bytes": 320,
+        "lines": 9,
+        "text": "Function result: result\nEdit attribution uncertain\nReturn choice | Before | After\n\"no\" | !flag | flag\n\"yes\" | flag | !flag\nEffect: !flag: \"no\" -> \"yes\" (Different)\nEffect: flag: \"yes\" -> \"no\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-a598f5826cd9b5c6)\n"
+      }
+    },
+    {
+      "case": "known_expression",
+      "full_report_id": "ifds-function-2c8828ab71e2dbbd",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "74ca18b7017f75e8f9dca1b47d56f8bdf0eaac2f42af4bcc02ade2bfd3440997",
+      "compact_normalized_sha256": "3e29411a0c0ceb3b5c0cce0c915c108eb1f296f10647dba9f6cae95c4cefd31f",
+      "before": {
+        "bytes": 423,
+        "lines": 9,
+        "text": "Function result: result\nReturn choice | Before | After\ninput + 1 | always | never\ninput + 2 | never | always\nEffect: always: input + 1 -> input + 2 (Changed)\nBefore return input + 1 at snippet.ts:3; contributing writes: snippet.ts:2\nAfter return input + 2 at snippet.ts:3; contributing writes: snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-2c8828ab71e2dbbd)\n"
+      },
+      "short": {
+        "bytes": 270,
+        "lines": 6,
+        "text": "Function result: result\nEffect: always: input + 1 -> input + 2 (Changed)\nBefore contributing writes: snippet.ts:2\nAfter contributing writes: snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-2c8828ab71e2dbbd)\n"
+      },
+      "verbose": {
+        "bytes": 423,
+        "lines": 9,
+        "text": "Function result: result\nReturn choice | Before | After\ninput + 1 | always | never\ninput + 2 | never | always\nEffect: always: input + 1 -> input + 2 (Changed)\nBefore return input + 1 at snippet.ts:3; contributing writes: snippet.ts:2\nAfter return input + 2 at snippet.ts:3; contributing writes: snippet.ts:2\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-2c8828ab71e2dbbd)\n"
+      }
+    },
+    {
+      "case": "literal",
+      "full_report_id": "ifds-function-f0f31433ea1131ad",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "49c64f375542f1e12c22c4d28d3c22f27a26444cc40930459ca07b992f27868f",
+      "compact_normalized_sha256": "f84de1db243210e028cb7a71ec435d0cf2fe839501a5e6bfce2c6c026fe92a7d",
+      "before": {
+        "bytes": 244,
+        "lines": 7,
+        "text": "Function result: result\nReturn choice | Before | After\n1 | always | never\n2 | never | always\nEffect: always: 1 -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f0f31433ea1131ad)\n"
+      },
+      "short": {
+        "bytes": 175,
+        "lines": 4,
+        "text": "Function result: result\nEffect: always: 1 -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f0f31433ea1131ad)\n"
+      },
+      "verbose": {
+        "bytes": 244,
+        "lines": 7,
+        "text": "Function result: result\nReturn choice | Before | After\n1 | always | never\n2 | never | always\nEffect: always: 1 -> 2 (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f0f31433ea1131ad)\n"
+      }
+    },
+    {
+      "case": "overwritten",
+      "full_report_id": "ifds-function-f4dc3cfc1e5fa881",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "c69a2013bc0adddf691577aa0fa111d0941ae61f9637508ad625468463c0db09",
+      "compact_normalized_sha256": "a069da0e47f186687ecd5832c10da160506c732483147985309d1b42871db621",
+      "before": {
+        "bytes": 230,
+        "lines": 4,
+        "text": "Function result: result\nNormal results unchanged on common inputs: always (under the recorded entry assumptions).\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f4dc3cfc1e5fa881)\n"
+      },
+      "short": {
+        "bytes": 230,
+        "lines": 4,
+        "text": "Function result: result\nNormal results unchanged on common inputs: always (under the recorded entry assumptions).\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f4dc3cfc1e5fa881)\n"
+      },
+      "verbose": {
+        "bytes": 230,
+        "lines": 4,
+        "text": "Function result: result\nNormal results unchanged on common inputs: always (under the recorded entry assumptions).\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-f4dc3cfc1e5fa881)\n"
+      }
+    },
+    {
+      "case": "priority",
+      "full_report_id": "ifds-function-bb514a929c428eee",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "5885c0d6cda99f6e20cb533a7fbaa94528f5dd948ba016903bfb3b3afa6c08fa",
+      "compact_normalized_sha256": "0c3b31c52ec27697ae0e2a84c74dbde0c3b31922f3eac90f734511dc195e4eef",
+      "before": {
+        "bytes": 703,
+        "lines": 11,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains x (0) (Equal) under !a && !b in the common input scope; result remains x (1) (Equal) under a && !b in the common input scope; result remains x (2) (Equal) under !a && b in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nReturn choice | Before | After\nx (1) | a && !b | a\nx (2) | b | !a && b\nEffect: a && b: x (2) -> x (1) (Different)\nBefore return x at snippet.ts:5; contributing writes: snippet.ts:4\nAfter return x at snippet.ts:5; contributing writes: snippet.ts:4\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-bb514a929c428eee)\n"
+      },
+      "short": {
+        "bytes": 558,
+        "lines": 12,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); results unchanged (Equal) under !a || !b in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nControl changed (guard correspondence unresolved)\nReturn choice | Before | After\nx (1) | a && !b | a\nx (2) | b | !a && b\nEffect: a && b: x (2) -> x (1) (Different)\nBefore contributing writes: snippet.ts:4\nAfter contributing writes: snippet.ts:4\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-bb514a929c428eee)\n"
+      },
+      "verbose": {
+        "bytes": 703,
+        "lines": 11,
+        "text": "Function result: result\nControl changed (guard correspondence unresolved); result remains x (0) (Equal) under !a && !b in the common input scope; result remains x (1) (Equal) under a && !b in the common input scope; result remains x (2) (Equal) under !a && b in the common input scope; Edit attribution uncertain\nEdit attribution uncertain\nReturn choice | Before | After\nx (1) | a && !b | a\nx (2) | b | !a && b\nEffect: a && b: x (2) -> x (1) (Different)\nBefore return x at snippet.ts:5; contributing writes: snippet.ts:4\nAfter return x at snippet.ts:5; contributing writes: snippet.ts:4\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-bb514a929c428eee)\n"
+      }
+    },
+    {
+      "case": "short_circuit",
+      "full_report_id": "ifds-function-d805e525daaf76d7",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "333cf39c1134cb14f6b9a014c3f6eea5d111ee4a8f8f55cf4d18796ba4a0312e",
+      "compact_normalized_sha256": "560584b4c2d6b948eb76070ecc87874cc643140941efaf925c3bc63f108a4f82",
+      "before": {
+        "bytes": 188,
+        "lines": 4,
+        "text": "Function result: result\nwhen flag is truthy: \"old\" -> \"new\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-d805e525daaf76d7)\n"
+      },
+      "short": {
+        "bytes": 188,
+        "lines": 4,
+        "text": "Function result: result\nwhen flag is truthy: \"old\" -> \"new\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-d805e525daaf76d7)\n"
+      },
+      "verbose": {
+        "bytes": 188,
+        "lines": 4,
+        "text": "Function result: result\nwhen flag is truthy: \"old\" -> \"new\" (Different)\nCoverage: result comparison Complete; source alignment Partial\nEvidence: full.json (ifds-function-d805e525daaf76d7)\n"
+      }
+    },
+    {
+      "case": "unknown",
+      "full_report_id": "ifds-function-d379155b81a46d01",
+      "full_json_identical": true,
+      "compact_json_identical": true,
+      "verbose_matches_baseline": true,
+      "sidecar_matches_full_stdout_except_final_newline": true,
+      "text_modes_deterministic": true,
+      "full_stdout_sha256": "795977974c585c0039004e4887f584a1f3fd0bd5842414c3bdae33b0e7cf45e4",
+      "compact_normalized_sha256": "1a6351187e1e63866c4bb0779941b3ab289d3ec3f3d249db8c2a2a26bb2c2519",
+      "before": {
+        "bytes": 403,
+        "lines": 10,
+        "text": "Function result: result\nContext: flag\nReturn choice | Before | After\n1 | always | never\n2 | never | always\nEffect: always: 1 -> 2 (Different)\nEdit attribution uncertain\nUnknown under !flag: an unresolved call may prevent normal completion\nCoverage: result comparison Partial; source alignment Partial; before analysis Partial; after analysis Partial\nEvidence: full.json (ifds-function-d379155b81a46d01)\n"
+      },
+      "short": {
+        "bytes": 318,
+        "lines": 6,
+        "text": "Function result: result\nEffect: flag: 1 -> 2 (Different)\nEdit attribution uncertain\nUnknown under !flag: an unresolved call may prevent normal completion\nCoverage: result comparison Partial; source alignment Partial; before analysis Partial; after analysis Partial\nEvidence: full.json (ifds-function-d379155b81a46d01)\n"
+      },
+      "verbose": {
+        "bytes": 403,
+        "lines": 10,
+        "text": "Function result: result\nContext: flag\nReturn choice | Before | After\n1 | always | never\n2 | never | always\nEffect: always: 1 -> 2 (Different)\nEdit attribution uncertain\nUnknown under !flag: an unresolved call may prevent normal completion\nCoverage: result comparison Partial; source alignment Partial; before analysis Partial; after analysis Partial\nEvidence: full.json (ifds-function-d379155b81a46d01)\n"
+      }
+    }
+  ],
+  "binding_controls": [
+    {
+      "case": "overwrite",
+      "all_three_formats_equivalent_except_runtime_stats_and_derived_ids": true
+    },
+    {
+      "case": "copy_then_overwrite",
+      "all_three_formats_equivalent_except_runtime_stats_and_derived_ids": true
+    },
+    {
+      "case": "full_downstream_chain",
+      "all_three_formats_equivalent_except_runtime_stats_and_derived_ids": true
+    }
+  ],
+  "invalid_verbose_options": [
+    {
+      "target": "--function",
+      "format": "compact-json",
+      "rejected_before_file_io": true
+    },
+    {
+      "target": "--function",
+      "format": "full-json",
+      "rejected_before_file_io": true
+    },
+    {
+      "target": "x",
+      "format": "text",
+      "rejected_before_file_io": true
+    },
+    {
+      "target": "x",
+      "format": "compact-json",
+      "rejected_before_file_io": true
+    },
+    {
+      "target": "x",
+      "format": "full-json",
+      "rejected_before_file_io": true
+    }
+  ],
+  "checks": {
+    "cargo_test_locked_offline": {
+      "passed": true,
+      "unit_tests": 221,
+      "integration_tests": 9,
+      "doc_tests": 2
+    },
+    "cargo_fmt_all_check": true,
+    "cargo_clippy_locked_offline_all_targets_deny_warnings": true
+  }
+}
