@@ -471,3 +471,72 @@ pub(super) fn source_text(result: &PresentedResult) -> Vec<String> {
     }
     lines.into_iter().collect()
 }
+
+/// Keep value-producing writes, omitting a copy only when its sole source is
+/// another write reached through a resolved transparent dependency chain.
+pub(super) fn key_source_text(
+    finding: &CompactResultFinding,
+    full: &FunctionResultReport,
+) -> Vec<String> {
+    fn copied_write(dependency: &ResultDependency) -> bool {
+        !dependency.unresolved
+            && ((dependency.operation == "write" && dependency.span.is_some())
+                || (transparent(dependency)
+                    && dependency.inputs.len() == 1
+                    && copied_write(&dependency.inputs[0])))
+    }
+    fn collect(dependency: &ResultDependency, spans: &mut BTreeMap<NodeId, SourceSpan>) {
+        if dependency.operation == "write"
+            && !(!dependency.unresolved
+                && dependency.inputs.len() == 1
+                && copied_write(&dependency.inputs[0]))
+            && let Some(span) = &dependency.span
+        {
+            spans.insert(dependency.node.clone(), span.clone());
+        }
+        for input in &dependency.inputs {
+            collect(input, spans);
+        }
+    }
+    let mut spans = BTreeMap::new();
+    for evidence in finding
+        .effects
+        .iter()
+        .flat_map(|effect| [&effect.before_result, &effect.after_result])
+        .flatten()
+        .flat_map(|result| &result.evidence)
+    {
+        let side = match evidence.observation.section.as_str() {
+            "analysis.before.observations" => &full.analysis.before,
+            "analysis.after.observations" => &full.analysis.after,
+            _ => continue,
+        };
+        if let Some(item) = side
+            .as_ref()
+            .and_then(|side| side.observations.get(evidence.observation.index))
+            && let ResultValue::Expression { dependency, .. } = &item.value
+        {
+            collect(dependency, &mut spans);
+        }
+    }
+    [SnapshotSide::Before, SnapshotSide::After]
+        .into_iter()
+        .filter_map(|side| {
+            let locations: BTreeSet<_> = spans
+                .iter()
+                .filter(|(node, _)| node.snapshot.side == side)
+                .map(|(_, span)| (span.path.as_str(), span.start_line))
+                .collect();
+            (!locations.is_empty()).then(|| {
+                format!(
+                    "{side:?} contributing writes: {}",
+                    locations
+                        .into_iter()
+                        .map(|(path, line)| format!("{path}:{line}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            })
+        })
+        .collect()
+}

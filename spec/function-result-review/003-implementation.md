@@ -248,5 +248,6 @@ Verification passed: `cargo test --locked --offline` (217 unit tests, 9 integrat
 tests, 2 documentation tests), `cargo fmt --all -- --check`, and
 `cargo clippy --locked --offline --all-targets -- -D warnings`. Serialization
 round trips and evidence validation are covered by the renderer and integration
-regressions. Evidence size reduction remains the separate planned task
-[004](004-evidence-size.md).
+regressions. The subsequent task [004](004-evidence-size.md) implements
+further human-text concision following the user's clarified intent, superseding
+its earlier JSON-size proposal. The verification above records the 003 baseline.

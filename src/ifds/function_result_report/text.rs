@@ -3,6 +3,19 @@
 use super::*;
 use crate::ifds::model::NodeId;
 
+pub(super) type GuardPair = (NodeId, NodeId, String, String);
+
+pub(super) fn conditional_choices(finding: &CompactResultFinding) -> bool {
+    finding.effects.len() > 1
+        || finding.choices.iter().any(|choice| {
+            choice
+                .before
+                .iter()
+                .chain(&choice.after)
+                .any(|region| !region.values.is_empty())
+        })
+}
+
 pub(super) fn normal_results_unchanged(
     compact: &FunctionResultCompactReport,
     full: &FunctionResultReport,
@@ -28,7 +41,7 @@ pub(super) fn normal_results_unchanged(
 
 /// Establish one changed guard through unique paired-input value dependencies.
 /// Branch order, expression labels, and result equality alone are insufficient.
-fn changed_guard_pair(full: &FunctionResultReport) -> Option<(NodeId, NodeId, String, String)> {
+pub(super) fn changed_guard_pair(full: &FunctionResultReport) -> Option<GuardPair> {
     if full.analysis.input_mapping_coverage != Coverage::Complete {
         return None;
     }
@@ -166,8 +179,9 @@ fn changed_guard_pair(full: &FunctionResultReport) -> Option<(NodeId, NodeId, St
 pub(super) fn equal_control_lines(
     compact: &FunctionResultCompactReport,
     full: &FunctionResultReport,
+    pair: Option<&GuardPair>,
+    verbose: bool,
 ) -> Vec<String> {
-    let pair = changed_guard_pair(full);
     let mut lines = Vec::new();
     for finding in &full.findings {
         if finding.assessment != ResultAssessment::Equal || !finding.control_changed {
@@ -206,44 +220,28 @@ pub(super) fn equal_control_lines(
                 .or_default()
                 .push(region.region.clone());
         }
-        let result_text = results
-            .into_iter()
-            .map(|((before, after), regions)| {
-                let scope = regions_text(&simplify_regions(regions), &compact.input_names);
-                let result = if before == after {
-                    format!("result remains {before} (Equal)")
-                } else {
-                    format!("equal results: {before} / {after} (Equal)")
-                };
-                format!("{result} under {scope} in the common input scope")
-            })
-            .collect::<Vec<_>>()
-            .join("; ");
-        // The paired guard must contribute to this finding, not just occur
-        // elsewhere in the function. A conservative fallback is preferable to
-        // attributing an unrelated global guard change to a selected return.
-        let contributes = |side: &Option<FunctionSnapshotResult>,
-                           refs: &[ResultObservationRef],
-                           branch: &NodeId| {
-            !refs.is_empty()
-                && refs.iter().all(|reference| {
-                    observation(side, reference).is_some_and(|(_, item)| {
-                        item.guards.iter().any(|guard| &guard.branch == branch)
-                    })
-                })
-        };
-        let relevant_pair = pair.as_ref().filter(|(before, after, _, _)| {
-            finding.regions.iter().all(|index| {
-                let region = &full.comparison.regions[*index];
-                contributes(&full.analysis.before, &region.before_observations, before)
-                    && contributes(&full.analysis.after, &region.after_observations, after)
-            })
-        });
-        let control = if let Some((_, _, before, after)) = relevant_pair {
-            format!("Control: {before} -> {after}")
+        let result_text = if !verbose && results.len() > 1 {
+            let regions = results.values().flatten().cloned().collect();
+            format!(
+                "results unchanged (Equal) under {} in the common input scope",
+                regions_text(&simplify_regions(regions), &compact.input_names)
+            )
         } else {
-            "Control changed (guard correspondence unresolved)".into()
+            results
+                .into_iter()
+                .map(|((before, after), regions)| {
+                    let scope = regions_text(&simplify_regions(regions), &compact.input_names);
+                    let result = if before == after {
+                        format!("result remains {before} (Equal)")
+                    } else {
+                        format!("equal results: {before} / {after} (Equal)")
+                    };
+                    format!("{result} under {scope} in the common input scope")
+                })
+                .collect::<Vec<_>>()
+                .join("; ")
         };
+        let control = control_text(full, finding.regions.iter().copied(), pair);
         let attribution = if finding.attribution_certain {
             ""
         } else {
@@ -252,6 +250,35 @@ pub(super) fn equal_control_lines(
         lines.push(format!("{control}; {result_text}{attribution}"));
     }
     lines
+}
+
+pub(super) fn control_text(
+    full: &FunctionResultReport,
+    regions: impl Iterator<Item = usize>,
+    pair: Option<&GuardPair>,
+) -> String {
+    // A changed guard must contribute to the displayed regions, rather than
+    // merely occur elsewhere in the function.
+    let contributes =
+        |side: &Option<FunctionSnapshotResult>, refs: &[ResultObservationRef], branch: &NodeId| {
+            !refs.is_empty()
+                && refs.iter().all(|reference| {
+                    observation(side, reference).is_some_and(|(_, item)| {
+                        item.guards.iter().any(|guard| &guard.branch == branch)
+                    })
+                })
+        };
+    if let Some((before, after, before_label, after_label)) = pair
+        && regions.into_iter().all(|index| {
+            let region = &full.comparison.regions[index];
+            contributes(&full.analysis.before, &region.before_observations, before)
+                && contributes(&full.analysis.after, &region.after_observations, after)
+        })
+    {
+        format!("Control: {before_label} -> {after_label}")
+    } else {
+        "Control changed (guard correspondence unresolved)".into()
+    }
 }
 
 pub(super) fn coverage_text(coverage: &FunctionReportCoverage) -> String {
