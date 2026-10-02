@@ -1,0 +1,3 @@
+No established changes at uses within the declared scope.
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/overwritten_edit/full.json (ifds-564b92f7ec3233e7)

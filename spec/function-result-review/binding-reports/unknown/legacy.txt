@@ -1,0 +1,4 @@
+Changed expression: write `x = 1` -> write `x = opaque()`.
+Comparison unresolved at one or more aligned operations.
+Unknown: {UnsupportedSyntax}.
+Scope: function f; analysis Partial; source comparison unresolved. Full evidence: spec/function-result-review/binding-reports/unknown/legacy-full.json (ifds-dd5a0b874fc242bd).

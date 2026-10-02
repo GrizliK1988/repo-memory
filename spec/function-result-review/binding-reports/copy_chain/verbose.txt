@@ -1,0 +1,37 @@
+x at write `x = 2` (snippet.ts:2, input value)
+Before: literal `1`.
+After: literal `2`.
+x at write `saved = x` (snippet.ts:3, input value)
+Before: write `x = 1`.
+After: write `x = 2`.
+x at write `y = saved + 1` (snippet.ts:4, input value.operands[0])
+Expression changed: literal `1` -> literal `2`.
+Expression changed: write `x = 1` -> write `x = 2`.
+x at return `return y * 2;` (snippet.ts:5, input value.operands[0])
+Expression changed: literal `1` -> literal `2`.
+Expression changed: write `x = 1` -> write `x = 2`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `2` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 2 (snippet.ts:2) <- literal `2` (snippet.ts:2)
+  Before: saved = x (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  After: saved = x (snippet.ts:3) <- x = 2 (snippet.ts:2)
+  Before: y = saved + 1 (snippet.ts:4) <- saved = x (snippet.ts:3)
+  After: y = saved + 1 (snippet.ts:4) <- saved = x (snippet.ts:3)
+  Before: return y * 2; (snippet.ts:5) <- y = saved + 1 (snippet.ts:4)
+  After: return y * 2; (snippet.ts:5) <- y = saved + 1 (snippet.ts:4)
+Observation: x = 1 -> x = 2 (value; before snippet.ts:2; after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `2` (snippet.ts:2); use guard always
+Observation: saved = x (value; before/after snippet.ts:3)
+  Before: x = 1 (snippet.ts:2); use guard always
+  After: x = 2 (snippet.ts:2); use guard always
+Observation: y = saved + 1 (operand 0; before/after snippet.ts:4)
+  Before: saved = x (snippet.ts:3); use guard always
+  After: saved = x (snippet.ts:3); use guard always
+Observation: return y * 2; (operand 0; before/after snippet.ts:5)
+  Before: y = saved + 1 (snippet.ts:4); use guard always
+  After: y = saved + 1 (snippet.ts:4); use guard always
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/copy_chain/verbose-full.json (ifds-aaf15ac8b8a4ac45)

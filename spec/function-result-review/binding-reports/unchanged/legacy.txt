@@ -1,0 +1,2 @@
+No established source or logic change within the declared scope.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/unchanged/legacy-full.json (ifds-69ea71131cf87839).

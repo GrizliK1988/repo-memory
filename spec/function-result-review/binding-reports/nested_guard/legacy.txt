@@ -1,0 +1,9 @@
+x at write `x = 3` (snippet.ts:5, input value)
+Use guard: a && b.
+x at return `return x;` (snippet.ts:7, input value)
+Before: write `x = 2` under a && b; write `x = 3` under a && !b.
+After: write `x = 2` under a && !b; write `x = 3` under a && b.
+x at write `x = 2` (snippet.ts:4, input value)
+Use guard: a && !b.
+Changed expression: branch `(b)` -> branch `(!b)`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/nested_guard/legacy-full.json (ifds-78b5306d31eb178f).

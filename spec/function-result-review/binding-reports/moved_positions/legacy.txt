@@ -1,0 +1,7 @@
+x at return `return x;` (snippet.ts:6, input value)
+Before: write `x = 2` under flag.
+After: write `x = 2` under !flag.
+x at write `x = 2` (snippet.ts:4, input value)
+Use guard: !flag.
+Changed expression: branch `(flag)` -> branch `(!flag)`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/moved_positions/legacy-full.json (ifds-896273610d4b3453).

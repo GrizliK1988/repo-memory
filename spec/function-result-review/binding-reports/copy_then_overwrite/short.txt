@@ -1,0 +1,3 @@
+No established changes at uses within the declared scope.
+Scope: function example; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/copy_then_overwrite/full.json (ifds-2477efe79e2814a4)

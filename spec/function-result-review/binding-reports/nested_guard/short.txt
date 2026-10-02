@@ -1,0 +1,9 @@
+Selection changed:
+  Before: x = 2 (snippet.ts:4) enabled under a && b; x = 3 (snippet.ts:5) enabled under a && !b
+  After: x = 2 (snippet.ts:4) enabled under a && !b; x = 3 (snippet.ts:5) enabled under a && b
+  Before control #5: branch `(a)` (snippet.ts:3)
+  After control #5: branch `(a)` (snippet.ts:3)
+  Fallback: before/after x = 1 (snippet.ts:2)
+Affected uses: return x; (value; before/after snippet.ts:7)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/nested_guard/full.json (ifds-78b5306d31eb178f)

@@ -1,0 +1,49 @@
+x at write `x = 3` (snippet.ts:6, input value)
+Use guard: !flag.
+x at return `return x + 4;` (snippet.ts:7, input value.operands[0])
+Before: write `x = 3`.
+After: write `x = 3` under !flag.
+Use guard: !flag.
+x at return `return x;` (snippet.ts:5, input value)
+After: write `x = 2`.
+Use guard: flag.
+Added observation return `return x;`.
+Sources and dependencies:
+  Before: literal `0` (snippet.ts:2)
+  After: literal `0` (snippet.ts:2)
+  Before: x = 0 (snippet.ts:2) <- literal `0` (snippet.ts:2)
+  After: x = 0 (snippet.ts:2) <- literal `0` (snippet.ts:2)
+  Before: literal `1` (snippet.ts:3)
+  After: literal `1` (snippet.ts:3)
+  Before: x = 1 (snippet.ts:3) <- literal `1` (snippet.ts:3)
+  After: x = 1 (snippet.ts:3) <- literal `1` (snippet.ts:3)
+  Before: literal `2` (snippet.ts:4)
+  After: literal `2` (snippet.ts:4)
+  Before: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)
+  After: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)
+  Before: literal `3` (snippet.ts:5)
+  After: literal `3` (snippet.ts:6)
+  Before: x = 3 (snippet.ts:5) <- literal `3` (snippet.ts:5)
+  After: x = 3 (snippet.ts:6) enabled under !flag <- literal `3` (snippet.ts:6)
+  Before: return x + 4; (snippet.ts:6) <- x = 3 (snippet.ts:5)
+  After: return x + 4; (snippet.ts:7) <- x = 3 (snippet.ts:6)
+  After: return x; (snippet.ts:5) <- x = 2 (snippet.ts:4)
+Observation: x = 0 (value; before/after snippet.ts:2)
+  Before: literal `0` (snippet.ts:2); use guard always
+  After: literal `0` (snippet.ts:2); use guard always
+Observation: x = 1 (value; before/after snippet.ts:3)
+  Before: literal `1` (snippet.ts:3); use guard always
+  After: literal `1` (snippet.ts:3); use guard always
+Observation: x = 2 (value; before/after snippet.ts:4)
+  Before: literal `2` (snippet.ts:4); use guard always
+  After: literal `2` (snippet.ts:4); use guard always
+Observation: x = 3 (value; before snippet.ts:5; after snippet.ts:6)
+  Before: literal `3` (snippet.ts:5); use guard always
+  After: literal `3` (snippet.ts:6) selected under !flag; use guard !flag
+Observation: return x + 4; (operand 0; before snippet.ts:6; after snippet.ts:7)
+  Before: x = 3 (snippet.ts:5); use guard always
+  After: x = 3 (snippet.ts:6) selected under !flag; use guard !flag
+Observation: return x; (value; after snippet.ts:5)
+  After: x = 2 (snippet.ts:4) selected under flag; use guard flag
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/early_return/verbose-full.json (ifds-1bef723796e1dc62)

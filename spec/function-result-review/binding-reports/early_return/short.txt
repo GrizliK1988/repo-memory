@@ -1,0 +1,12 @@
+Selection changed:
+  Before: x = 3 (snippet.ts:5)
+  After: x = 3 (snippet.ts:6) enabled under !flag
+  After control #16: branch `(flag)` (snippet.ts:5)
+Affected uses: return x + 4; (operand 0; before snippet.ts:6; after snippet.ts:7)
+  Use guard: before always; after !flag
+Added observation:
+  After sources: x = 2 (snippet.ts:4) selected under flag
+Affected uses: return x; (value; after snippet.ts:5)
+  Use guard: before absent; after flag
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/early_return/full.json (ifds-1bef723796e1dc62)

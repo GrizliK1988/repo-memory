@@ -1,0 +1,11 @@
+x at write `x = 2` (snippet.ts:2, input value)
+Before: literal `1`.
+After: literal `2`.
+x at write `y = x + 2` (snippet.ts:3, input value.operands[0])
+Before: write `x = 1`.
+After: write `x = 2`.
+x at return `return y;` (snippet.ts:4, input value)
+Before: write `y = x + 1`.
+After: write `y = x + 2`.
+Expression changed: literal `1` -> literal `2`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/independent_expressions/legacy-full.json (ifds-6c930da02d6bc5bf).

@@ -1,0 +1,16 @@
+x at write `x = input + 1` (snippet.ts:2, input value)
+Before: function_input `input`.
+After: none.
+x at write `y = x + 1` (snippet.ts:3, input value.operands[0])
+Before: write `x = input`.
+After: write `x = input + 1`.
+x at return `return y * 2;` (snippet.ts:4, input value.operands[0])
+Expression changed: write `x = input` -> write `x = input + 1`.
+Expression changed: source 13 -> literal `1`.
+x at write `x = input + 1` (snippet.ts:2, input value.operands[1])
+Before: none.
+After: literal `1`.
+x at write `x = input + 1` (snippet.ts:2, input value.operands[0])
+Before: none.
+After: function_input `input`.
+Scope: function chain; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/full_downstream_chain/legacy-full.json (ifds-23eaa379b397ef6d).

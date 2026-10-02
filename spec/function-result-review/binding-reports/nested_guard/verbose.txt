@@ -1,0 +1,41 @@
+x at write `x = 3` (snippet.ts:5, input value)
+Use guard: a && b.
+x at return `return x;` (snippet.ts:7, input value)
+Before: write `x = 2` under a && b; write `x = 3` under a && !b.
+After: write `x = 2` under a && !b; write `x = 3` under a && b.
+x at write `x = 2` (snippet.ts:4, input value)
+Use guard: a && !b.
+Changed expression: branch `(b)` -> branch `(!b)`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: literal `2` (snippet.ts:4)
+  After: literal `2` (snippet.ts:4)
+  Before: x = 2 (snippet.ts:4) enabled under a && b <- literal `2` (snippet.ts:4)
+  After: x = 2 (snippet.ts:4) enabled under a && !b <- literal `2` (snippet.ts:4)
+  Before: literal `3` (snippet.ts:5)
+  After: literal `3` (snippet.ts:5)
+  Before: x = 3 (snippet.ts:5) enabled under a && !b <- literal `3` (snippet.ts:5)
+  After: x = 3 (snippet.ts:5) enabled under a && b <- literal `3` (snippet.ts:5)
+  Before: return x; (snippet.ts:7) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:5)
+  After: return x; (snippet.ts:7) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:5)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: x = 2 (value; before/after snippet.ts:4)
+  Before: literal `2` (snippet.ts:4) selected under a && b; use guard a && b
+  After: literal `2` (snippet.ts:4) selected under a && !b; use guard a && !b
+Observation: x = 3 (value; before/after snippet.ts:5)
+  Before: literal `3` (snippet.ts:5) selected under a && !b; use guard a && !b
+  After: literal `3` (snippet.ts:5) selected under a && b; use guard a && b
+Observation: return x; (value; before/after snippet.ts:7)
+  Before: x = 1 (snippet.ts:2) selected under !a; x = 2 (snippet.ts:4) selected under a && b; x = 3 (snippet.ts:5) selected under a && !b; use guard always
+  Before precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply
+  Before precedence: x = 3 (snippet.ts:5) overrides x = 1 (snippet.ts:2) when both writes apply
+  After: x = 1 (snippet.ts:2) selected under !a; x = 2 (snippet.ts:4) selected under a && !b; x = 3 (snippet.ts:5) selected under a && b; use guard always
+  After precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply
+  After precedence: x = 3 (snippet.ts:5) overrides x = 1 (snippet.ts:2) when both writes apply
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/nested_guard/verbose-full.json (ifds-88388fb558b35bd2)

@@ -472,7 +472,7 @@ fn assemble_report(
     report.validate()?;
     let compact =
         project_variable_sources(&report, before_ir, after_ir, before_source, after_source);
-    report.human_summary = compact.render_text();
+    report.human_summary = compact.render_legacy_text();
     report.validate()?;
     compact.validate_with_full(&report)?;
     Ok((report, compact))
@@ -739,7 +739,7 @@ mod tests {
     #[test]
     fn ifds_k013_human_summary_contract() {
         let (report, compact) = run_reports(OVERWRITE_BEFORE, OVERWRITE_AFTER, "x");
-        assert_eq!(report.human_summary, compact.render_text());
+        assert_eq!(report.human_summary, compact.render_legacy_text());
         assert!(report.human_summary.contains("Before:"));
         assert!(report.human_summary.contains("After:"));
         assert!(report.human_summary.contains("x = 2"));
@@ -779,7 +779,7 @@ mod tests {
             "function f(flag: boolean) {\n  let x = 0;\n  if (flag) x = 1;\n  return x;\n}\n",
             "x",
         );
-        assert_eq!(report.human_summary, compact.render_text());
+        assert_eq!(report.human_summary, compact.render_legacy_text());
         assert!(report.human_summary.contains("x = 0"));
         assert!(
             report.human_summary.contains("x = 1` under flag"),
@@ -1360,7 +1360,7 @@ mod tests {
 
     #[test]
     fn ifds_k041_expression_only_change() {
-        let (_, compact) = run_reports(
+        let (full, compact) = run_reports(
             "function f(p: number) { let x = p + 1; return x; }",
             "function f(p: number) { let x = p - 1; return x; }",
             "x",
@@ -1371,8 +1371,8 @@ mod tests {
                 .iter()
                 .any(|finding| finding.kind == FindingKind::ExpressionChanged)
         );
-        assert!(compact.render_text().contains("p + 1"));
-        assert!(compact.render_text().contains("p - 1"));
+        assert!(compact.render_text(&full).contains("p + 1"));
+        assert!(compact.render_text(&full).contains("p - 1"));
         assert!(!compact.findings.iter().any(|finding| matches!(
             finding.kind,
             FindingKind::WriteAdded | FindingKind::WriteRemoved
@@ -1543,7 +1543,7 @@ mod tests {
             "x",
         );
         let summary = &full.human_summary;
-        assert_eq!(summary, &compact.render_text());
+        assert_eq!(summary, &compact.render_legacy_text());
         assert!(!summary.contains("Before: literal `5`"), "{summary}");
         assert!(!summary.contains("After: literal `5`"), "{summary}");
         assert!(!summary.contains("write `x = 3` under !flag"), "{summary}");
@@ -1657,7 +1657,7 @@ mod tests {
             "x",
         );
         let summary = &full.human_summary;
-        assert_eq!(summary, &compact.render_text());
+        assert_eq!(summary, &compact.render_legacy_text());
         assert_eq!(summary.matches("x at return").count(), 1, "{summary}");
         assert_eq!(
             summary.matches("Before: write `x = 5`").count(),
@@ -1713,7 +1713,7 @@ mod tests {
         assert_eq!(decoded, compact);
         assert_eq!(encoded, decoded.to_canonical_json().unwrap());
         assert!(decoded.validate_with_full(&full).is_ok());
-        assert_eq!(full.human_summary, compact.render_text());
+        assert_eq!(full.human_summary, compact.render_legacy_text());
         assert_eq!(
             VariableFlowReport::from_json(&full.to_canonical_json().unwrap()).unwrap(),
             full
@@ -1757,7 +1757,436 @@ mod tests {
                 .len(),
             compact.controls.len()
         );
-        assert!(compact.render_text().len() < full.to_canonical_json().unwrap().len());
+        assert!(compact.render_text(&full).len() < full.to_canonical_json().unwrap().len());
         assert_eq!(compact.analysis_coverage, full.completeness);
+    }
+
+    #[test]
+    fn ifds_binding_text_shared_source_and_json_parity() {
+        let (full, compact) = run_reports(
+            "function f(input: number) {\n  let x = input;\n  const y = x + 1;\n  return y * 2;\n}\n",
+            "function f(input: number) {\n  let x = input + 1;\n  const y = x + 1;\n  return y * 2;\n}\n",
+            "x",
+        );
+        let full_bytes = full.to_canonical_json().unwrap();
+        let compact_bytes = compact.to_canonical_json().unwrap();
+        let short = compact.render_text(&full);
+        let detailed = compact.render_verbose_text(&full);
+        assert_eq!(
+            short.matches("Source expression changed:").count(),
+            1,
+            "{short}"
+        );
+        assert_eq!(short.matches("x = input (main.ts:2)").count(), 1, "{short}");
+        assert_eq!(
+            short.matches("x = input + 1 (main.ts:2)").count(),
+            1,
+            "{short}"
+        );
+        assert!(
+            short.contains("y = x + 1 (operand 0; before/after main.ts:3)"),
+            "{short}"
+        );
+        assert!(
+            short.contains("return y * 2; (operand 0; before/after main.ts:4)"),
+            "{short}"
+        );
+        assert!(!short.contains("source #13"), "{short}");
+        assert!(short.lines().count() < full.human_summary.lines().count());
+        assert!(short.contains("caller continuation outside scope"));
+        assert!(detailed.contains("Sources and dependencies:"));
+        assert!(detailed.contains(" <- y = x + 1"));
+        assert_eq!(full_bytes, full.to_canonical_json().unwrap());
+        assert_eq!(compact_bytes, compact.to_canonical_json().unwrap());
+        assert_eq!(full.human_summary, compact.render_legacy_text());
+        assert_eq!(short, compact.render_text(&full));
+        let restored_full = VariableFlowReport::from_json(&full_bytes).unwrap();
+        let restored_compact = VariableSourceReport::from_json(&compact_bytes).unwrap();
+        assert_eq!(short, restored_compact.render_text(&restored_full));
+        assert_eq!(
+            detailed,
+            restored_compact.render_verbose_text(&restored_full)
+        );
+        for mode in [&short, &detailed] {
+            assert!(mode.ends_with(&format!(
+                "Evidence: {} ({})",
+                compact.evidence_file, compact.full_report_id
+            )));
+        }
+    }
+
+    #[test]
+    fn ifds_binding_text_copies_and_computations() {
+        let (full, compact) = run_reports(
+            "function f() {\n  let x = 1;\n  const saved = x;\n  const y = saved + 1;\n  return y * 2;\n}\n",
+            "function f() {\n  let x = 2;\n  const saved = x;\n  const y = saved + 1;\n  return y * 2;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(
+            short.matches("Source expression changed:").count(),
+            1,
+            "{short}"
+        );
+        assert!(!short.contains("saved = x"), "{short}");
+        assert!(short.contains("y = saved + 1"), "{short}");
+        assert!(short.contains("return y * 2;"), "{short}");
+        assert!(
+            compact
+                .render_verbose_text(&full)
+                .contains("write `saved = x`")
+        );
+
+        // Incomplete evidence must not justify omitting a copy.
+        let mut partial = compact.clone();
+        partial.comparison_complete = false;
+        let text = partial.render_text(&full);
+        assert!(text.contains("saved = x"), "{text}");
+        assert!(text.contains("source comparison unresolved"));
+
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) { let x = 1; let saved = x; if (flag) saved = x; return saved; }",
+            "function f(flag: boolean) { let x = 2; let saved = x; if (flag) saved = x; return saved; }",
+            "x",
+        );
+        assert!(compact.render_text(&full).contains("saved = x"));
+    }
+
+    #[test]
+    fn ifds_binding_text_hidden_write_does_not_claim_equality() {
+        let (full, compact) = run_reports(
+            "function f() {\n  let x = 1;\n  const saved = x;\n  return saved;\n}\n",
+            "function f() {\n  let x = 1;\n  const saved = x;\n  x = 2;\n  return saved;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(!short.contains("x = 2"), "{short}");
+        assert!(short.contains("No established changes at uses within the declared scope."));
+        assert!(!short.contains("Equal") && !short.contains("no impact"));
+        assert!(
+            compact
+                .render_verbose_text(&full)
+                .contains("Added write `x = 2`")
+        );
+        assert!(full.human_summary.contains("Added write `x = 2`"));
+    }
+
+    #[test]
+    fn ifds_binding_text_guard_positions_and_fallback() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) {\n  let x = 1;\n  if (flag) x = 2;\n  return x;\n}\n",
+            "function f(flag: boolean) {\n  let x = 1;\n\n  if (!flag) x = 2;\n\n  return x;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Selection changed:").count(), 1, "{short}");
+        assert!(
+            short.contains("Before: x = 2 (main.ts:3) enabled under flag"),
+            "{short}"
+        );
+        assert!(
+            short.contains("After: x = 2 (main.ts:4) enabled under !flag"),
+            "{short}"
+        );
+        assert!(short.contains("Fallback:"), "{short}");
+        assert!(short.contains("x = 1"));
+        assert!(short.contains("before main.ts:4; after main.ts:6"));
+        assert!(!short.contains("Source expression changed:"));
+    }
+
+    #[test]
+    fn ifds_binding_text_priority_preserves_both_orders() {
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (a) x = 2;\n  if (b) x = 3;\n  return x;\n}\n",
+            "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (b) x = 3;\n  if (a) x = 2;\n  return x;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(
+            short.contains("Before precedence: x = 3 overrides x = 2"),
+            "{short}"
+        );
+        assert!(
+            short.contains("After precedence: x = 2 overrides x = 3"),
+            "{short}"
+        );
+        assert!(short.contains("selected under a && !b"), "{short}");
+        assert!(short.contains("selected under !a && b"), "{short}");
+        assert!(short.contains("Fallback:"));
+    }
+
+    #[test]
+    fn ifds_binding_text_early_return_and_use_conditions() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) {\n  let x = 0;\n  x = 1;\n  x = 2;\n  x = 3;\n  return x + 4;\n}\n",
+            "function f(flag: boolean) {\n  let x = 0;\n  x = 1;\n  x = 2;\n  if (flag) return x;\n  x = 3;\n  return x + 4;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Added observation:").count(), 1, "{short}");
+        assert!(
+            short.contains("return x; (value; after main.ts:5)"),
+            "{short}"
+        );
+        assert!(
+            short.contains("x = 2 (main.ts:4) selected under flag"),
+            "{short}"
+        );
+        assert!(
+            short.contains("return x + 4; (operand 0; before main.ts:6; after main.ts:7)"),
+            "{short}"
+        );
+        assert!(
+            short.contains("Use guard: before always; after !flag"),
+            "{short}"
+        );
+        assert!(
+            short.contains("Use guard: before absent; after flag"),
+            "{short}"
+        );
+    }
+
+    #[test]
+    fn ifds_binding_text_unknown_and_presentation_limits() {
+        let (full, mut compact) = run_reports(
+            "function f() { let x = 1; return x; }",
+            "function f() { let x = opaque(); return x; }",
+            "x",
+        );
+        for mode in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert!(mode.contains("UnsupportedSyntax"), "{mode}");
+            assert!(mode.contains("analysis partial"));
+            assert!(mode.contains("source comparison unresolved"));
+        }
+        compact.observation_groups.clear();
+        compact.presentation_complete = false;
+        compact.omitted_groups = 3;
+        for mode in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert!(mode.contains("presentation partial (3 groups omitted; see full evidence)"));
+            assert!(mode.contains("Unknown:"));
+            assert!(!mode.contains("Equal"));
+        }
+    }
+
+    #[test]
+    fn ifds_binding_text_exact_evidence_and_distinct_writes() {
+        let (full, mut compact) = run_reports(
+            "function f(flag: boolean) { let x = 1; return x; }",
+            "function f(flag: boolean) { let x = 1; if (flag) x = 1; return x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(short.contains("[source #"), "{short}");
+        compact.full_report_id = "another-report".into();
+        assert!(compact.validate_with_full(&full).is_err());
+        for mode in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert!(mode.starts_with("Evidence mismatch:"));
+            assert!(!mode.contains("Affected uses:"));
+        }
+    }
+
+    #[test]
+    fn ifds_binding_text_nested_guard_factoring_and_independent_changes() {
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) { if (b) x = 2; else x = 3; } return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) { if (!b) x = 2; else x = 3; } return x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Selection changed:").count(), 1, "{short}");
+        assert!(short.contains("enabled under a && b"), "{short}");
+        assert!(short.contains("enabled under a && !b"), "{short}");
+        assert_eq!(short.matches("Affected uses:").count(), 1, "{short}");
+
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) x = 2; if (b) x = 3; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (!a) x = 2; if (!b) x = 3; return x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Selection changed:").count(), 2, "{short}");
+        assert!(short.contains("enabled under !a"));
+        assert!(short.contains("enabled under !b"));
+    }
+
+    #[test]
+    fn ifds_binding_text_guard_versions_remain_distinguishable() {
+        let (full, compact) = run_reports(
+            "function f(flag: boolean) {\n let x = 1;\n if (flag) x = 2;\n flag = false;\n if (flag) x = 3;\n return x;\n}\n",
+            "function f(flag: boolean) {\n let x = 1;\n if (flag) x = 2;\n flag = true;\n if (flag) x = 3;\n return x;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        let ids: BTreeSet<_> = compact.controls.iter().map(|control| control.id).collect();
+        assert!(ids.len() >= 2);
+        for id in ids {
+            assert!(short.contains(&format!("[guard #{}]", id.0)), "{short}");
+        }
+        assert!(short.contains("main.ts:3"));
+        assert!(short.contains("main.ts:5"));
+        assert!(short.contains("return x;"));
+    }
+
+    #[test]
+    fn ifds_binding_text_added_writers_and_narrower_reaching_rules() {
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) { let x = 1; return x; }",
+            "function f(a: boolean, b: boolean) { let x = 1; if (a) x = 2; if (b) x = 3; return x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Sources changed:").count(), 1, "{short}");
+        assert!(!short.contains("Selection changed:"), "{short}");
+        assert!(
+            short.contains("After precedence: x = 3 overrides x = 2"),
+            "{short}"
+        );
+        assert!(short.contains("x = 2") && short.contains("selected under a && !b"));
+
+        let (full, compact) = run_reports(
+            "function f(a: boolean, b: boolean) {\n let x = 1;\n if (a) x = 2;\n if (b) x = 3;\n return x;\n}\n",
+            "function f(a: boolean, b: boolean) {\n let x = 1;\n if (!a) x = 2;\n if (b) x = 3;\n return x;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(short.contains("enabled under a"));
+        assert!(
+            short.contains("Reaching rule for x = 2: before a && !b; after !a && !b"),
+            "{short}"
+        );
+        assert!(short.contains("branch `(b)` (main.ts:4)"), "{short}");
+    }
+
+    #[test]
+    fn ifds_binding_text_analysis_limits_are_distinct_from_presentation() {
+        let before = OVERWRITE_BEFORE;
+        let after = OVERWRITE_AFTER;
+        let (full, _) = run_reports(before, after, "x");
+        let mut query = full.query.request;
+        query.limits.output_nodes = 2;
+        query.limits.witnesses_per_relation = 0;
+        let provider = InMemorySnapshotProvider::new([
+            InMemorySnapshot {
+                handle: query.before.clone(),
+                files: BTreeMap::from([(
+                    "main.ts".into(),
+                    ("blob-before".into(), before.as_bytes().to_vec()),
+                )]),
+            },
+            InMemorySnapshot {
+                handle: query.after.clone(),
+                files: BTreeMap::from([(
+                    "main.ts".into(),
+                    ("blob-after".into(), after.as_bytes().to_vec()),
+                )]),
+            },
+        ]);
+        let environment = AnalysisEnvironment {
+            capabilities: query.capabilities.clone(),
+            summaries: BTreeSet::new(),
+        };
+        let (full, compact) =
+            analyze_variable_flow_reports(query, &provider, &environment, &environment).unwrap();
+        assert!(full.stats.graph_truncated);
+        assert!(full.stats.limits_hit.contains("output_nodes"));
+        for mode in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert!(
+                mode.contains("Limits:") && mode.contains("output_nodes"),
+                "{mode}"
+            );
+            assert!(mode.contains("graph truncated true"));
+            assert!(mode.contains("analysis partial"));
+            assert!(!mode.contains("groups omitted"));
+        }
+    }
+
+    #[test]
+    fn ifds_binding_text_overwritten_edits_and_terminal_copies() {
+        let (full, compact) = run_reports(
+            "function f() { let x = 1; x = 9; return x; }",
+            "function f() { let x = 2; x = 9; return x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(
+            !short.contains("x = 1") && !short.contains("x = 2"),
+            "{short}"
+        );
+        assert!(short.contains("No established changes at uses"));
+        assert!(compact.render_verbose_text(&full).contains("x = 2"));
+
+        let (full, compact) = run_reports(
+            "function f() { let x = 1; const saved = x; }",
+            "function f() { let x = 2; const saved = x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(short.contains("Affected uses: saved = x"), "{short}");
+    }
+
+    #[test]
+    fn ifds_binding_text_independent_expression_changes_are_not_repeated() {
+        let (full, compact) = run_reports(
+            "function f() {\n let x = 1;\n const y = x + 1;\n return y;\n}\n",
+            "function f() {\n let x = 2;\n const y = x + 2;\n return y;\n}\n",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert_eq!(
+            short.matches("Source expression changed:").count(),
+            2,
+            "{short}"
+        );
+        assert_eq!(short.matches("Before: x = 1").count(), 1, "{short}");
+        assert_eq!(short.matches("After: x = 2").count(), 1, "{short}");
+        assert!(short.contains("Before: y = x + 1"));
+        assert!(short.contains("After: y = x + 2"));
+        assert!(short.contains("return y; (value; before/after main.ts:4)"));
+    }
+
+    #[test]
+    fn ifds_binding_text_expression_changed_at_selected_operand_use() {
+        let (full, compact) = run_reports(
+            "function f() { let x = 1; return x + 1; }",
+            "function f() { let x = 1; return x + 2; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(short.contains("return x + 1; (main.ts:1)"), "{short}");
+        assert!(short.contains("return x + 2; (main.ts:1)"), "{short}");
+        assert!(
+            short.contains("Affected input at changed producer: operand 0"),
+            "{short}"
+        );
+        assert!(!short.contains("Before: x = 1"));
+        assert!(!short.contains("Equal") && !short.contains("Different"));
+    }
+
+    #[test]
+    fn ifds_binding_text_new_copy_is_a_new_use() {
+        let (full, compact) = run_reports(
+            "function f() { let x = 1; }",
+            "function f() { let x = 1; const saved = x; }",
+            "x",
+        );
+        let short = compact.render_text(&full);
+        assert!(short.contains("Added observation:"), "{short}");
+        assert!(
+            short.contains("Affected uses: saved = x (value; after main.ts:1)"),
+            "{short}"
+        );
+        assert!(!short.contains("No established changes at uses"));
     }
 }

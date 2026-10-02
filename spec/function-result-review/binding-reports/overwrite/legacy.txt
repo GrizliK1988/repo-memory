@@ -1,0 +1,5 @@
+x at return `return x;` (snippet.ts:4, input value)
+Before: write `x = 1`.
+After: write `x = 2`.
+write `x = 1` remains in the code but no longer reaches this input.
+Scope: function example; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/overwrite/legacy-full.json (ifds-343bcadca828cc48).

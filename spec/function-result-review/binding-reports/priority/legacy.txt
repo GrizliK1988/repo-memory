@@ -1,0 +1,3 @@
+x at return `return x;` (snippet.ts:5, input value)
+Precedence: write `x = 2` overrides write `x = 3` when both writes apply.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/priority/legacy-full.json (ifds-073bd190b6fca823).

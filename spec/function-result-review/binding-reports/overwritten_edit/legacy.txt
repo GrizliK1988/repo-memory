@@ -1,0 +1,5 @@
+x at write `x = 2` (snippet.ts:2, input value)
+Before: literal `1`.
+After: literal `2`.
+Changed expression: write `x = 1` -> write `x = 2`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/overwritten_edit/legacy-full.json (ifds-564b92f7ec3233e7).

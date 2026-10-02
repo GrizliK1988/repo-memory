@@ -21,9 +21,43 @@ contains sources, typed guard clauses, observations, source selections, overwrit
 rules, semantic findings, and separate analysis/comparison/presentation coverage.
 Its `full_report_id` is the deterministic FNV-1a digest of canonical full JSON with
 `human_summary` cleared, so the summary can refer to the report without making
-the digest circular. Each evidence reference names a section and zero-based index
+the digest circular. Existing runtime `stats.elapsed_ms` participates in that
+digest, so independent analyses of identical queries can have different IDs.
+Each evidence reference names a section and zero-based index
 in that exact full report. The example command writes the full JSON sidecar for
 `text` and `compact-json`; `full-json` writes complete evidence to stdout.
+
+## Human text modes
+
+Following [005](../../spec/function-result-review/005-binding-human-report.md),
+binding `text` describes a shared change once and identifies its affected uses.
+Both snapshots' positions remain explicit, including moved uses. Observations
+with distinct conditions or uncertainty retain those distinctions; this is a
+text presentation change, not a change to structured observation grouping.
+
+Short text retains computations and exact operand roles. An unchanged transparent
+copy may be omitted only with an unambiguous, exhaustive single origin and no
+hidden condition or binding-version distinction. Selection explanations show the
+change plus necessary fallback, reaching conditions, and overwrite priority.
+An assignment's enabling condition is distinct from the condition under which
+its value reaches a particular input. Standalone write edits without established
+impact on uses remain in detailed text and evidence. An empty visible finding
+list states only the absence of established changes at uses within the scope.
+Binding text does not establish equality of whole function results.
+
+`--verbose` retains the previous level of detail and adds explicit source chains,
+positions, and selection rules. Both modes preserve uncertainty, entry
+restrictions, independent analysis/comparison coverage, limits, presentation
+omissions, open boundaries, and the exact evidence link. The flag works only with
+text format, for either target; JSON combinations fail before source/evidence I/O.
+
+The API's `render_text(&full)` and `render_verbose_text(&full)` consume the same
+compact facts and exact full report. These methods now require the full evidence
+to expose its limits and boundaries and verify report identity. The original
+no-argument renderer is available as `render_legacy_text()`; full JSON keeps that
+legacy `human_summary` and its existing custom evidence-path handling. Full and
+compact JSON structures, schema versions, IDs, and evidence remain unchanged by
+choosing either human mode.
 
 ## Questions answered
 

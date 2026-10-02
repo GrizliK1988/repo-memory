@@ -1,0 +1,9 @@
+Selection changed:
+  Before: x = 2 (snippet.ts:3) selected under a && !b; x = 3 (snippet.ts:4) selected under b
+  Before precedence: x = 3 overrides x = 2 when both writes apply
+  After: x = 2 (snippet.ts:4) selected under a; x = 3 (snippet.ts:3) selected under !a && b
+  After precedence: x = 2 overrides x = 3 when both writes apply
+  Fallback: before/after x = 1 (snippet.ts:2)
+Affected uses: return x; (value; before/after snippet.ts:5)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/priority/full.json (ifds-073bd190b6fca823)

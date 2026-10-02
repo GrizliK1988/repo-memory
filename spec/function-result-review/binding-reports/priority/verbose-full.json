@@ -1,0 +1,5085 @@
+{
+  "schema_version": 3,
+  "analysis_version": "0.1.0",
+  "snapshots": [
+    {
+      "side": "before",
+      "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+      "content_id": "fnv1a64-b0265795dc3e0e32"
+    },
+    {
+      "side": "after",
+      "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+      "content_id": "fnv1a64-0c0c9cba95721a3e"
+    }
+  ],
+  "query": {
+    "request": {
+      "before": {
+        "id": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "repository_id": "local-example"
+      },
+      "after": {
+        "id": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "repository_id": "local-example"
+      },
+      "diff": {
+        "before_content_id": "fnv1a64-b0265795dc3e0e32",
+        "after_content_id": "fnv1a64-0c0c9cba95721a3e",
+        "changes": [
+          {
+            "kind": "modified",
+            "before_path": "snippet.ts",
+            "after_path": "snippet.ts",
+            "before_content_id": "fnv1a64-b0265795dc3e0e32",
+            "after_content_id": "fnv1a64-0c0c9cba95721a3e"
+          }
+        ]
+      },
+      "selected_binding": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 43,
+          "byte_end": 44,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "expected_name": "x",
+        "expected_enclosing_symbol": "f"
+      },
+      "counterpart": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 43,
+          "byte_end": 44,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "expected_name": "x",
+        "expected_enclosing_symbol": "f"
+      },
+      "entry": {
+        "kind": "containing_function"
+      },
+      "capabilities": {
+        "stage": 1,
+        "capabilities": [
+          "straight_line"
+        ],
+        "version": "stage-1"
+      },
+      "summaries": [],
+      "limits": {
+        "time_ms": 120000,
+        "memory_bytes": 4294967296,
+        "processed_path_edges": 1000000,
+        "witnesses_per_relation": 3,
+        "output_nodes": 100000
+      }
+    },
+    "before_binding": {
+      "snapshot": {
+        "side": "before",
+        "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+        "content_id": "fnv1a64-b0265795dc3e0e32"
+      },
+      "local": 3
+    },
+    "after_binding": {
+      "snapshot": {
+        "side": "after",
+        "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+        "content_id": "fnv1a64-0c0c9cba95721a3e"
+      },
+      "local": 3
+    }
+  },
+  "entry_assumptions": [
+    {
+      "name": "parameter 0",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 1
+        }
+      }
+    },
+    {
+      "name": "parameter 0",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 1
+        }
+      }
+    },
+    {
+      "name": "parameter 1",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 2
+        }
+      }
+    },
+    {
+      "name": "parameter 1",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 2
+        }
+      }
+    }
+  ],
+  "before_graph": {
+    "nodes": [
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934594
+        },
+        "operation": "literal `1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 47,
+          "byte_end": 48,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:1:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 43,
+          "byte_end": 48,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        "operation": "branch `(a)`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 55,
+          "byte_end": 58,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "branch"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934599
+        },
+        "operation": "literal `2`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 63,
+          "byte_end": 64,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:2:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "operation": "write `x = 2`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 59,
+          "byte_end": 64,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        "operation": "branch `(b)`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 71,
+          "byte_end": 74,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "branch"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        },
+        "operation": "literal `3`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 79,
+          "byte_end": 80,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:3:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "operation": "write `x = 3`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 75,
+          "byte_end": 80,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        },
+        "operation": "return `return x;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 84,
+          "byte_end": 93,
+          "start_line": 5,
+          "end_line": 5
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "return"
+      }
+    ],
+    "edges": [
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934594
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": null,
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!a && !b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934599
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!b && a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "!a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "!a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "!a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "a && b",
+        "evidence": "supported"
+      }
+    ],
+    "facts": [
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934594
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934594
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934599
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934599
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934606
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934595
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934600
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934607
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934594
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934599
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934606
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934595
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934600
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+              "content_id": "fnv1a64-b0265795dc3e0e32"
+            },
+            "local": 8589934607
+          }
+        }
+      }
+    ]
+  },
+  "after_graph": {
+    "nodes": [
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934594
+        },
+        "operation": "literal `1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 47,
+          "byte_end": 48,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:1:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 43,
+          "byte_end": 48,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        "operation": "branch `(b)`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 55,
+          "byte_end": 58,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "branch"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934599
+        },
+        "operation": "literal `3`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 63,
+          "byte_end": 64,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:3:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "operation": "write `x = 3`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 59,
+          "byte_end": 64,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        "operation": "branch `(a)`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 71,
+          "byte_end": 74,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "branch"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        },
+        "operation": "literal `2`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 79,
+          "byte_end": 80,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "literal:Number:2:None"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "operation": "write `x = 2`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 75,
+          "byte_end": 80,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "write"
+      },
+      {
+        "id": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        },
+        "operation": "return `return x;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 84,
+          "byte_end": 93,
+          "start_line": 5,
+          "end_line": 5
+        },
+        "enclosing_declaration": "function f",
+        "fingerprint": "return"
+      }
+    ],
+    "edges": [
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934594
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": null,
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!a && !b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934599
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "!b && a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "controls",
+        "projection": null,
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "!b && a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "value_dependency",
+        "projection": "value",
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "!b && a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "relation": "may_write",
+        "projection": null,
+        "condition": "a && b",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "!b && a",
+        "evidence": "supported"
+      },
+      {
+        "source": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        "target": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        },
+        "relation": "reaches",
+        "projection": "value",
+        "condition": "a && b",
+        "evidence": "supported"
+      }
+    ],
+    "facts": [
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934594
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934594
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934599
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934599
+        }
+      },
+      {
+        "kind": "last_write",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934606
+          }
+        },
+        "write": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934595
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934600
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "binding",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 3
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934607
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934594
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934599
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934606
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934594
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934595
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934599
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934600
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934606
+          }
+        }
+      },
+      {
+        "kind": "origin",
+        "place": {
+          "kind": "temporary",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934610
+          }
+        },
+        "source": {
+          "kind": "write",
+          "value": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+              "content_id": "fnv1a64-0c0c9cba95721a3e"
+            },
+            "local": 8589934607
+          }
+        }
+      }
+    ]
+  },
+  "alignment": [
+    {
+      "logical": 1,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934593
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934593
+      },
+      "evidence": "synthetic procedure entry"
+    },
+    {
+      "logical": 2,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934594
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934594
+      },
+      "evidence": "matched producer of aligned input"
+    },
+    {
+      "logical": 3,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934595
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934595
+      },
+      "evidence": "aligned declaration write"
+    },
+    {
+      "logical": 4,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934596
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934603
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 5,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934597
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934604
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 6,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934599
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934606
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 7,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934600
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934607
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 8,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934603
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934596
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 9,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934604
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934597
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 10,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934606
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934599
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 11,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934607
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934600
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 12,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934610
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934610
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 13,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934611
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934611
+      },
+      "evidence": "identical semantic fingerprint"
+    },
+    {
+      "logical": 14,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934612
+      },
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934612
+      },
+      "evidence": "synthetic procedure exit"
+    },
+    {
+      "logical": 15,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934598
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 16,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934601
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 17,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934602
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 18,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934605
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 19,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934608
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 20,
+      "before": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+          "content_id": "fnv1a64-b0265795dc3e0e32"
+        },
+        "local": 8589934609
+      },
+      "after": null,
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 21,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934598
+      },
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 22,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934601
+      },
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 23,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934602
+      },
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 24,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934605
+      },
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 25,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934608
+      },
+      "evidence": "confirmed one-sided operation"
+    },
+    {
+      "logical": 26,
+      "before": null,
+      "after": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+          "content_id": "fnv1a64-0c0c9cba95721a3e"
+        },
+        "local": 8589934609
+      },
+      "evidence": "confirmed one-sided operation"
+    }
+  ],
+  "deltas": [
+    {
+      "delta": {
+        "kind": "flow_condition_changed",
+        "source": 7,
+        "target": 13,
+        "relation": "reaches",
+        "projection": "value",
+        "before": "!b && a",
+        "after": "(!b && a) || (a && b)"
+      },
+      "groups": [
+        10520130959868974882,
+        12255197817919040769
+      ],
+      "before_span": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "after_span": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": null
+    },
+    {
+      "delta": {
+        "kind": "flow_condition_changed",
+        "source": 11,
+        "target": 13,
+        "relation": "reaches",
+        "projection": "value",
+        "before": "(!a && b) || (a && b)",
+        "after": "!a && b"
+      },
+      "groups": [
+        3732398064978195165,
+        16741085522739669278
+      ],
+      "before_span": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "after_span": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": null
+    }
+  ],
+  "human_summary": "x at return `return x;` (snippet.ts:5, input value)\nPrecedence: write `x = 2` overrides write `x = 3` when both writes apply.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/priority/verbose-full.json (ifds-22cd516e912631f6).",
+  "witnesses": [
+    {
+      "id": 1,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934594
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 2,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934599
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 3,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 4,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 5,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 6,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 7,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 8,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 9,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 10,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 11,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 12,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 13,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934598
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934599
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 14,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934605
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934606
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 15,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 16,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 17,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 18,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 20,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934594
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 21,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934599
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 22,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 23,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 24,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 25,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 26,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 27,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 28,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 29,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 30,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 31,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 32,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934598
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934599
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 33,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934605
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934606
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 34,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934596
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934597
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934601
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 35,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934602
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934603
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934604
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934608
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 36,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    },
+    {
+      "id": 37,
+      "nodes": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934609
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934610
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934611
+        }
+      ],
+      "backedges": [],
+      "summary_expansions": [],
+      "evidence": "supported"
+    }
+  ],
+  "diagnostics": [],
+  "unknown_frontiers": [],
+  "capabilities": {
+    "stage": 1,
+    "capabilities": [
+      "straight_line"
+    ],
+    "version": "stage-1"
+  },
+  "summaries_used": [],
+  "flow_extent": {
+    "before": {
+      "upstream": "complete",
+      "downstream": "complete",
+      "declared_scope": "function f",
+      "source_boundaries": [],
+      "sink_boundaries": [
+        "caller_scope"
+      ],
+      "value_lifecycle_closed": false
+    },
+    "after": {
+      "upstream": "complete",
+      "downstream": "complete",
+      "declared_scope": "function f",
+      "source_boundaries": [],
+      "sink_boundaries": [
+        "caller_scope"
+      ],
+      "value_lifecycle_closed": false
+    }
+  },
+  "path_endings": [
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934595
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!a && !b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 15,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934600
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!b && a",
+      "context": "returned beyond the declared caller scope",
+      "witness": 16,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!a && b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 18,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 8589934607
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b0265795dc3e0e32",
+            "content_id": "fnv1a64-b0265795dc3e0e32"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "a && b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 17,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934595
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!a && !b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 34,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934600
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!a && b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 35,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "!b && a",
+      "context": "returned beyond the declared caller scope",
+      "witness": 37,
+      "model": null,
+      "diagnostic": null
+    },
+    {
+      "kind": "scope_boundary",
+      "origin": {
+        "kind": "write",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 8589934607
+        }
+      },
+      "carrier": {
+        "kind": "binding",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-0c0c9cba95721a3e",
+            "content_id": "fnv1a64-0c0c9cba95721a3e"
+          },
+          "local": 3
+        }
+      },
+      "location": {
+        "path": "snippet.ts",
+        "byte_start": 84,
+        "byte_end": 93,
+        "start_line": 5,
+        "end_line": 5
+      },
+      "condition": "a && b",
+      "context": "returned beyond the declared caller scope",
+      "witness": 36,
+      "model": null,
+      "diagnostic": null
+    }
+  ],
+  "completeness": "complete_for_query",
+  "region_completeness": {
+    "after:downstream": "complete",
+    "after:procedure:downstream": "complete",
+    "after:upstream": "complete",
+    "before:downstream": "complete",
+    "before:procedure:downstream": "complete",
+    "before:upstream": "complete"
+  },
+  "stats": {
+    "elapsed_ms": 22,
+    "peak_memory_bytes": 248320,
+    "processed_path_edges": 742,
+    "graph_nodes": 18,
+    "graph_edges": 28,
+    "witnesses_emitted": 36,
+    "witnesses_omitted": 0,
+    "limits_hit": [],
+    "graph_truncated": false,
+    "witnesses_truncated": false
+  }
+}

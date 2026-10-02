@@ -1,0 +1,30 @@
+x at return `return x;` (snippet.ts:4, input value)
+Before: write `x = 2` under flag.
+After: write `x = 2` under !flag.
+x at write `x = 2` (snippet.ts:3, input value)
+Use guard: !flag.
+Changed expression: branch `(flag)` -> branch `(!flag)`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: literal `2` (snippet.ts:3)
+  After: literal `2` (snippet.ts:3)
+  Before: x = 2 (snippet.ts:3) enabled under flag <- literal `2` (snippet.ts:3)
+  After: x = 2 (snippet.ts:3) enabled under !flag <- literal `2` (snippet.ts:3)
+  Before: return x; (snippet.ts:4) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)
+  After: return x; (snippet.ts:4) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: x = 2 (value; before/after snippet.ts:3)
+  Before: literal `2` (snippet.ts:3) selected under flag; use guard flag
+  After: literal `2` (snippet.ts:3) selected under !flag; use guard !flag
+Observation: return x; (value; before/after snippet.ts:4)
+  Before: x = 1 (snippet.ts:2) selected under !flag; x = 2 (snippet.ts:3) selected under flag; use guard always
+  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply
+  After: x = 1 (snippet.ts:2) selected under flag; x = 2 (snippet.ts:3) selected under !flag; use guard always
+  After precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/guard/verbose-full.json (ifds-9ef43390f1676d48)

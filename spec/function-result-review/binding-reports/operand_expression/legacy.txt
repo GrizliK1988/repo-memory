@@ -1,0 +1,2 @@
+Changed expression: return `return x + 1;` -> return `return x + 2;`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/operand_expression/legacy-full.json (ifds-bfcb449d692c462b).

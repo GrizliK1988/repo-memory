@@ -9,6 +9,8 @@ use super::model::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
+mod text;
+
 pub const COMPACT_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -302,7 +304,18 @@ impl VariableSourceReport {
         serde_json::to_vec(self).map_err(|error| SchemaError::Serialization(error.to_string()))
     }
 
-    pub fn render_text(&self) -> String {
+    /// Concise binding-flow text, backed by this exact full report.
+    pub fn render_text(&self, full: &VariableFlowReport) -> String {
+        text::render(self, full, false)
+    }
+
+    /// Detailed binding-flow text, including source chains and selection rules.
+    pub fn render_verbose_text(&self, full: &VariableFlowReport) -> String {
+        text::render(self, full, true)
+    }
+
+    /// The compatibility summary stored in full JSON. Keep its wording stable.
+    pub fn render_legacy_text(&self) -> String {
         let sites: BTreeMap<_, _> = self
             .sources
             .iter()

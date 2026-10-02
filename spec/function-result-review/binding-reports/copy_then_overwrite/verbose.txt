@@ -1,0 +1,25 @@
+Added write `x = 2`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: y = x (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  After: y = x (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  Before: return y; (snippet.ts:4) <- y = x (snippet.ts:3)
+  After: return y; (snippet.ts:5) <- y = x (snippet.ts:3)
+  After: literal `2` (snippet.ts:4)
+  After: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: y = x (value; before/after snippet.ts:3)
+  Before: x = 1 (snippet.ts:2); use guard always
+  After: x = 1 (snippet.ts:2); use guard always
+Observation: return y; (value; before snippet.ts:4; after snippet.ts:5)
+  Before: y = x (snippet.ts:3); use guard always
+  After: y = x (snippet.ts:3); use guard always
+Observation: x = 2 (value; after snippet.ts:4)
+  After: literal `2` (snippet.ts:4); use guard always
+Scope: function example; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/copy_then_overwrite/verbose-full.json (ifds-2477efe79e2814a4)

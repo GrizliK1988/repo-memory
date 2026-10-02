@@ -1,0 +1,33 @@
+x at return `return x;` (snippet.ts:6, input value)
+Before: write `x = 1` as fallback; write `x = 2` under flag.
+After: write `x = 3` under flag.
+Use guard: flag.
+write `x = 1` remains in the code but no longer reaches this input.
+write `x = 2` remains in the code but no longer reaches this input.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: literal `2` (snippet.ts:3)
+  After: literal `2` (snippet.ts:3)
+  Before: x = 2 (snippet.ts:3) enabled under flag [guard #5] <- literal `2` (snippet.ts:3)
+  After: x = 2 (snippet.ts:3) enabled under flag [guard #5] <- literal `2` (snippet.ts:3)
+  After: literal `3` (snippet.ts:5)
+  After: x = 3 (snippet.ts:5) enabled under flag [guard #11] <- literal `3` (snippet.ts:5)
+  Before: return x; (snippet.ts:6) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)
+  After: return x; (snippet.ts:6) <- x = 3 (snippet.ts:5)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: x = 2 (value; before/after snippet.ts:3)
+  Before: literal `2` (snippet.ts:3) selected under flag [guard #5]; use guard flag [guard #5]
+  After: literal `2` (snippet.ts:3) selected under flag [guard #5]; use guard flag [guard #5]
+Observation: x = 3 (value; after snippet.ts:5)
+  After: literal `3` (snippet.ts:5) selected under flag [guard #11]; use guard flag [guard #11]
+Observation: return x; (value; before/after snippet.ts:6)
+  Before: x = 1 (snippet.ts:2) selected under !flag [guard #5] && !flag [guard #11]; x = 2 (snippet.ts:3) selected under flag [guard #5] && !flag [guard #11]; use guard !flag [guard #11]
+  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply
+  After: x = 3 (snippet.ts:5) selected under flag [guard #11]; use guard flag [guard #11]
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/guard_versions/verbose-full.json (ifds-ba9c002d8e3ae3df)

@@ -1,0 +1,16 @@
+Changed expression: return `return x + 1;` -> return `return x + 2;`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: return x + 1; (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  After: return x + 2; (snippet.ts:3) <- x = 1 (snippet.ts:2)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: return x + 1; -> return x + 2; (operand 0; before snippet.ts:3; after snippet.ts:3)
+  Before: x = 1 (snippet.ts:2); use guard always
+  After: x = 1 (snippet.ts:2); use guard always
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/operand_expression/verbose-full.json (ifds-bfcb449d692c462b)

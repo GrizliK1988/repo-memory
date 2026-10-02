@@ -1,0 +1,7 @@
+No established changes at uses within the declared scope.
+Comparison unresolved at one or more aligned operations.
+Unknown: UnsupportedSyntax: unsupported TypeScript construct "call_expression" (After snippet.ts:2)
+Unknown: UnsupportedSyntax: unsupported TypeScript construct "identifier" (After snippet.ts:2)
+After coverage: upstream Partial; downstream Complete
+Scope: function f; analysis partial; source comparison unresolved; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/unknown/full.json (ifds-dd5a0b874fc242bd)

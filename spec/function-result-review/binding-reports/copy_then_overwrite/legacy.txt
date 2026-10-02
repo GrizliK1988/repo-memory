@@ -1,0 +1,2 @@
+Added write `x = 2`.
+Scope: function example; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/copy_then_overwrite/legacy-full.json (ifds-2477efe79e2814a4).

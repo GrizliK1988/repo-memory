@@ -1,0 +1,7 @@
+Selection changed:
+  Before: x = 2 (snippet.ts:3) enabled under flag
+  After: x = 2 (snippet.ts:4) enabled under !flag
+  Fallback: before/after x = 1 (snippet.ts:2)
+Affected uses: return x; (value; before snippet.ts:4; after snippet.ts:6)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/moved_positions/full.json (ifds-896273610d4b3453)

@@ -1,0 +1,6 @@
+Added observation:
+  After sources: x = 1 (snippet.ts:2)
+Affected uses: saved = x (value; after snippet.ts:3)
+  Use guard: before absent; after always
+Scope: function f; analysis complete; source comparison complete.
+Evidence: spec/function-result-review/binding-reports/new_copy/full.json (ifds-32a7579960030ba4)

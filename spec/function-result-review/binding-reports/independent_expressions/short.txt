@@ -1,0 +1,10 @@
+Source expression changed:
+  Before: x = 1 (snippet.ts:2)
+  After: x = 2 (snippet.ts:2)
+Affected uses: y = x + 1 -> y = x + 2 (operand 0; before snippet.ts:3; after snippet.ts:3); return y; (value; before/after snippet.ts:4)
+Source expression changed:
+  Before: y = x + 1 (snippet.ts:3)
+  After: y = x + 2 (snippet.ts:3)
+Affected uses: return y; (value; before/after snippet.ts:4)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/independent_expressions/full.json (ifds-6c930da02d6bc5bf)

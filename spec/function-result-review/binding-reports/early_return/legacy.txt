@@ -1,0 +1,11 @@
+x at write `x = 3` (snippet.ts:6, input value)
+Use guard: !flag.
+x at return `return x + 4;` (snippet.ts:7, input value.operands[0])
+Before: write `x = 3`.
+After: write `x = 3` under !flag.
+Use guard: !flag.
+x at return `return x;` (snippet.ts:5, input value)
+After: write `x = 2`.
+Use guard: flag.
+Added observation return `return x;`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/early_return/legacy-full.json (ifds-1bef723796e1dc62).

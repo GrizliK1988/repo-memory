@@ -30,6 +30,19 @@ JSON. Compact evidence references name a section and zero-based index in that
 saved full report. Existing scripts that read full JSON should add
 `--format full-json` before redirecting stdout.
 
+Binding text describes a shared source or selection change once and lists the
+affected uses, with explicit before/after source positions and operand roles.
+It can omit unambiguous transparent copies, while retaining computations,
+conditions, overwrite priority, uncertainty, and scope. Standalone write edits
+without established impact on uses are hidden in short text. Add `--verbose` to
+see those edits, complete recorded dependencies, and detailed selection rules.
+The full JSON's existing `human_summary` remains unchanged in either mode.
+
+`VariableSourceReport::render_text(&full)` renders concise binding text;
+`render_verbose_text(&full)` renders detailed text. Both use the exact full
+`VariableFlowReport`, including its coverage, limits, and boundary information.
+`render_legacy_text()` preserves the summary stored in full JSON.
+
 To compare all normal results of one function without selecting a variable, use
 the explicit function target:
 
@@ -51,8 +64,8 @@ Function text is concise by default: simple replacements appear once, with key
 contributing-write positions. Conditional choice tables remain where they explain
 selection rules, and control changes, uncertainty, coverage, and the evidence link
 remain visible. Add `--verbose` for the detailed function text, including simple
-choice tables and full contributing-write lists. This flag requires a function
-target and text format; binding reports retain their existing presentation.
+choice tables and full contributing-write lists. This flag works for both binding
+and function targets with text format; either JSON format rejects it explicitly.
 
 The public API provides `render_text(&full)` and `render_verbose_text(&full)` on
 `FunctionResultCompactReport`. Both consume the same structured facts and evidence.

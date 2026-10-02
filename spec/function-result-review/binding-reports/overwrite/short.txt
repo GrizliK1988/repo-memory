@@ -1,0 +1,7 @@
+Sources changed:
+  Before: x = 1 (snippet.ts:2)
+  After: x = 2 (snippet.ts:3)
+  Retained in code, no longer reaches this input: after x = 1 (snippet.ts:2)
+Affected uses: return x; (value; before snippet.ts:3; after snippet.ts:4)
+Scope: function example; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/overwrite/full.json (ifds-343bcadca828cc48)

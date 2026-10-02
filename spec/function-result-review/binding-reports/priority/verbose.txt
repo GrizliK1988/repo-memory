@@ -1,0 +1,37 @@
+x at return `return x;` (snippet.ts:5, input value)
+Precedence: write `x = 2` overrides write `x = 3` when both writes apply.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: literal `2` (snippet.ts:3)
+  After: literal `2` (snippet.ts:4)
+  Before: x = 2 (snippet.ts:3) enabled under a <- literal `2` (snippet.ts:3)
+  After: x = 2 (snippet.ts:4) enabled under a <- literal `2` (snippet.ts:4)
+  Before: literal `3` (snippet.ts:4)
+  After: literal `3` (snippet.ts:3)
+  Before: x = 3 (snippet.ts:4) enabled under b <- literal `3` (snippet.ts:4)
+  After: x = 3 (snippet.ts:3) enabled under b <- literal `3` (snippet.ts:3)
+  Before: return x; (snippet.ts:5) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3); x = 3 (snippet.ts:4)
+  After: return x; (snippet.ts:5) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:3)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: x = 2 (value; before snippet.ts:3; after snippet.ts:4)
+  Before: literal `2` (snippet.ts:3) selected under a; use guard a
+  After: literal `2` (snippet.ts:4) selected under a; use guard a
+Observation: x = 3 (value; before snippet.ts:4; after snippet.ts:3)
+  Before: literal `3` (snippet.ts:4) selected under b; use guard b
+  After: literal `3` (snippet.ts:3) selected under b; use guard b
+Observation: return x; (value; before/after snippet.ts:5)
+  Before: x = 1 (snippet.ts:2) selected under !a && !b; x = 2 (snippet.ts:3) selected under a && !b; x = 3 (snippet.ts:4) selected under b; use guard always
+  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply
+  Before precedence: x = 3 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply
+  Before precedence: x = 3 (snippet.ts:4) overrides x = 2 (snippet.ts:3) when both writes apply
+  After: x = 1 (snippet.ts:2) selected under !a && !b; x = 2 (snippet.ts:4) selected under a; x = 3 (snippet.ts:3) selected under !a && b; use guard always
+  After precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply
+  After precedence: x = 3 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply
+  After precedence: x = 2 (snippet.ts:4) overrides x = 3 (snippet.ts:3) when both writes apply
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/priority/verbose-full.json (ifds-22cd516e912631f6)

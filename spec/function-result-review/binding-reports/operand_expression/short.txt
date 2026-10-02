@@ -1,0 +1,6 @@
+Source expression changed:
+  Before: return x + 1; (snippet.ts:3)
+  After: return x + 2; (snippet.ts:3)
+  Affected input at changed producer: operand 0
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/operand_expression/full.json (ifds-bfcb449d692c462b)

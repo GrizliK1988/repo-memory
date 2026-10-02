@@ -1,0 +1,21 @@
+Changed expression: write `x = 1` -> write `x = opaque()`.
+Comparison unresolved at one or more aligned operations.
+Unknown: {UnsupportedSyntax}.
+Sources and dependencies:
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = opaque() (snippet.ts:2) <- unknown_effect `opaque()` (snippet.ts:2)
+  Before: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  After: return x; (snippet.ts:3) <- x = opaque() (snippet.ts:2)
+  Before: literal `1` (snippet.ts:2)
+  After: unknown_effect `opaque()` (snippet.ts:2)
+Observation: x = 1 -> x = opaque() (value; before snippet.ts:2; after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: unknown_effect `opaque()` (snippet.ts:2); other sources unresolved; use guard always
+Observation: return x; (value; before/after snippet.ts:3)
+  Before: x = 1 (snippet.ts:2); use guard always
+  After: x = opaque() (snippet.ts:2); other sources unresolved; use guard always
+Unknown: UnsupportedSyntax: unsupported TypeScript construct "call_expression" (After snippet.ts:2)
+Unknown: UnsupportedSyntax: unsupported TypeScript construct "identifier" (After snippet.ts:2)
+After coverage: upstream Partial; downstream Complete
+Scope: function f; analysis partial; source comparison unresolved; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/unknown/verbose-full.json (ifds-dd5a0b874fc242bd)

@@ -1,0 +1,42 @@
+x at write `x = input + 1` (snippet.ts:2, input value)
+Before: function_input `input`.
+After: none.
+x at write `y = x + 1` (snippet.ts:3, input value.operands[0])
+Before: write `x = input`.
+After: write `x = input + 1`.
+x at return `return y * 2;` (snippet.ts:4, input value.operands[0])
+Expression changed: write `x = input` -> write `x = input + 1`.
+Expression changed: source 13 -> literal `1`.
+x at write `x = input + 1` (snippet.ts:2, input value.operands[1])
+Before: none.
+After: literal `1`.
+x at write `x = input + 1` (snippet.ts:2, input value.operands[0])
+Before: none.
+After: function_input `input`.
+Sources and dependencies:
+  Before: function_input `input` (snippet.ts:2)
+  After: function_input `input` (snippet.ts:2)
+  Before: x = input (snippet.ts:2) <- function_input `input` (snippet.ts:2)
+  After: x = input + 1 (snippet.ts:2) <- function_input `input` (snippet.ts:2); literal `1` (snippet.ts:2)
+  Before: y = x + 1 (snippet.ts:3) <- x = input (snippet.ts:2)
+  After: y = x + 1 (snippet.ts:3) <- x = input + 1 (snippet.ts:2)
+  Before: return y * 2; (snippet.ts:4) <- y = x + 1 (snippet.ts:3)
+  After: return y * 2; (snippet.ts:4) <- y = x + 1 (snippet.ts:3)
+  After: literal `1` (snippet.ts:2)
+Observation: x = input -> x = input + 1 (value; before snippet.ts:2; after snippet.ts:2)
+  Before: function_input `input` (snippet.ts:2); use guard always
+  After: no established sources at this input; use guard always
+Observation: x = input -> x = input + 1 (operand 0; before snippet.ts:2; after snippet.ts:2)
+  Before: no established sources at this input; use guard always
+  After: function_input `input` (snippet.ts:2); use guard always
+Observation: x = input -> x = input + 1 (operand 1; before snippet.ts:2; after snippet.ts:2)
+  Before: no established sources at this input; use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: y = x + 1 (operand 0; before/after snippet.ts:3)
+  Before: x = input (snippet.ts:2); use guard always
+  After: x = input + 1 (snippet.ts:2); use guard always
+Observation: return y * 2; (operand 0; before/after snippet.ts:4)
+  Before: y = x + 1 (snippet.ts:3); use guard always
+  After: y = x + 1 (snippet.ts:3); use guard always
+Scope: function chain; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/full_downstream_chain/verbose-full.json (ifds-32050f2d09270272)

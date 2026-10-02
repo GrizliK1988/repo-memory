@@ -1,0 +1,26 @@
+x at write `x = 2` (snippet.ts:2, input value)
+Before: literal `1`.
+After: literal `2`.
+Changed expression: write `x = 1` -> write `x = 2`.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `2` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 2 (snippet.ts:2) <- literal `2` (snippet.ts:2)
+  Before: literal `9` (snippet.ts:3)
+  After: literal `9` (snippet.ts:3)
+  Before: x = 9 (snippet.ts:3) <- literal `9` (snippet.ts:3)
+  After: x = 9 (snippet.ts:3) <- literal `9` (snippet.ts:3)
+  Before: return x; (snippet.ts:4) <- x = 9 (snippet.ts:3)
+  After: return x; (snippet.ts:4) <- x = 9 (snippet.ts:3)
+Observation: x = 1 -> x = 2 (value; before snippet.ts:2; after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `2` (snippet.ts:2); use guard always
+Observation: x = 9 (value; before/after snippet.ts:3)
+  Before: literal `9` (snippet.ts:3); use guard always
+  After: literal `9` (snippet.ts:3); use guard always
+Observation: return x; (value; before/after snippet.ts:4)
+  Before: x = 9 (snippet.ts:3); use guard always
+  After: x = 9 (snippet.ts:3); use guard always
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/overwritten_edit/verbose-full.json (ifds-564b92f7ec3233e7)

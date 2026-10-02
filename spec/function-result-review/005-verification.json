@@ -1,0 +1,731 @@
+{
+  "task": "005: concise binding human reports",
+  "baseline_commit": "374919a6429de2d3741335cb5ce21c4b3fcf4011",
+  "normalization": "Only stats.elapsed_ms, its derived binding IDs, and evidence paths normalize for CLI parity. Legacy human_summary wording and every other structured value must match. Fixed-report determinism and byte parity are additionally tested in Rust.",
+  "measurement_scope": "16 synthetic binding queries; no fixed size cap; not a project performance estimate",
+  "totals": {
+    "legacy": {
+      "bytes": 5755,
+      "lines": 106
+    },
+    "short": {
+      "bytes": 6626,
+      "lines": 113
+    },
+    "verbose": {
+      "bytes": 27290,
+      "lines": 473
+    }
+  },
+  "binding_cases": [
+    {
+      "case": "copy_chain",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  const saved = x;\n  const y = saved + 1;\n  return y * 2;\n}\n",
+      "after_source": "function f() {\n  let x = 2;\n  const saved = x;\n  const y = saved + 1;\n  return y * 2;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 37,
+      "short_report_id": "ifds-aaf15ac8b8a4ac45",
+      "verbose_report_id": "ifds-aaf15ac8b8a4ac45",
+      "legacy": {
+        "bytes": 643,
+        "lines": 13,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nx at write `saved = x` (snippet.ts:3, input value)\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nx at write `y = saved + 1` (snippet.ts:4, input value.operands[0])\nExpression changed: literal `1` -> literal `2`.\nExpression changed: write `x = 1` -> write `x = 2`.\nx at return `return y * 2;` (snippet.ts:5, input value.operands[0])\nExpression changed: literal `1` -> literal `2`.\nExpression changed: write `x = 1` -> write `x = 2`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-a632d2b333d69a72).\n"
+      },
+      "short": {
+        "bytes": 355,
+        "lines": 6,
+        "text": "Source expression changed:\n  Before: x = 1 (snippet.ts:2)\n  After: x = 2 (snippet.ts:2)\nAffected uses: y = saved + 1 (operand 0; before/after snippet.ts:4); return y * 2; (operand 0; before/after snippet.ts:5)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-aaf15ac8b8a4ac45)\n"
+      },
+      "verbose": {
+        "bytes": 1966,
+        "lines": 37,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nx at write `saved = x` (snippet.ts:3, input value)\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nx at write `y = saved + 1` (snippet.ts:4, input value.operands[0])\nExpression changed: literal `1` -> literal `2`.\nExpression changed: write `x = 1` -> write `x = 2`.\nx at return `return y * 2;` (snippet.ts:5, input value.operands[0])\nExpression changed: literal `1` -> literal `2`.\nExpression changed: write `x = 1` -> write `x = 2`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `2` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 2 (snippet.ts:2) <- literal `2` (snippet.ts:2)\n  Before: saved = x (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: saved = x (snippet.ts:3) <- x = 2 (snippet.ts:2)\n  Before: y = saved + 1 (snippet.ts:4) <- saved = x (snippet.ts:3)\n  After: y = saved + 1 (snippet.ts:4) <- saved = x (snippet.ts:3)\n  Before: return y * 2; (snippet.ts:5) <- y = saved + 1 (snippet.ts:4)\n  After: return y * 2; (snippet.ts:5) <- y = saved + 1 (snippet.ts:4)\nObservation: x = 1 -> x = 2 (value; before snippet.ts:2; after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `2` (snippet.ts:2); use guard always\nObservation: saved = x (value; before/after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 2 (snippet.ts:2); use guard always\nObservation: y = saved + 1 (operand 0; before/after snippet.ts:4)\n  Before: saved = x (snippet.ts:3); use guard always\n  After: saved = x (snippet.ts:3); use guard always\nObservation: return y * 2; (operand 0; before/after snippet.ts:5)\n  Before: y = saved + 1 (snippet.ts:4); use guard always\n  After: y = saved + 1 (snippet.ts:4); use guard always\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-aaf15ac8b8a4ac45)\n"
+      }
+    },
+    {
+      "case": "copy_then_overwrite",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function example() {\n  let x = 1;\n  let y = x;\n  return y;\n}\n",
+      "after_source": "function example() {\n  let x = 1;\n  let y = x;\n  x = 2;\n  return y;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 25,
+      "short_report_id": "ifds-2477efe79e2814a4",
+      "verbose_report_id": "ifds-2477efe79e2814a4",
+      "legacy": {
+        "bytes": 151,
+        "lines": 2,
+        "text": "Added write `x = 2`.\nScope: function example; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-2477efe79e2814a4).\n"
+      },
+      "short": {
+        "bytes": 209,
+        "lines": 3,
+        "text": "No established changes at uses within the declared scope.\nScope: function example; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-2477efe79e2814a4)\n"
+      },
+      "verbose": {
+        "bytes": 1298,
+        "lines": 25,
+        "text": "Added write `x = 2`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: y = x (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: y = x (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  Before: return y; (snippet.ts:4) <- y = x (snippet.ts:3)\n  After: return y; (snippet.ts:5) <- y = x (snippet.ts:3)\n  After: literal `2` (snippet.ts:4)\n  After: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: y = x (value; before/after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 1 (snippet.ts:2); use guard always\nObservation: return y; (value; before snippet.ts:4; after snippet.ts:5)\n  Before: y = x (snippet.ts:3); use guard always\n  After: y = x (snippet.ts:3); use guard always\nObservation: x = 2 (value; after snippet.ts:4)\n  After: literal `2` (snippet.ts:4); use guard always\nScope: function example; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-2477efe79e2814a4)\n"
+      }
+    },
+    {
+      "case": "early_return",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(flag: boolean) {\n  let x = 0;\n  x = 1;\n  x = 2;\n  x = 3;\n  return x + 4;\n}\n",
+      "after_source": "function f(flag: boolean) {\n  let x = 0;\n  x = 1;\n  x = 2;\n  if (flag) return x;\n  x = 3;\n  return x + 4;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 49,
+      "short_report_id": "ifds-1bef723796e1dc62",
+      "verbose_report_id": "ifds-1bef723796e1dc62",
+      "legacy": {
+        "bytes": 461,
+        "lines": 11,
+        "text": "x at write `x = 3` (snippet.ts:6, input value)\nUse guard: !flag.\nx at return `return x + 4;` (snippet.ts:7, input value.operands[0])\nBefore: write `x = 3`.\nAfter: write `x = 3` under !flag.\nUse guard: !flag.\nx at return `return x;` (snippet.ts:5, input value)\nAfter: write `x = 2`.\nUse guard: flag.\nAdded observation return `return x;`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-1bef723796e1dc62).\n"
+      },
+      "short": {
+        "bytes": 588,
+        "lines": 12,
+        "text": "Selection changed:\n  Before: x = 3 (snippet.ts:5)\n  After: x = 3 (snippet.ts:6) enabled under !flag\n  After control #16: branch `(flag)` (snippet.ts:5)\nAffected uses: return x + 4; (operand 0; before snippet.ts:6; after snippet.ts:7)\n  Use guard: before always; after !flag\nAdded observation:\n  After sources: x = 2 (snippet.ts:4) selected under flag\nAffected uses: return x; (value; after snippet.ts:5)\n  Use guard: before absent; after flag\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-1bef723796e1dc62)\n"
+      },
+      "verbose": {
+        "bytes": 2487,
+        "lines": 49,
+        "text": "x at write `x = 3` (snippet.ts:6, input value)\nUse guard: !flag.\nx at return `return x + 4;` (snippet.ts:7, input value.operands[0])\nBefore: write `x = 3`.\nAfter: write `x = 3` under !flag.\nUse guard: !flag.\nx at return `return x;` (snippet.ts:5, input value)\nAfter: write `x = 2`.\nUse guard: flag.\nAdded observation return `return x;`.\nSources and dependencies:\n  Before: literal `0` (snippet.ts:2)\n  After: literal `0` (snippet.ts:2)\n  Before: x = 0 (snippet.ts:2) <- literal `0` (snippet.ts:2)\n  After: x = 0 (snippet.ts:2) <- literal `0` (snippet.ts:2)\n  Before: literal `1` (snippet.ts:3)\n  After: literal `1` (snippet.ts:3)\n  Before: x = 1 (snippet.ts:3) <- literal `1` (snippet.ts:3)\n  After: x = 1 (snippet.ts:3) <- literal `1` (snippet.ts:3)\n  Before: literal `2` (snippet.ts:4)\n  After: literal `2` (snippet.ts:4)\n  Before: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)\n  After: x = 2 (snippet.ts:4) <- literal `2` (snippet.ts:4)\n  Before: literal `3` (snippet.ts:5)\n  After: literal `3` (snippet.ts:6)\n  Before: x = 3 (snippet.ts:5) <- literal `3` (snippet.ts:5)\n  After: x = 3 (snippet.ts:6) enabled under !flag <- literal `3` (snippet.ts:6)\n  Before: return x + 4; (snippet.ts:6) <- x = 3 (snippet.ts:5)\n  After: return x + 4; (snippet.ts:7) <- x = 3 (snippet.ts:6)\n  After: return x; (snippet.ts:5) <- x = 2 (snippet.ts:4)\nObservation: x = 0 (value; before/after snippet.ts:2)\n  Before: literal `0` (snippet.ts:2); use guard always\n  After: literal `0` (snippet.ts:2); use guard always\nObservation: x = 1 (value; before/after snippet.ts:3)\n  Before: literal `1` (snippet.ts:3); use guard always\n  After: literal `1` (snippet.ts:3); use guard always\nObservation: x = 2 (value; before/after snippet.ts:4)\n  Before: literal `2` (snippet.ts:4); use guard always\n  After: literal `2` (snippet.ts:4); use guard always\nObservation: x = 3 (value; before snippet.ts:5; after snippet.ts:6)\n  Before: literal `3` (snippet.ts:5); use guard always\n  After: literal `3` (snippet.ts:6) selected under !flag; use guard !flag\nObservation: return x + 4; (operand 0; before snippet.ts:6; after snippet.ts:7)\n  Before: x = 3 (snippet.ts:5); use guard always\n  After: x = 3 (snippet.ts:6) selected under !flag; use guard !flag\nObservation: return x; (value; after snippet.ts:5)\n  After: x = 2 (snippet.ts:4) selected under flag; use guard flag\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-1bef723796e1dc62)\n"
+      }
+    },
+    {
+      "case": "full_downstream_chain",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function chain(input: number) {\n  let x = input;\n  const y = x + 1;\n  return y * 2;\n}\n",
+      "after_source": "function chain(input: number) {\n  let x = input + 1;\n  const y = x + 1;\n  return y * 2;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 41,
+      "short_report_id": "ifds-23eaa379b397ef6d",
+      "verbose_report_id": "ifds-32050f2d09270272",
+      "legacy": {
+        "bytes": 739,
+        "lines": 16,
+        "text": "x at write `x = input + 1` (snippet.ts:2, input value)\nBefore: function_input `input`.\nAfter: none.\nx at write `y = x + 1` (snippet.ts:3, input value.operands[0])\nBefore: write `x = input`.\nAfter: write `x = input + 1`.\nx at return `return y * 2;` (snippet.ts:4, input value.operands[0])\nExpression changed: write `x = input` -> write `x = input + 1`.\nExpression changed: source 13 -> literal `1`.\nx at write `x = input + 1` (snippet.ts:2, input value.operands[1])\nBefore: none.\nAfter: literal `1`.\nx at write `x = input + 1` (snippet.ts:2, input value.operands[0])\nBefore: none.\nAfter: function_input `input`.\nScope: function chain; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-23eaa379b397ef6d).\n"
+      },
+      "short": {
+        "bytes": 367,
+        "lines": 6,
+        "text": "Source expression changed:\n  Before: x = input (snippet.ts:2)\n  After: x = input + 1 (snippet.ts:2)\nAffected uses: y = x + 1 (operand 0; before/after snippet.ts:3); return y * 2; (operand 0; before/after snippet.ts:4)\nScope: function chain; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-23eaa379b397ef6d)\n"
+      },
+      "verbose": {
+        "bytes": 2358,
+        "lines": 42,
+        "text": "x at write `x = input + 1` (snippet.ts:2, input value)\nBefore: function_input `input`.\nAfter: none.\nx at write `y = x + 1` (snippet.ts:3, input value.operands[0])\nBefore: write `x = input`.\nAfter: write `x = input + 1`.\nx at return `return y * 2;` (snippet.ts:4, input value.operands[0])\nExpression changed: write `x = input` -> write `x = input + 1`.\nExpression changed: source 13 -> literal `1`.\nx at write `x = input + 1` (snippet.ts:2, input value.operands[1])\nBefore: none.\nAfter: literal `1`.\nx at write `x = input + 1` (snippet.ts:2, input value.operands[0])\nBefore: none.\nAfter: function_input `input`.\nSources and dependencies:\n  Before: function_input `input` (snippet.ts:2)\n  After: function_input `input` (snippet.ts:2)\n  Before: x = input (snippet.ts:2) <- function_input `input` (snippet.ts:2)\n  After: x = input + 1 (snippet.ts:2) <- function_input `input` (snippet.ts:2); literal `1` (snippet.ts:2)\n  Before: y = x + 1 (snippet.ts:3) <- x = input (snippet.ts:2)\n  After: y = x + 1 (snippet.ts:3) <- x = input + 1 (snippet.ts:2)\n  Before: return y * 2; (snippet.ts:4) <- y = x + 1 (snippet.ts:3)\n  After: return y * 2; (snippet.ts:4) <- y = x + 1 (snippet.ts:3)\n  After: literal `1` (snippet.ts:2)\nObservation: x = input -> x = input + 1 (value; before snippet.ts:2; after snippet.ts:2)\n  Before: function_input `input` (snippet.ts:2); use guard always\n  After: no established sources at this input; use guard always\nObservation: x = input -> x = input + 1 (operand 0; before snippet.ts:2; after snippet.ts:2)\n  Before: no established sources at this input; use guard always\n  After: function_input `input` (snippet.ts:2); use guard always\nObservation: x = input -> x = input + 1 (operand 1; before snippet.ts:2; after snippet.ts:2)\n  Before: no established sources at this input; use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: y = x + 1 (operand 0; before/after snippet.ts:3)\n  Before: x = input (snippet.ts:2); use guard always\n  After: x = input + 1 (snippet.ts:2); use guard always\nObservation: return y * 2; (operand 0; before/after snippet.ts:4)\n  Before: y = x + 1 (snippet.ts:3); use guard always\n  After: y = x + 1 (snippet.ts:3); use guard always\nScope: function chain; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-32050f2d09270272)\n"
+      }
+    },
+    {
+      "case": "guard",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(flag: boolean) {\n  let x = 1;\n  if (flag) x = 2;\n  return x;\n}\n",
+      "after_source": "function f(flag: boolean) {\n  let x = 1;\n  if (!flag) x = 2;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 38,
+      "short_report_id": "ifds-9ef43390f1676d48",
+      "verbose_report_id": "ifds-9ef43390f1676d48",
+      "legacy": {
+        "bytes": 366,
+        "lines": 7,
+        "text": "x at return `return x;` (snippet.ts:4, input value)\nBefore: write `x = 2` under flag.\nAfter: write `x = 2` under !flag.\nx at write `x = 2` (snippet.ts:3, input value)\nUse guard: !flag.\nChanged expression: branch `(flag)` -> branch `(!flag)`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-9ef43390f1676d48).\n"
+      },
+      "short": {
+        "bytes": 370,
+        "lines": 7,
+        "text": "Selection changed:\n  Before: x = 2 (snippet.ts:3) enabled under flag\n  After: x = 2 (snippet.ts:3) enabled under !flag\n  Fallback: before/after x = 1 (snippet.ts:2)\nAffected uses: return x; (value; before/after snippet.ts:4)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-9ef43390f1676d48)\n"
+      },
+      "verbose": {
+        "bytes": 1837,
+        "lines": 30,
+        "text": "x at return `return x;` (snippet.ts:4, input value)\nBefore: write `x = 2` under flag.\nAfter: write `x = 2` under !flag.\nx at write `x = 2` (snippet.ts:3, input value)\nUse guard: !flag.\nChanged expression: branch `(flag)` -> branch `(!flag)`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: literal `2` (snippet.ts:3)\n  After: literal `2` (snippet.ts:3)\n  Before: x = 2 (snippet.ts:3) enabled under flag <- literal `2` (snippet.ts:3)\n  After: x = 2 (snippet.ts:3) enabled under !flag <- literal `2` (snippet.ts:3)\n  Before: return x; (snippet.ts:4) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)\n  After: return x; (snippet.ts:4) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: x = 2 (value; before/after snippet.ts:3)\n  Before: literal `2` (snippet.ts:3) selected under flag; use guard flag\n  After: literal `2` (snippet.ts:3) selected under !flag; use guard !flag\nObservation: return x; (value; before/after snippet.ts:4)\n  Before: x = 1 (snippet.ts:2) selected under !flag; x = 2 (snippet.ts:3) selected under flag; use guard always\n  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\n  After: x = 1 (snippet.ts:2) selected under flag; x = 2 (snippet.ts:3) selected under !flag; use guard always\n  After precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-9ef43390f1676d48)\n"
+      }
+    },
+    {
+      "case": "guard_versions",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(flag: boolean) {\n  let x = 1;\n  if (flag) x = 2;\n  flag = false;\n  if (flag) x = 3;\n  return x;\n}\n",
+      "after_source": "function f(flag: boolean) {\n  let x = 1;\n  if (flag) x = 2;\n  flag = true;\n  if (flag) x = 3;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 37,
+      "short_report_id": "ifds-ba9c002d8e3ae3df",
+      "verbose_report_id": "ifds-ba9c002d8e3ae3df",
+      "legacy": {
+        "bytes": 423,
+        "lines": 7,
+        "text": "x at return `return x;` (snippet.ts:6, input value)\nBefore: write `x = 1` as fallback; write `x = 2` under flag.\nAfter: write `x = 3` under flag.\nUse guard: flag.\nwrite `x = 1` remains in the code but no longer reaches this input.\nwrite `x = 2` remains in the code but no longer reaches this input.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-096d75c0ff88ca82).\n"
+      },
+      "short": {
+        "bytes": 829,
+        "lines": 12,
+        "text": "Sources changed:\n  Before: x = 1 (snippet.ts:2) selected under !flag [guard #5] && !flag [guard #11]; x = 2 (snippet.ts:3) selected under flag [guard #5] && !flag [guard #11]\n  Before precedence: x = 2 overrides x = 1 when both writes apply\n  After: x = 3 (snippet.ts:5) selected under flag [guard #11]\n  Retained in code, no longer reaches this input: after x = 1 (snippet.ts:2)\n  Retained in code, no longer reaches this input: after x = 2 (snippet.ts:3)\nAffected uses: return x; (value; before/after snippet.ts:6)\n  Use guard: before !flag [guard #11]; after flag [guard #11]\n  Before control #11: branch `(flag)` (snippet.ts:5)\n  After control #11: branch `(flag)` (snippet.ts:5)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-ba9c002d8e3ae3df)\n"
+      },
+      "verbose": {
+        "bytes": 2164,
+        "lines": 33,
+        "text": "x at return `return x;` (snippet.ts:6, input value)\nBefore: write `x = 1` as fallback; write `x = 2` under flag.\nAfter: write `x = 3` under flag.\nUse guard: flag.\nwrite `x = 1` remains in the code but no longer reaches this input.\nwrite `x = 2` remains in the code but no longer reaches this input.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: literal `2` (snippet.ts:3)\n  After: literal `2` (snippet.ts:3)\n  Before: x = 2 (snippet.ts:3) enabled under flag [guard #5] <- literal `2` (snippet.ts:3)\n  After: x = 2 (snippet.ts:3) enabled under flag [guard #5] <- literal `2` (snippet.ts:3)\n  After: literal `3` (snippet.ts:5)\n  After: x = 3 (snippet.ts:5) enabled under flag [guard #11] <- literal `3` (snippet.ts:5)\n  Before: return x; (snippet.ts:6) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)\n  After: return x; (snippet.ts:6) <- x = 3 (snippet.ts:5)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: x = 2 (value; before/after snippet.ts:3)\n  Before: literal `2` (snippet.ts:3) selected under flag [guard #5]; use guard flag [guard #5]\n  After: literal `2` (snippet.ts:3) selected under flag [guard #5]; use guard flag [guard #5]\nObservation: x = 3 (value; after snippet.ts:5)\n  After: literal `3` (snippet.ts:5) selected under flag [guard #11]; use guard flag [guard #11]\nObservation: return x; (value; before/after snippet.ts:6)\n  Before: x = 1 (snippet.ts:2) selected under !flag [guard #5] && !flag [guard #11]; x = 2 (snippet.ts:3) selected under flag [guard #5] && !flag [guard #11]; use guard !flag [guard #11]\n  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\n  After: x = 3 (snippet.ts:5) selected under flag [guard #11]; use guard flag [guard #11]\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-ba9c002d8e3ae3df)\n"
+      }
+    },
+    {
+      "case": "independent_expressions",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  const y = x + 1;\n  return y;\n}\n",
+      "after_source": "function f() {\n  let x = 2;\n  const y = x + 2;\n  return y;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 29,
+      "short_report_id": "ifds-6c930da02d6bc5bf",
+      "verbose_report_id": "ifds-6c930da02d6bc5bf",
+      "legacy": {
+        "bytes": 473,
+        "lines": 11,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nx at write `y = x + 2` (snippet.ts:3, input value.operands[0])\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nx at return `return y;` (snippet.ts:4, input value)\nBefore: write `y = x + 1`.\nAfter: write `y = x + 2`.\nExpression changed: literal `1` -> literal `2`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-6c930da02d6bc5bf).\n"
+      },
+      "short": {
+        "bytes": 526,
+        "lines": 10,
+        "text": "Source expression changed:\n  Before: x = 1 (snippet.ts:2)\n  After: x = 2 (snippet.ts:2)\nAffected uses: y = x + 1 -> y = x + 2 (operand 0; before snippet.ts:3; after snippet.ts:3); return y; (value; before/after snippet.ts:4)\nSource expression changed:\n  Before: y = x + 1 (snippet.ts:3)\n  After: y = x + 2 (snippet.ts:3)\nAffected uses: return y; (value; before/after snippet.ts:4)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-6c930da02d6bc5bf)\n"
+      },
+      "verbose": {
+        "bytes": 1491,
+        "lines": 30,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nx at write `y = x + 2` (snippet.ts:3, input value.operands[0])\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nx at return `return y;` (snippet.ts:4, input value)\nBefore: write `y = x + 1`.\nAfter: write `y = x + 2`.\nExpression changed: literal `1` -> literal `2`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `2` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 2 (snippet.ts:2) <- literal `2` (snippet.ts:2)\n  Before: y = x + 1 (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: y = x + 2 (snippet.ts:3) <- x = 2 (snippet.ts:2)\n  Before: return y; (snippet.ts:4) <- y = x + 1 (snippet.ts:3)\n  After: return y; (snippet.ts:4) <- y = x + 2 (snippet.ts:3)\nObservation: x = 1 -> x = 2 (value; before snippet.ts:2; after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `2` (snippet.ts:2); use guard always\nObservation: y = x + 1 -> y = x + 2 (operand 0; before snippet.ts:3; after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 2 (snippet.ts:2); use guard always\nObservation: return y; (value; before/after snippet.ts:4)\n  Before: y = x + 1 (snippet.ts:3); use guard always\n  After: y = x + 2 (snippet.ts:3); use guard always\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-6c930da02d6bc5bf)\n"
+      }
+    },
+    {
+      "case": "moved_positions",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(flag: boolean) {\n  let x = 1;\n  if (flag) x = 2;\n  return x;\n}\n",
+      "after_source": "function f(flag: boolean) {\n  let x = 1;\n\n  if (!flag) x = 2;\n\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 38,
+      "short_report_id": "ifds-896273610d4b3453",
+      "verbose_report_id": "ifds-896273610d4b3453",
+      "legacy": {
+        "bytes": 366,
+        "lines": 7,
+        "text": "x at return `return x;` (snippet.ts:6, input value)\nBefore: write `x = 2` under flag.\nAfter: write `x = 2` under !flag.\nx at write `x = 2` (snippet.ts:4, input value)\nUse guard: !flag.\nChanged expression: branch `(flag)` -> branch `(!flag)`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-896273610d4b3453).\n"
+      },
+      "short": {
+        "bytes": 384,
+        "lines": 7,
+        "text": "Selection changed:\n  Before: x = 2 (snippet.ts:3) enabled under flag\n  After: x = 2 (snippet.ts:4) enabled under !flag\n  Fallback: before/after x = 1 (snippet.ts:2)\nAffected uses: return x; (value; before snippet.ts:4; after snippet.ts:6)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-896273610d4b3453)\n"
+      },
+      "verbose": {
+        "bytes": 1865,
+        "lines": 30,
+        "text": "x at return `return x;` (snippet.ts:6, input value)\nBefore: write `x = 2` under flag.\nAfter: write `x = 2` under !flag.\nx at write `x = 2` (snippet.ts:4, input value)\nUse guard: !flag.\nChanged expression: branch `(flag)` -> branch `(!flag)`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: literal `2` (snippet.ts:3)\n  After: literal `2` (snippet.ts:4)\n  Before: x = 2 (snippet.ts:3) enabled under flag <- literal `2` (snippet.ts:3)\n  After: x = 2 (snippet.ts:4) enabled under !flag <- literal `2` (snippet.ts:4)\n  Before: return x; (snippet.ts:4) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3)\n  After: return x; (snippet.ts:6) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: x = 2 (value; before snippet.ts:3; after snippet.ts:4)\n  Before: literal `2` (snippet.ts:3) selected under flag; use guard flag\n  After: literal `2` (snippet.ts:4) selected under !flag; use guard !flag\nObservation: return x; (value; before snippet.ts:4; after snippet.ts:6)\n  Before: x = 1 (snippet.ts:2) selected under !flag; x = 2 (snippet.ts:3) selected under flag; use guard always\n  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\n  After: x = 1 (snippet.ts:2) selected under flag; x = 2 (snippet.ts:4) selected under !flag; use guard always\n  After precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-896273610d4b3453)\n"
+      }
+    },
+    {
+      "case": "nested_guard",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (a) {\n    if (b) x = 2;\n    else x = 3;\n  }\n  return x;\n}\n",
+      "after_source": "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (a) {\n    if (!b) x = 2;\n    else x = 3;\n  }\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 59,
+      "short_report_id": "ifds-78b5306d31eb178f",
+      "verbose_report_id": "ifds-88388fb558b35bd2",
+      "legacy": {
+        "bytes": 489,
+        "lines": 9,
+        "text": "x at write `x = 3` (snippet.ts:5, input value)\nUse guard: a && b.\nx at return `return x;` (snippet.ts:7, input value)\nBefore: write `x = 2` under a && b; write `x = 3` under a && !b.\nAfter: write `x = 2` under a && !b; write `x = 3` under a && b.\nx at write `x = 2` (snippet.ts:4, input value)\nUse guard: a && !b.\nChanged expression: branch `(b)` -> branch `(!b)`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-78b5306d31eb178f).\n"
+      },
+      "short": {
+        "bytes": 558,
+        "lines": 9,
+        "text": "Selection changed:\n  Before: x = 2 (snippet.ts:4) enabled under a && b; x = 3 (snippet.ts:5) enabled under a && !b\n  After: x = 2 (snippet.ts:4) enabled under a && !b; x = 3 (snippet.ts:5) enabled under a && b\n  Before control #5: branch `(a)` (snippet.ts:3)\n  After control #5: branch `(a)` (snippet.ts:3)\n  Fallback: before/after x = 1 (snippet.ts:2)\nAffected uses: return x; (value; before/after snippet.ts:7)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-78b5306d31eb178f)\n"
+      },
+      "verbose": {
+        "bytes": 2741,
+        "lines": 41,
+        "text": "x at write `x = 3` (snippet.ts:5, input value)\nUse guard: a && b.\nx at return `return x;` (snippet.ts:7, input value)\nBefore: write `x = 2` under a && b; write `x = 3` under a && !b.\nAfter: write `x = 2` under a && !b; write `x = 3` under a && b.\nx at write `x = 2` (snippet.ts:4, input value)\nUse guard: a && !b.\nChanged expression: branch `(b)` -> branch `(!b)`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: literal `2` (snippet.ts:4)\n  After: literal `2` (snippet.ts:4)\n  Before: x = 2 (snippet.ts:4) enabled under a && b <- literal `2` (snippet.ts:4)\n  After: x = 2 (snippet.ts:4) enabled under a && !b <- literal `2` (snippet.ts:4)\n  Before: literal `3` (snippet.ts:5)\n  After: literal `3` (snippet.ts:5)\n  Before: x = 3 (snippet.ts:5) enabled under a && !b <- literal `3` (snippet.ts:5)\n  After: x = 3 (snippet.ts:5) enabled under a && b <- literal `3` (snippet.ts:5)\n  Before: return x; (snippet.ts:7) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:5)\n  After: return x; (snippet.ts:7) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:5)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: x = 2 (value; before/after snippet.ts:4)\n  Before: literal `2` (snippet.ts:4) selected under a && b; use guard a && b\n  After: literal `2` (snippet.ts:4) selected under a && !b; use guard a && !b\nObservation: x = 3 (value; before/after snippet.ts:5)\n  Before: literal `3` (snippet.ts:5) selected under a && !b; use guard a && !b\n  After: literal `3` (snippet.ts:5) selected under a && b; use guard a && b\nObservation: return x; (value; before/after snippet.ts:7)\n  Before: x = 1 (snippet.ts:2) selected under !a; x = 2 (snippet.ts:4) selected under a && b; x = 3 (snippet.ts:5) selected under a && !b; use guard always\n  Before precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply\n  Before precedence: x = 3 (snippet.ts:5) overrides x = 1 (snippet.ts:2) when both writes apply\n  After: x = 1 (snippet.ts:2) selected under !a; x = 2 (snippet.ts:4) selected under a && !b; x = 3 (snippet.ts:5) selected under a && b; use guard always\n  After precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply\n  After precedence: x = 3 (snippet.ts:5) overrides x = 1 (snippet.ts:2) when both writes apply\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-88388fb558b35bd2)\n"
+      }
+    },
+    {
+      "case": "new_copy",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n}\n",
+      "after_source": "function f() {\n  let x = 1;\n  const saved = x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 11,
+      "short_report_id": "ifds-32a7579960030ba4",
+      "verbose_report_id": "ifds-32a7579960030ba4",
+      "legacy": {
+        "bytes": 189,
+        "lines": 2,
+        "text": "No established source or logic change within the declared scope.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-32a7579960030ba4).\n"
+      },
+      "short": {
+        "bytes": 261,
+        "lines": 6,
+        "text": "Added observation:\n  After sources: x = 1 (snippet.ts:2)\nAffected uses: saved = x (value; after snippet.ts:3)\n  Use guard: before absent; after always\nScope: function f; analysis complete; source comparison complete.\nEvidence: full.json (ifds-32a7579960030ba4)\n"
+      },
+      "verbose": {
+        "bytes": 801,
+        "lines": 17,
+        "text": "Added observation:\n  After sources: x = 1 (snippet.ts:2)\nAffected uses: saved = x (value; after snippet.ts:3)\n  Use guard: before absent; after always\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: saved = x (snippet.ts:3) <- x = 1 (snippet.ts:2)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: saved = x (value; after snippet.ts:3)\n  After: x = 1 (snippet.ts:2); use guard always\nScope: function f; analysis complete; source comparison complete.\nEvidence: full.json (ifds-32a7579960030ba4)\n"
+      }
+    },
+    {
+      "case": "operand_expression",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  return x + 1;\n}\n",
+      "after_source": "function f() {\n  let x = 1;\n  return x + 2;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 15,
+      "short_report_id": "ifds-bfcb449d692c462b",
+      "verbose_report_id": "ifds-bfcb449d692c462b",
+      "legacy": {
+        "bytes": 194,
+        "lines": 2,
+        "text": "Changed expression: return `return x + 1;` -> return `return x + 2;`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-bfcb449d692c462b).\n"
+      },
+      "short": {
+        "bytes": 297,
+        "lines": 6,
+        "text": "Source expression changed:\n  Before: return x + 1; (snippet.ts:3)\n  After: return x + 2; (snippet.ts:3)\n  Affected input at changed producer: operand 0\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-bfcb449d692c462b)\n"
+      },
+      "verbose": {
+        "bytes": 917,
+        "lines": 16,
+        "text": "Changed expression: return `return x + 1;` -> return `return x + 2;`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: return x + 1; (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: return x + 2; (snippet.ts:3) <- x = 1 (snippet.ts:2)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: return x + 1; -> return x + 2; (operand 0; before snippet.ts:3; after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 1 (snippet.ts:2); use guard always\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-bfcb449d692c462b)\n"
+      }
+    },
+    {
+      "case": "overwrite",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function example() {\n  let x = 1;\n  return x;\n}\n",
+      "after_source": "function example() {\n  let x = 1;\n  x = 2;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 24,
+      "short_report_id": "ifds-343bcadca828cc48",
+      "verbose_report_id": "ifds-343bcadca828cc48",
+      "legacy": {
+        "bytes": 295,
+        "lines": 5,
+        "text": "x at return `return x;` (snippet.ts:4, input value)\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nwrite `x = 1` remains in the code but no longer reaches this input.\nScope: function example; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-343bcadca828cc48).\n"
+      },
+      "short": {
+        "bytes": 380,
+        "lines": 7,
+        "text": "Sources changed:\n  Before: x = 1 (snippet.ts:2)\n  After: x = 2 (snippet.ts:3)\n  Retained in code, no longer reaches this input: after x = 1 (snippet.ts:2)\nAffected uses: return x; (value; before snippet.ts:3; after snippet.ts:4)\nScope: function example; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-343bcadca828cc48)\n"
+      },
+      "verbose": {
+        "bytes": 1182,
+        "lines": 23,
+        "text": "x at return `return x;` (snippet.ts:4, input value)\nBefore: write `x = 1`.\nAfter: write `x = 2`.\nwrite `x = 1` remains in the code but no longer reaches this input.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: return x; (snippet.ts:4) <- x = 2 (snippet.ts:3)\n  After: literal `2` (snippet.ts:3)\n  After: x = 2 (snippet.ts:3) <- literal `2` (snippet.ts:3)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: return x; (value; before snippet.ts:3; after snippet.ts:4)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 2 (snippet.ts:3); use guard always\nObservation: x = 2 (value; after snippet.ts:3)\n  After: literal `2` (snippet.ts:3); use guard always\nScope: function example; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-343bcadca828cc48)\n"
+      }
+    },
+    {
+      "case": "overwritten_edit",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  x = 9;\n  return x;\n}\n",
+      "after_source": "function f() {\n  let x = 2;\n  x = 9;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 25,
+      "short_report_id": "ifds-564b92f7ec3233e7",
+      "verbose_report_id": "ifds-564b92f7ec3233e7",
+      "legacy": {
+        "bytes": 264,
+        "lines": 5,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nChanged expression: write `x = 1` -> write `x = 2`.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-564b92f7ec3233e7).\n"
+      },
+      "short": {
+        "bytes": 203,
+        "lines": 3,
+        "text": "No established changes at uses within the declared scope.\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-564b92f7ec3233e7)\n"
+      },
+      "verbose": {
+        "bytes": 1320,
+        "lines": 26,
+        "text": "x at write `x = 2` (snippet.ts:2, input value)\nBefore: literal `1`.\nAfter: literal `2`.\nChanged expression: write `x = 1` -> write `x = 2`.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `2` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 2 (snippet.ts:2) <- literal `2` (snippet.ts:2)\n  Before: literal `9` (snippet.ts:3)\n  After: literal `9` (snippet.ts:3)\n  Before: x = 9 (snippet.ts:3) <- literal `9` (snippet.ts:3)\n  After: x = 9 (snippet.ts:3) <- literal `9` (snippet.ts:3)\n  Before: return x; (snippet.ts:4) <- x = 9 (snippet.ts:3)\n  After: return x; (snippet.ts:4) <- x = 9 (snippet.ts:3)\nObservation: x = 1 -> x = 2 (value; before snippet.ts:2; after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `2` (snippet.ts:2); use guard always\nObservation: x = 9 (value; before/after snippet.ts:3)\n  Before: literal `9` (snippet.ts:3); use guard always\n  After: literal `9` (snippet.ts:3); use guard always\nObservation: return x; (value; before/after snippet.ts:4)\n  Before: x = 9 (snippet.ts:3); use guard always\n  After: x = 9 (snippet.ts:3); use guard always\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-564b92f7ec3233e7)\n"
+      }
+    },
+    {
+      "case": "priority",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (a) x = 2;\n  if (b) x = 3;\n  return x;\n}\n",
+      "after_source": "function f(a: boolean, b: boolean) {\n  let x = 1;\n  if (b) x = 3;\n  if (a) x = 2;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 52,
+      "short_report_id": "ifds-073bd190b6fca823",
+      "verbose_report_id": "ifds-22cd516e912631f6",
+      "legacy": {
+        "bytes": 250,
+        "lines": 3,
+        "text": "x at return `return x;` (snippet.ts:5, input value)\nPrecedence: write `x = 2` overrides write `x = 3` when both writes apply.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-073bd190b6fca823).\n"
+      },
+      "short": {
+        "bytes": 586,
+        "lines": 9,
+        "text": "Selection changed:\n  Before: x = 2 (snippet.ts:3) selected under a && !b; x = 3 (snippet.ts:4) selected under b\n  Before precedence: x = 3 overrides x = 2 when both writes apply\n  After: x = 2 (snippet.ts:4) selected under a; x = 3 (snippet.ts:3) selected under !a && b\n  After precedence: x = 2 overrides x = 3 when both writes apply\n  Fallback: before/after x = 1 (snippet.ts:2)\nAffected uses: return x; (value; before/after snippet.ts:5)\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-073bd190b6fca823)\n"
+      },
+      "verbose": {
+        "bytes": 2657,
+        "lines": 37,
+        "text": "x at return `return x;` (snippet.ts:5, input value)\nPrecedence: write `x = 2` overrides write `x = 3` when both writes apply.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: literal `2` (snippet.ts:3)\n  After: literal `2` (snippet.ts:4)\n  Before: x = 2 (snippet.ts:3) enabled under a <- literal `2` (snippet.ts:3)\n  After: x = 2 (snippet.ts:4) enabled under a <- literal `2` (snippet.ts:4)\n  Before: literal `3` (snippet.ts:4)\n  After: literal `3` (snippet.ts:3)\n  Before: x = 3 (snippet.ts:4) enabled under b <- literal `3` (snippet.ts:4)\n  After: x = 3 (snippet.ts:3) enabled under b <- literal `3` (snippet.ts:3)\n  Before: return x; (snippet.ts:5) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:3); x = 3 (snippet.ts:4)\n  After: return x; (snippet.ts:5) <- x = 1 (snippet.ts:2); x = 2 (snippet.ts:4); x = 3 (snippet.ts:3)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: x = 2 (value; before snippet.ts:3; after snippet.ts:4)\n  Before: literal `2` (snippet.ts:3) selected under a; use guard a\n  After: literal `2` (snippet.ts:4) selected under a; use guard a\nObservation: x = 3 (value; before snippet.ts:4; after snippet.ts:3)\n  Before: literal `3` (snippet.ts:4) selected under b; use guard b\n  After: literal `3` (snippet.ts:3) selected under b; use guard b\nObservation: return x; (value; before/after snippet.ts:5)\n  Before: x = 1 (snippet.ts:2) selected under !a && !b; x = 2 (snippet.ts:3) selected under a && !b; x = 3 (snippet.ts:4) selected under b; use guard always\n  Before precedence: x = 2 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\n  Before precedence: x = 3 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply\n  Before precedence: x = 3 (snippet.ts:4) overrides x = 2 (snippet.ts:3) when both writes apply\n  After: x = 1 (snippet.ts:2) selected under !a && !b; x = 2 (snippet.ts:4) selected under a; x = 3 (snippet.ts:3) selected under !a && b; use guard always\n  After precedence: x = 2 (snippet.ts:4) overrides x = 1 (snippet.ts:2) when both writes apply\n  After precedence: x = 3 (snippet.ts:3) overrides x = 1 (snippet.ts:2) when both writes apply\n  After precedence: x = 2 (snippet.ts:4) overrides x = 3 (snippet.ts:3) when both writes apply\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-22cd516e912631f6)\n"
+      }
+    },
+    {
+      "case": "unchanged",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  return x;\n}\n",
+      "after_source": "function f() {\n  let x = 1;\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 14,
+      "short_report_id": "ifds-69ea71131cf87839",
+      "verbose_report_id": "ifds-69ea71131cf87839",
+      "legacy": {
+        "bytes": 189,
+        "lines": 2,
+        "text": "No established source or logic change within the declared scope.\nScope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: full.json (ifds-69ea71131cf87839).\n"
+      },
+      "short": {
+        "bytes": 203,
+        "lines": 3,
+        "text": "No established changes at uses within the declared scope.\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-69ea71131cf87839)\n"
+      },
+      "verbose": {
+        "bytes": 865,
+        "lines": 16,
+        "text": "No established source or logic change within the declared scope.\nSources and dependencies:\n  Before: literal `1` (snippet.ts:2)\n  After: literal `1` (snippet.ts:2)\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  Before: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)\nObservation: x = 1 (value; before/after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: literal `1` (snippet.ts:2); use guard always\nObservation: return x; (value; before/after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = 1 (snippet.ts:2); use guard always\nScope: function f; analysis complete; source comparison complete; caller continuation outside scope.\nEvidence: full.json (ifds-69ea71131cf87839)\n"
+      }
+    },
+    {
+      "case": "unknown",
+      "query": {
+        "binding": "x",
+        "entry": "containing_function",
+        "limits": {
+          "time_ms": 120000,
+          "memory_bytes": 4294967296,
+          "processed_path_edges": 1000000,
+          "witnesses_per_relation": 3,
+          "output_nodes": 100000
+        }
+      },
+      "before_source": "function f() {\n  let x = 1;\n  return x;\n}\n",
+      "after_source": "function f() {\n  let x = opaque();\n  return x;\n}\n",
+      "full_json_parity": true,
+      "compact_json_parity": true,
+      "legacy_summary_parity": true,
+      "text_mode_sidecar_parity": true,
+      "text_deterministic_except_existing_runtime_identity": true,
+      "valid_reference_count": 20,
+      "short_report_id": "ifds-dd5a0b874fc242bd",
+      "verbose_report_id": "ifds-dd5a0b874fc242bd",
+      "legacy": {
+        "bytes": 263,
+        "lines": 4,
+        "text": "Changed expression: write `x = 1` -> write `x = opaque()`.\nComparison unresolved at one or more aligned operations.\nUnknown: {UnsupportedSyntax}.\nScope: function f; analysis Partial; source comparison unresolved. Full evidence: full.json (ifds-dd5a0b874fc242bd).\n"
+      },
+      "short": {
+        "bytes": 510,
+        "lines": 7,
+        "text": "No established changes at uses within the declared scope.\nComparison unresolved at one or more aligned operations.\nUnknown: UnsupportedSyntax: unsupported TypeScript construct \"call_expression\" (After snippet.ts:2)\nUnknown: UnsupportedSyntax: unsupported TypeScript construct \"identifier\" (After snippet.ts:2)\nAfter coverage: upstream Partial; downstream Complete\nScope: function f; analysis partial; source comparison unresolved; caller continuation outside scope.\nEvidence: full.json (ifds-dd5a0b874fc242bd)\n"
+      },
+      "verbose": {
+        "bytes": 1341,
+        "lines": 21,
+        "text": "Changed expression: write `x = 1` -> write `x = opaque()`.\nComparison unresolved at one or more aligned operations.\nUnknown: {UnsupportedSyntax}.\nSources and dependencies:\n  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)\n  After: x = opaque() (snippet.ts:2) <- unknown_effect `opaque()` (snippet.ts:2)\n  Before: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)\n  After: return x; (snippet.ts:3) <- x = opaque() (snippet.ts:2)\n  Before: literal `1` (snippet.ts:2)\n  After: unknown_effect `opaque()` (snippet.ts:2)\nObservation: x = 1 -> x = opaque() (value; before snippet.ts:2; after snippet.ts:2)\n  Before: literal `1` (snippet.ts:2); use guard always\n  After: unknown_effect `opaque()` (snippet.ts:2); other sources unresolved; use guard always\nObservation: return x; (value; before/after snippet.ts:3)\n  Before: x = 1 (snippet.ts:2); use guard always\n  After: x = opaque() (snippet.ts:2); other sources unresolved; use guard always\nUnknown: UnsupportedSyntax: unsupported TypeScript construct \"call_expression\" (After snippet.ts:2)\nUnknown: UnsupportedSyntax: unsupported TypeScript construct \"identifier\" (After snippet.ts:2)\nAfter coverage: upstream Partial; downstream Complete\nScope: function f; analysis partial; source comparison unresolved; caller continuation outside scope.\nEvidence: full.json (ifds-dd5a0b874fc242bd)\n"
+      }
+    }
+  ],
+  "function_controls": [
+    {
+      "case": "copy",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "early_return",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "equal_control",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "expression",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "fallthrough",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "guard",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "guard_version",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "known_expression",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "literal",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "overwritten",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "priority",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "short_circuit",
+      "both_text_modes_and_json_byte_identical": true
+    },
+    {
+      "case": "unknown",
+      "both_text_modes_and_json_byte_identical": true
+    }
+  ],
+  "invalid_verbose_options": [
+    {
+      "target": "x",
+      "format": "compact-json",
+      "rejected_before_source_io": true
+    },
+    {
+      "target": "x",
+      "format": "full-json",
+      "rejected_before_source_io": true
+    },
+    {
+      "target": "--function",
+      "format": "compact-json",
+      "rejected_before_source_io": true
+    },
+    {
+      "target": "--function",
+      "format": "full-json",
+      "rejected_before_source_io": true
+    }
+  ],
+  "existing_sidecar_preserved": true,
+  "validation": {
+    "cargo_test": "passed: 237 unit, 9 integration, 2 documentation tests",
+    "cargo_fmt": "passed: cargo fmt --all -- --check",
+    "cargo_clippy": "passed: cargo clippy --locked --offline --all-targets -- -D warnings",
+    "focused_binding_renderer_tests": 16,
+    "evidence_validation": "passed: all 514 compact references and all recorded source positions resolve to their snapshots",
+    "archives": "original function reports and prior verification artifacts untouched"
+  }
+}

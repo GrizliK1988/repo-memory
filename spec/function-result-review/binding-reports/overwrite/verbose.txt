@@ -1,0 +1,23 @@
+x at return `return x;` (snippet.ts:4, input value)
+Before: write `x = 1`.
+After: write `x = 2`.
+write `x = 1` remains in the code but no longer reaches this input.
+Sources and dependencies:
+  Before: literal `1` (snippet.ts:2)
+  After: literal `1` (snippet.ts:2)
+  Before: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  After: x = 1 (snippet.ts:2) <- literal `1` (snippet.ts:2)
+  Before: return x; (snippet.ts:3) <- x = 1 (snippet.ts:2)
+  After: return x; (snippet.ts:4) <- x = 2 (snippet.ts:3)
+  After: literal `2` (snippet.ts:3)
+  After: x = 2 (snippet.ts:3) <- literal `2` (snippet.ts:3)
+Observation: x = 1 (value; before/after snippet.ts:2)
+  Before: literal `1` (snippet.ts:2); use guard always
+  After: literal `1` (snippet.ts:2); use guard always
+Observation: return x; (value; before snippet.ts:3; after snippet.ts:4)
+  Before: x = 1 (snippet.ts:2); use guard always
+  After: x = 2 (snippet.ts:3); use guard always
+Observation: x = 2 (value; after snippet.ts:3)
+  After: literal `2` (snippet.ts:3); use guard always
+Scope: function example; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/overwrite/verbose-full.json (ifds-343bcadca828cc48)

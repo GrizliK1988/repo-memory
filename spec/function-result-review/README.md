@@ -45,6 +45,9 @@ control changes. It supersedes the earlier JSON-size proposal and is implemented
 and verified; see its [implementation review](004-implementation.md) and
 [measurements and parity checks](004-verification.json).
 Binding human reports are tracked separately in
-[005](005-binding-human-report.md).
+[005](005-binding-human-report.md), implemented and verified with an
+[implementation review](005-implementation.md),
+[parity checks and measurements](005-verification.json), and
+[fresh binding reports](binding-reports/README.md).
 
 Schema and reference checks, truth tables, test results, and file sizes are recorded in [verification.json](reports/verification.json). These reports are not implementation-generated golden expectations; expected behavior was derived independently from the source examples.

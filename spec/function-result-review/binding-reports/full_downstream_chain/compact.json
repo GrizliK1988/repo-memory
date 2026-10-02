@@ -1,0 +1,1073 @@
+{
+  "schema_version": 2,
+  "analysis_version": "0.1.0",
+  "full_report_id": "ifds-23eaa379b397ef6d",
+  "evidence_file": "spec/function-result-review/binding-reports/full_downstream_chain/compact-full.json",
+  "snapshots": [
+    {
+      "side": "before",
+      "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+      "content_id": "fnv1a64-ca3460a16f1b3565"
+    },
+    {
+      "side": "after",
+      "revision": "local-after-fnv1a64-c0ede429c5db8473",
+      "content_id": "fnv1a64-c0ede429c5db8473"
+    }
+  ],
+  "selected_binding": {
+    "snapshot": {
+      "side": "before",
+      "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+      "content_id": "fnv1a64-ca3460a16f1b3565"
+    },
+    "declaration": {
+      "path": "snippet.ts",
+      "byte_start": 38,
+      "byte_end": 39,
+      "start_line": 2,
+      "end_line": 2
+    },
+    "expected_name": "x",
+    "expected_enclosing_symbol": "chain"
+  },
+  "entry_assumptions": [
+    {
+      "name": "parameter 0",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 1
+        }
+      }
+    },
+    {
+      "name": "parameter 0",
+      "value": null,
+      "source": {
+        "kind": "function_input",
+        "value": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 1
+        }
+      }
+    }
+  ],
+  "declared_scope": "function chain",
+  "sources": [
+    {
+      "id": 2,
+      "role": "input",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934594
+        },
+        "operation": "function_input `input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 42,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 0
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934594
+        },
+        "operation": "function_input `input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 42,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 0
+        }
+      },
+      "before_upstream": [],
+      "after_upstream": [],
+      "before_assignment_guard": null,
+      "after_assignment_guard": null
+    },
+    {
+      "id": 3,
+      "role": "writer",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 1
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934597
+        },
+        "operation": "write `x = input + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 51,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 2
+        }
+      },
+      "before_upstream": [
+        2
+      ],
+      "after_upstream": [
+        2,
+        13
+      ],
+      "before_assignment_guard": [
+        {
+          "terms": []
+        }
+      ],
+      "after_assignment_guard": [
+        {
+          "terms": []
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "role": "writer",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934599
+        },
+        "operation": "write `y = x + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 57,
+          "byte_end": 66,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 2
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934601
+        },
+        "operation": "write `y = x + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 61,
+          "byte_end": 70,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 3
+        }
+      },
+      "before_upstream": [
+        3
+      ],
+      "after_upstream": [
+        3
+      ],
+      "before_assignment_guard": [
+        {
+          "terms": []
+        }
+      ],
+      "after_assignment_guard": [
+        {
+          "terms": []
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "role": "other",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934603
+        },
+        "operation": "return `return y * 2;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 70,
+          "byte_end": 83,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 3
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934605
+        },
+        "operation": "return `return y * 2;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 74,
+          "byte_end": 87,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 4
+        }
+      },
+      "before_upstream": [
+        7
+      ],
+      "after_upstream": [
+        7
+      ],
+      "before_assignment_guard": null,
+      "after_assignment_guard": null
+    },
+    {
+      "id": 13,
+      "role": "literal",
+      "before": null,
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934595
+        },
+        "operation": "literal `1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 50,
+          "byte_end": 51,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 1
+        }
+      },
+      "before_upstream": [],
+      "after_upstream": [],
+      "before_assignment_guard": null,
+      "after_assignment_guard": null
+    }
+  ],
+  "controls": [],
+  "observations": [
+    {
+      "id": 3,
+      "projection": "value",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 1
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934597
+        },
+        "operation": "write `x = input + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 51,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 2
+        }
+      },
+      "before_state": {
+        "sources": [
+          2
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 2,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "before_graph.edges",
+                "index": 0
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      },
+      "after_state": {
+        "sources": [],
+        "exhaustive": true,
+        "selections": [],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "projection": "value.operands[0]",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 1
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934597
+        },
+        "operation": "write `x = input + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 51,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 2
+        }
+      },
+      "before_state": {
+        "sources": [],
+        "exhaustive": true,
+        "selections": [],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      },
+      "after_state": {
+        "sources": [
+          2
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 2,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "after_graph.edges",
+                "index": 0
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "projection": "value.operands[1]",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934595
+        },
+        "operation": "write `x = input`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 47,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 1
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934597
+        },
+        "operation": "write `x = input + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 38,
+          "byte_end": 51,
+          "start_line": 2,
+          "end_line": 2
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 2
+        }
+      },
+      "before_state": {
+        "sources": [],
+        "exhaustive": true,
+        "selections": [],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      },
+      "after_state": {
+        "sources": [
+          13
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 13,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "after_graph.edges",
+                "index": 1
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "projection": "value.operands[0]",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934599
+        },
+        "operation": "write `y = x + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 57,
+          "byte_end": 66,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 2
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934601
+        },
+        "operation": "write `y = x + 1`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 61,
+          "byte_end": 70,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 3
+        }
+      },
+      "before_state": {
+        "sources": [
+          3
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 3,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "before_graph.edges",
+                "index": 1
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      },
+      "after_state": {
+        "sources": [
+          3
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 3,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "after_graph.edges",
+                "index": 2
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "projection": "value.operands[0]",
+      "before": {
+        "node": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-ca3460a16f1b3565",
+            "content_id": "fnv1a64-ca3460a16f1b3565"
+          },
+          "local": 8589934603
+        },
+        "operation": "return `return y * 2;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 70,
+          "byte_end": 83,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "before_graph.nodes",
+          "index": 3
+        }
+      },
+      "after": {
+        "node": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c0ede429c5db8473",
+            "content_id": "fnv1a64-c0ede429c5db8473"
+          },
+          "local": 8589934605
+        },
+        "operation": "return `return y * 2;`",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 74,
+          "byte_end": 87,
+          "start_line": 4,
+          "end_line": 4
+        },
+        "evidence": {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "after_graph.nodes",
+          "index": 4
+        }
+      },
+      "before_state": {
+        "sources": [
+          7
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 7,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "before_graph.edges",
+                "index": 2
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      },
+      "after_state": {
+        "sources": [
+          7
+        ],
+        "exhaustive": true,
+        "selections": [
+          {
+            "source": 7,
+            "clauses": [
+              {
+                "terms": []
+              }
+            ],
+            "exact_condition_count": 0,
+            "exact_condition_example": null,
+            "evidence": [
+              {
+                "report_id": "ifds-23eaa379b397ef6d",
+                "section": "after_graph.edges",
+                "index": 3
+              }
+            ]
+          }
+        ],
+        "precedence": [],
+        "use_guard": [
+          {
+            "terms": []
+          }
+        ]
+      }
+    }
+  ],
+  "observation_groups": [
+    {
+      "id": 1,
+      "members": [
+        {
+          "id": 3,
+          "projection": "value"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "members": [
+        {
+          "id": 7,
+          "projection": "value.operands[0]"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "members": [
+        {
+          "id": 11,
+          "projection": "value.operands[0]"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "members": [
+        {
+          "id": 3,
+          "projection": "value.operands[1]"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "members": [
+        {
+          "id": 3,
+          "projection": "value.operands[0]"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "kind": "source_set_changed",
+      "subject": 3,
+      "observation": 3,
+      "projection": "value",
+      "before_sources": [
+        2
+      ],
+      "after_sources": [],
+      "before_bindings": [
+        1
+      ],
+      "after_bindings": [],
+      "changed_operations": [],
+      "evidence": [
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 2
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 4
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 5
+        }
+      ]
+    },
+    {
+      "kind": "source_set_changed",
+      "subject": 3,
+      "observation": 3,
+      "projection": "value.operands[0]",
+      "before_sources": [],
+      "after_sources": [
+        2
+      ],
+      "before_bindings": [],
+      "after_bindings": [
+        1
+      ],
+      "changed_operations": [],
+      "evidence": [
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 2
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 4
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 6
+        }
+      ]
+    },
+    {
+      "kind": "source_set_changed",
+      "subject": 3,
+      "observation": 3,
+      "projection": "value.operands[1]",
+      "before_sources": [],
+      "after_sources": [
+        13
+      ],
+      "before_bindings": [],
+      "after_bindings": [],
+      "changed_operations": [
+        13
+      ],
+      "evidence": [
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 0
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 3
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 7
+        }
+      ]
+    },
+    {
+      "kind": "expression_changed",
+      "subject": 7,
+      "observation": 7,
+      "projection": "value.operands[0]",
+      "before_sources": [
+        3
+      ],
+      "after_sources": [
+        3
+      ],
+      "before_bindings": [],
+      "after_bindings": [],
+      "changed_operations": [
+        3,
+        13
+      ],
+      "evidence": [
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 0
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 1
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 8
+        }
+      ]
+    },
+    {
+      "kind": "expression_changed",
+      "subject": 11,
+      "observation": 11,
+      "projection": "value.operands[0]",
+      "before_sources": [
+        7
+      ],
+      "after_sources": [
+        7
+      ],
+      "before_bindings": [],
+      "after_bindings": [],
+      "changed_operations": [
+        3,
+        13
+      ],
+      "evidence": [
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 0
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 1
+        },
+        {
+          "report_id": "ifds-23eaa379b397ef6d",
+          "section": "deltas",
+          "index": 9
+        }
+      ]
+    }
+  ],
+  "analysis_coverage": "complete_for_query",
+  "comparison_complete": true,
+  "presentation_complete": true,
+  "omitted_groups": 0,
+  "diagnostics": [],
+  "source_boundaries": [],
+  "sink_boundaries": [
+    "caller_scope"
+  ]
+}

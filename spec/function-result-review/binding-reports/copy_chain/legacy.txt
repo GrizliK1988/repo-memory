@@ -1,0 +1,13 @@
+x at write `x = 2` (snippet.ts:2, input value)
+Before: literal `1`.
+After: literal `2`.
+x at write `saved = x` (snippet.ts:3, input value)
+Before: write `x = 1`.
+After: write `x = 2`.
+x at write `y = saved + 1` (snippet.ts:4, input value.operands[0])
+Expression changed: literal `1` -> literal `2`.
+Expression changed: write `x = 1` -> write `x = 2`.
+x at return `return y * 2;` (snippet.ts:5, input value.operands[0])
+Expression changed: literal `1` -> literal `2`.
+Expression changed: write `x = 1` -> write `x = 2`.
+Scope: function f; analysis CompleteForQuery; source comparison complete. Full evidence: spec/function-result-review/binding-reports/copy_chain/legacy-full.json (ifds-a632d2b333d69a72).

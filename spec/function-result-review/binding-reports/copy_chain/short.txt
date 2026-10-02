@@ -1,0 +1,6 @@
+Source expression changed:
+  Before: x = 1 (snippet.ts:2)
+  After: x = 2 (snippet.ts:2)
+Affected uses: y = saved + 1 (operand 0; before/after snippet.ts:4); return y * 2; (operand 0; before/after snippet.ts:5)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/copy_chain/full.json (ifds-aaf15ac8b8a4ac45)

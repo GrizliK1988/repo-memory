@@ -1,0 +1,6 @@
+Source expression changed:
+  Before: x = input (snippet.ts:2)
+  After: x = input + 1 (snippet.ts:2)
+Affected uses: y = x + 1 (operand 0; before/after snippet.ts:3); return y * 2; (operand 0; before/after snippet.ts:4)
+Scope: function chain; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/full_downstream_chain/full.json (ifds-23eaa379b397ef6d)

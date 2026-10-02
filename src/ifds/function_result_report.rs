@@ -2593,7 +2593,7 @@ mod tests {
             crate::ifds::compact::COMPACT_SCHEMA_VERSION
         );
         assert_eq!(compact.selected_binding.expected_name.as_deref(), Some("x"));
-        assert!(compact.render_text().contains("x = 1"));
+        assert!(compact.render_text(&full).contains("x = 1"));
         compact.validate_with_full(&full).unwrap();
     }
 }

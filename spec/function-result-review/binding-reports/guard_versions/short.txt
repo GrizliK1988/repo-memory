@@ -1,0 +1,12 @@
+Sources changed:
+  Before: x = 1 (snippet.ts:2) selected under !flag [guard #5] && !flag [guard #11]; x = 2 (snippet.ts:3) selected under flag [guard #5] && !flag [guard #11]
+  Before precedence: x = 2 overrides x = 1 when both writes apply
+  After: x = 3 (snippet.ts:5) selected under flag [guard #11]
+  Retained in code, no longer reaches this input: after x = 1 (snippet.ts:2)
+  Retained in code, no longer reaches this input: after x = 2 (snippet.ts:3)
+Affected uses: return x; (value; before/after snippet.ts:6)
+  Use guard: before !flag [guard #11]; after flag [guard #11]
+  Before control #11: branch `(flag)` (snippet.ts:5)
+  After control #11: branch `(flag)` (snippet.ts:5)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/function-result-review/binding-reports/guard_versions/full.json (ifds-ba9c002d8e3ae3df)
