@@ -9,17 +9,22 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 mod attribution;
+mod causes;
 mod grouping;
+mod selection;
 mod text;
 mod values;
 use attribution::*;
+use causes::*;
+pub use causes::{ControlCauseSide, FunctionResultCause, FunctionResultCauseKind};
 use grouping::*;
+use selection::*;
 use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
 
-pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 2;
-pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 2;
+pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 3;
+pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -34,6 +39,7 @@ pub struct FunctionResultFinding {
     pub before_locations: Vec<SourceSpan>,
     pub after_locations: Vec<SourceSpan>,
     pub attribution_certain: bool,
+    pub cause_refs: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +49,7 @@ pub struct FunctionResultReport {
     pub analysis: FunctionResultAnalysis,
     pub comparison: FunctionResultComparison,
     pub findings: Vec<FunctionResultFinding>,
+    pub causes: Vec<FunctionResultCause>,
 }
 
 impl FunctionResultReport {
@@ -56,7 +63,21 @@ impl FunctionResultReport {
                 report.schema_version, report.analysis.schema_version
             ));
         }
+        report.validate_control_causes()?;
         Ok(report)
+    }
+
+    fn validate_control_causes(&self) -> Result<(), String> {
+        let expected = control_change_causes(&self.analysis, &self.comparison);
+        if self.causes != expected {
+            return Err("function control causes do not match dependency evidence".into());
+        }
+        let mut expected_findings = findings(&self.analysis, &self.comparison);
+        link_control_causes(&mut expected_findings, &expected);
+        if self.findings != expected_findings {
+            return Err("function findings do not match attribution evidence".into());
+        }
+        Ok(())
     }
 }
 
@@ -83,6 +104,7 @@ pub struct CompactResultFinding {
     pub return_structure_changed: bool,
     pub evidence: Vec<EvidenceRef>,
     pub attribution_certain: bool,
+    pub cause_refs: Vec<EvidenceRef>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -259,6 +281,7 @@ fn findings(
             before_locations: Vec::new(),
             after_locations: Vec::new(),
             attribution_certain: false,
+            cause_refs: Vec::new(),
         });
         finding.regions.push(index);
         finding.before_locations.extend(locations(
@@ -361,12 +384,15 @@ fn canonicalize_analysis(mut analysis: FunctionResultAnalysis) -> FunctionResult
 pub fn assemble_function_result_report(analysis: FunctionResultAnalysis) -> FunctionResultReport {
     let analysis = canonicalize_analysis(analysis);
     let comparison = compare_function_results(&analysis);
-    let findings = findings(&analysis, &comparison);
+    let mut findings = findings(&analysis, &comparison);
+    let causes = control_change_causes(&analysis, &comparison);
+    link_control_causes(&mut findings, &causes);
     FunctionResultReport {
         schema_version: FUNCTION_RESULT_REPORT_SCHEMA_VERSION,
         analysis,
         comparison,
         findings,
+        causes,
     }
 }
 
@@ -376,12 +402,15 @@ pub fn assemble_function_result_report_with_comparison_limit(
 ) -> FunctionResultReport {
     let analysis = canonicalize_analysis(analysis);
     let comparison = compare_function_results_with_limit(&analysis, max_assignments);
-    let findings = findings(&analysis, &comparison);
+    let mut findings = findings(&analysis, &comparison);
+    let causes = control_change_causes(&analysis, &comparison);
+    link_control_causes(&mut findings, &causes);
     FunctionResultReport {
         schema_version: FUNCTION_RESULT_REPORT_SCHEMA_VERSION,
         analysis,
         comparison,
         findings,
+        causes,
     }
 }
 
@@ -690,6 +719,11 @@ pub fn compact_function_result_report(
             value_dependency_changed: finding.value_dependency_changed,
             return_structure_changed: finding.return_structure_changed,
             attribution_certain: finding.attribution_certain,
+            cause_refs: finding
+                .cause_refs
+                .iter()
+                .map(|index| reference(&id, "causes", *index))
+                .collect(),
         });
     }
     let all_count = all_findings.len();
@@ -960,6 +994,7 @@ impl FunctionResultCompactReport {
     }
 
     pub fn validate_with_full(&self, full: &FunctionResultReport) -> Result<(), String> {
+        full.validate_control_causes()?;
         if self.schema_version != FUNCTION_RESULT_COMPACT_SCHEMA_VERSION
             || full.schema_version != FUNCTION_RESULT_REPORT_SCHEMA_VERSION
             || self.full_report_id != report_id(full)
@@ -983,6 +1018,14 @@ impl FunctionResultCompactReport {
                 || evidence.index >= full.comparison.regions.len()
             {
                 return Err(format!("invalid function evidence reference: {evidence:?}"));
+            }
+        }
+        for evidence in self.findings.iter().flat_map(|finding| &finding.cause_refs) {
+            if evidence.report_id != self.full_report_id
+                || evidence.section != "causes"
+                || evidence.index >= full.causes.len()
+            {
+                return Err(format!("invalid function cause reference: {evidence:?}"));
             }
         }
         for (section, flows, side) in [
@@ -1034,7 +1077,11 @@ impl FunctionResultCompactReport {
     fn render_text_with_detail(&self, full: &FunctionResultReport, verbose: bool) -> String {
         debug_assert!(self.validate_with_full(full).is_ok());
         let names = &self.input_names;
-        let control_pair = changed_guard_pair(full);
+        let selection_rule = changed_return_selection(self, full);
+        let control_pair = selection_rule
+            .as_ref()
+            .map(|rule| rule.pair.clone())
+            .or_else(|| changed_guard_pair(full));
         let mut lines = vec![format!(
             "Function result: {}",
             self.selected_function
@@ -1127,13 +1174,18 @@ impl FunctionResultCompactReport {
                 lines.push("Common input feasibility is unresolved.".into());
             }
             lines.extend(dependency_edit_lines(self, full));
+            lines.extend(control_cause_lines(self, full));
+            let mut shown_controls = BTreeSet::new();
+            if let Some(rule) = &selection_rule {
+                shown_controls.insert(rule.lines[0].clone());
+                lines.extend(rule.lines.clone());
+            }
             let (shared_lines, shared_regions) = if verbose {
                 (Vec::new(), BTreeSet::new())
             } else {
                 shared_computation_lines(self, full)
             };
             lines.extend(shared_lines);
-            let mut shown_controls = BTreeSet::new();
             let (unchanged_lines, summary_regions) = unchanged_data_flow_summary(self, full);
             let unchanged_regions = if verbose {
                 BTreeSet::new()
@@ -1472,6 +1524,336 @@ mod tests {
         let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
         compact.validate_with_full(&full).unwrap();
         (full, compact)
+    }
+
+    #[test]
+    fn changed_guard_input_shows_return_source_selection_before_pairwise_effects() {
+        let before = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
+        );
+        let after = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/after.ts"
+        );
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let full_bytes = serde_json::to_vec(&full).unwrap();
+        let compact_bytes = serde_json::to_vec(&compact).unwrap();
+        for verbose in [false, true] {
+            let text = compact.render_text_with_detail(&full, verbose);
+            let selection = "Control: !first -> second\nReturn source: b - a\n  Before: under !first\n  After: under second";
+            assert!(text.contains(selection), "{text}");
+            assert_eq!(
+                text.matches("Control: !first -> second").count(),
+                1,
+                "{text}"
+            );
+            assert!(!text.contains("correspondence unresolved"), "{text}");
+            let effects = text.find("Changed computation under").unwrap();
+            assert!(text.find(selection).unwrap() < effects, "{text}");
+            assert!(
+                text.contains(
+                    "Changed computation under first && second:\n  (a + b) -> (b - a) (Changed)"
+                ),
+                "{text}"
+            );
+            assert!(
+                text.contains(
+                    "Changed computation under !first && !second:\n  (b - a) -> a (Changed)"
+                ),
+                "{text}"
+            );
+        }
+        for (first, second) in [(false, false), (false, true), (true, false), (true, true)] {
+            let region = full
+                .comparison
+                .regions
+                .iter()
+                .find(|region| region.region.values == BTreeMap::from([(2, first), (3, second)]))
+                .unwrap();
+            assert_eq!(region.value_dependency_changed, first == second);
+        }
+        assert_eq!(serde_json::to_vec(&full).unwrap(), full_bytes);
+        assert_eq!(serde_json::to_vec(&compact).unwrap(), compact_bytes);
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn changed_return_selection_retains_the_enclosing_reaching_condition() {
+        let before = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
+        )
+        .replace("first: boolean", "enabled: boolean, first: boolean")
+        .replace(
+            "  let decision",
+            "  if (!enabled) return 0;\n  let decision",
+        );
+        let after = before.replace("decision = !decision;", "decision = second;");
+        let full = assemble_function_result_report(analyze(
+            &before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("Return source: b - a\n  Before: under enabled && !first\n  After: under enabled && second"), "{text}");
+        assert!(!text.contains("  After: under second\n"), "{text}");
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn control_cause_follows_the_assignment_and_links_all_affected_regions() {
+        let before = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
+        );
+        let after = before.replace("decision = !decision;", "decision = second;");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(full.causes.len(), 1);
+        let cause = &full.causes[0];
+        assert_eq!(cause.kind, FunctionResultCauseKind::ControlSourceChanged);
+        assert_eq!(cause.before.expression, "(!first)");
+        assert_eq!(cause.after.expression, "second");
+        for (side, evidence) in [
+            (full.analysis.before.as_ref().unwrap(), &cause.before),
+            (full.analysis.after.as_ref().unwrap(), &cause.after),
+        ] {
+            assert_eq!(evidence.edit.operation, "write");
+            assert_eq!(evidence.edit.span.as_ref().unwrap().start_line, 4);
+            assert!(!evidence.edit.path.is_empty());
+            let guard = &side.observations[evidence.observation_index].guards[evidence.guard_index];
+            assert_eq!(guard.branch, evidence.branch);
+            let mut dependency = &guard.condition;
+            for index in &evidence.edit.path {
+                dependency = &dependency.inputs[*index];
+            }
+            assert_eq!(dependency.node, evidence.edit.node);
+            assert_eq!(dependency.span, evidence.edit.span);
+        }
+        assert_ne!(
+            cause.before.edit.node.snapshot,
+            cause.after.edit.node.snapshot
+        );
+        let changed_regions = cause
+            .regions
+            .iter()
+            .filter(|index| full.comparison.regions[**index].value_dependency_changed)
+            .map(|index| full.comparison.regions[*index].region.values.clone())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(
+            changed_regions,
+            BTreeSet::from([
+                BTreeMap::from([(2, true), (3, true)]),
+                BTreeMap::from([(2, false), (3, false)])
+            ])
+        );
+        assert!(
+            full.findings
+                .iter()
+                .all(|finding| finding.attribution_certain && finding.cause_refs == vec![0])
+        );
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        for verbose in [false, true] {
+            let text = compact.render_text_with_detail(&full, verbose);
+            assert_eq!(
+                text.matches(
+                    "Edit: (!first) -> second (before src/fixture.ts:4; after src/fixture.ts:4)"
+                )
+                .count(),
+                1,
+                "{text}"
+            );
+            assert!(!text.contains("Edit attribution uncertain"), "{text}");
+        }
+        let restored =
+            FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap()).unwrap();
+        assert_eq!(restored, full);
+        FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap())
+            .unwrap()
+            .validate_with_full(&restored)
+            .unwrap();
+        for mutation in 0..3 {
+            let mut corrupted = full.clone();
+            match mutation {
+                0 => corrupted.causes[0].before.edit.path.push(usize::MAX),
+                1 => corrupted.causes[0].regions.clear(),
+                _ => corrupted.findings[0].cause_refs.clear(),
+            }
+            assert!(
+                FunctionResultReport::from_json(&serde_json::to_vec(&corrupted).unwrap()).is_err()
+            );
+            assert!(compact.validate_with_full(&corrupted).is_err());
+        }
+        let mut corrupted = compact.clone();
+        corrupted.findings[0].cause_refs[0].index = usize::MAX;
+        assert!(corrupted.validate_with_full(&full).is_err());
+        let hidden =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        assert!(!hidden.render_text(&full).contains("Edit:"));
+    }
+
+    #[test]
+    fn control_cause_traces_copies_and_retains_the_captured_variable_version() {
+        let cases = [
+            (
+                "function result(first, second) {\nlet decision = first;\nconst copied = decision;\nconst alias = copied;\nif (alias) return 1;\nreturn 2;\n}",
+                "let decision = first;",
+                "let decision = second;",
+            ),
+            (
+                "function result(first, second) {\nlet decision = first;\nconst saved = decision;\ndecision = second;\nif (saved) return 1;\nreturn 2;\n}",
+                "let decision = first;",
+                "let decision = !first;",
+            ),
+        ];
+        for (before, old, new) in cases {
+            let after = before.replace(old, new).replace(
+                "decision = second;\nif (saved)",
+                "decision = first;\nif (saved)",
+            );
+            let full = assemble_function_result_report(analyze(
+                before,
+                &after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            assert_eq!(full.causes.len(), 1, "{full:#?}");
+            let cause = &full.causes[0];
+            assert_eq!(cause.before.edit.span.as_ref().unwrap().start_line, 2);
+            assert_eq!(cause.after.edit.span.as_ref().unwrap().start_line, 2);
+            assert!(cause.before.edit.path.len() > 3);
+            assert!(
+                full.findings
+                    .iter()
+                    .all(|finding| finding.attribution_certain)
+            );
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            assert!(
+                !compact
+                    .render_text(&full)
+                    .contains("Edit attribution uncertain")
+            );
+        }
+    }
+
+    #[test]
+    fn control_cause_rejects_multiple_edits_unknown_paths_and_killed_changes() {
+        let base = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
+        );
+        let changed = base.replace("decision = !decision;", "decision = second;");
+        let same_arms = "function result(first, second) {\nlet decision = first;\nif (decision) return 1;\nreturn 1;\n}";
+        for (before, after) in [
+            (base.to_string(), changed.replace("value = b - a;", "value = b + a;")),
+            (base.to_string(), changed.replace("const original = decision;", "const original = !decision;")),
+            (base.replace("  let value", "  mystery();\n  let value"), changed.replace("  let value", "  mystery();\n  let value")),
+            (base.to_string(), base.replace("decision = !decision;", "decision = second;\n  decision = !first;")),
+            (same_arms.to_string(), same_arms.replace("decision = first;", "decision = second;")),
+            ("function result(first, second) {\nlet decision = first;\nconst saved = decision;\ndecision = first;\nif (saved) return 1;\nreturn 2;\n}".into(), "function result(first, second) {\nlet decision = first;\nconst saved = decision;\ndecision = second;\nif (saved) return 1;\nreturn 2;\n}".into()),
+            ("function result(first, second) {\nlet decision = first;\nlet selector = decision;\nif (selector) return 1;\nreturn 2;\n}".into(), "function result(first, second) {\nlet decision = second;\nlet selector = !decision;\nif (selector) return 1;\nreturn 2;\n}".into()),
+            ("function result(first, second) {\nlet decision = first;\nif (decision) return 1;\nreturn 2;\n}".into(), "function result(first, second) {\nlet decision = second;\nif (!decision) return 1;\nreturn 2;\n}".into()),
+            (base.replace('\n', " "), changed.replace('\n', " ")),
+        ] {
+            let full = assemble_function_result_report(analyze(&before, &after, FunctionEntry::default(), FunctionEntry::default()));
+            assert!(full.causes.is_empty(), "{before}\n{after}\n{:#?}", full.causes);
+        }
+        let analysis = analyze(
+            base,
+            &changed,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        let limited = assemble_function_result_report_with_comparison_limit(analysis.clone(), 1);
+        assert!(limited.causes.is_empty());
+        for mutation in 0..3 {
+            let mut incomplete = analysis.clone();
+            match mutation {
+                0 => incomplete.input_mapping_coverage = Coverage::Partial,
+                1 => incomplete.input_correspondence.clear(),
+                _ => incomplete.after.as_mut().unwrap().coverage = Coverage::Partial,
+            }
+            assert!(
+                assemble_function_result_report(incomplete)
+                    .causes
+                    .is_empty()
+            );
+        }
+    }
+
+    #[test]
+    fn return_selection_explanation_rejects_ambiguous_or_unresolved_changes() {
+        let before = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
+        );
+        let after = before.replace("decision = !decision;", "decision = second;");
+        for (old, new) in [
+            (
+                before.to_string(),
+                after.replace("value = b - a;", "value = b + a;"),
+            ),
+            (
+                before.to_string(),
+                after.replace(
+                    "if (decision) value = b - a;",
+                    "if (decision) {\n    if (first) value = b - a;\n  }",
+                ),
+            ),
+            (
+                before.to_string(),
+                after.replace("  return value;", "  value = a;\n  return value;"),
+            ),
+            (
+                before.replace("  let value", "  mystery();\n  let value"),
+                after.replace("  let value", "  mystery();\n  let value"),
+            ),
+            (before.replace('\n', " "), after.replace('\n', " ")),
+            (
+                "function result(first, second) { if (first) return 1; return 1; }".into(),
+                "function result(first, second) { if (second) return 1; return 1; }".into(),
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                &old,
+                &new,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert!(!text.contains("Return source:"), "{old}\n{new}\n{text}");
+            compact.validate_with_full(&full).unwrap();
+        }
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        for max_groups in [0, 1] {
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions { max_groups });
+            let text = compact.render_text(&full);
+            assert!(!text.contains("Return source:"), "{text}");
+            assert!(text.contains("presentation Partial"), "{text}");
+            compact.validate_with_full(&full).unwrap();
+        }
+        let mut analysis = full.analysis.clone();
+        analysis.input_mapping_coverage = Coverage::Partial;
+        analysis.input_correspondence.clear();
+        let full = assemble_function_result_report(analysis);
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert!(!compact.render_text(&full).contains("Return source:"));
     }
 
     #[test]
@@ -2029,7 +2411,7 @@ mod tests {
         assert_eq!(text.matches("Control: flag -> !flag").count(), 1, "{text}");
         assert_eq!(
             text.matches("Edit attribution uncertain").count(),
-            1,
+            0,
             "{text}"
         );
         for side in ["Before", "After"] {
@@ -2635,9 +3017,9 @@ mod tests {
     #[test]
     fn ifds_fr003_typed_value_validation() {
         let (full, compact) = review("copy");
-        assert_eq!(full.schema_version, 2);
+        assert_eq!(full.schema_version, 3);
         assert_eq!(full.analysis.schema_version, 4);
-        assert_eq!(compact.schema_version, 2);
+        assert_eq!(compact.schema_version, 3);
         assert_eq!(
             FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap(),
             compact

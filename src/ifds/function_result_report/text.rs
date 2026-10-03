@@ -558,7 +558,11 @@ pub(super) fn equal_control_lines(
         } else {
             "; Edit attribution uncertain"
         };
-        lines.push(format!("{control}; {result_text}{attribution}"));
+        lines.push(if shown_controls.contains(&control) {
+            format!("{result_text}{attribution}")
+        } else {
+            format!("{control}; {result_text}{attribution}")
+        });
     }
     lines
 }

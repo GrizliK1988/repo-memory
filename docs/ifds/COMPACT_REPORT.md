@@ -79,6 +79,16 @@ cannot enlarge this union; structured regions and evidence remain unchanged.
 A proven permutation of unique pure paired-input guards is shown once as
 `Control: guard order ... -> ...`. Guard versions and outcomes must match;
 unsupported predicates and ambiguous correspondence retain uncertainty.
+When a uniquely anchored pure guard switches to another paired input, function
+text first explains the selected return source and its full reaching conditions
+on each side: for example, `Control: !first -> second`, `Return source: b - a`,
+`Before: under !first`, `After: under second`. These side-specific selection rules
+are separate from same-input effect regions such as `first && second`. Guard
+versions, observation topology, return computations, and contributing writes must
+match after pairing that one guard; enclosing conditions remain in the reaching
+rules. Unknown completion, ambiguous source anchors, changed returned computations,
+and incomplete presentation suppress this explanation. It does not broaden the
+same-input effect regions or change their assessments.
 Short text omits the return-choice table when expanded computations already
 explain every changed effect with its full same-input condition.
 
@@ -90,6 +100,28 @@ positional inputs; unresolved dependencies, changed entry assumptions, or severa
 candidate edits retain uncertainty. Text shows the unique edit once with both
 source positions. This local attribution does not imply complete alignment of
 every source operation in the file.
+
+Function report schema 3 also attributes a single changed guard through its
+reaching assignments. The full report's `causes` records paired before/after
+observation and guard indices, branch IDs, expanded condition expressions, and
+the source edit's dependency path, node, operation, location, and expanded input
+expression. These dependency paths start at the selected guard's condition root.
+Each cause lists absolute `comparison.regions` indices; full findings link to
+causes by index and compact findings by `EvidenceRef` with section `causes`.
+Those regions may include control changes preserving the returned computation.
+
+Attribution requires complete path/dependency evidence, paired inputs, identical
+entry assumptions and return topology, and one changed guard with one uniquely
+anchored source edit. Local assignment comparisons stop at their input reads'
+reaching definitions, so an upstream edit copied through several variables is
+attributed to its original assignment. Captured variable versions are preserved;
+subsequent overwritten or unused assignments are excluded. Multiple candidate
+edits, ambiguous same-line anchors, changed return computations, unknown calls,
+and exhausted analysis/comparison budgets retain uncertainty. Direct predicate
+edits are supported when no upstream assignment changed. Text prints the shared
+edit once with both source locations; rendering does not mutate evidence.
+Full and compact function reports use schema 3; analysis remains schema 4.
+Older report schemas are rejected, and historical archived reports are unchanged.
 
 When one changed read in a return expression has the same resolved dependency
 on several paths, short text shows that computation and its shared writes once.

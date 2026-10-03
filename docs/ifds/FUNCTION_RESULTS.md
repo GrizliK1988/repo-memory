@@ -354,7 +354,14 @@ for value identity as well as expression text. Symmetric effects of a proven
 common guard inversion share one finding while retaining separate directional
 results, regions, and evidence. Dependency source positions support concise
 links from returns to contributing writes. These structures use full report
-schema 2, analysis schema 4, and compact schema 2.
+schema 3, analysis schema 4, and compact schema 3. Full reports also retain
+supported control-source causes with paired dependency witnesses and absolute
+region indices; full and compact findings reference the shared cause. A witness
+path starts at an observation's guard condition and identifies the original
+reaching assignment or direct predicate edit. See
+[control-source attribution](COMPACT_REPORT.md#human-text-modes) for its
+conservative matching requirements. Earlier report schemas remain archived and
+are rejected by the current readers.
 
 When the before and after entry domains do not intersect, show the guarded
 normal-result flow for each snapshot under its own assumptions, then state that
