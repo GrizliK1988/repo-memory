@@ -32,7 +32,7 @@ pub struct PresentedResult {
     pub evidence: Vec<ReturnEvidence>,
 }
 
-fn primitive_text(value: &FunctionKnownValue) -> String {
+pub(super) fn primitive_text(value: &FunctionKnownValue) -> String {
     match value {
         FunctionKnownValue::Boolean { value } => value.to_string(),
         FunctionKnownValue::Number { value } => value.clone(),
@@ -106,7 +106,7 @@ fn supported_literal(value: &FunctionKnownValue) -> bool {
     }
 }
 
-fn transparent(dependency: &ResultDependency) -> bool {
+pub(super) fn transparent(dependency: &ResultDependency) -> bool {
     matches!(
         dependency.operation.as_str(),
         "read" | "write" | "binding_value"
@@ -474,10 +474,7 @@ pub(super) fn source_text(result: &PresentedResult) -> Vec<String> {
 
 /// Keep value-producing writes, omitting a copy only when its sole source is
 /// another write reached through a resolved transparent dependency chain.
-pub(super) fn key_source_text(
-    finding: &CompactResultFinding,
-    full: &FunctionResultReport,
-) -> Vec<String> {
+pub(super) fn key_write_spans(dependency: &ResultDependency) -> BTreeMap<NodeId, SourceSpan> {
     fn copied_write(dependency: &ResultDependency) -> bool {
         !dependency.unresolved
             && ((dependency.operation == "write" && dependency.span.is_some())
@@ -499,6 +496,15 @@ pub(super) fn key_source_text(
         }
     }
     let mut spans = BTreeMap::new();
+    collect(dependency, &mut spans);
+    spans
+}
+
+pub(super) fn key_source_text(
+    finding: &CompactResultFinding,
+    full: &FunctionResultReport,
+) -> Vec<String> {
+    let mut spans = BTreeMap::new();
     for evidence in finding
         .effects
         .iter()
@@ -516,7 +522,7 @@ pub(super) fn key_source_text(
             .and_then(|side| side.observations.get(evidence.observation.index))
             && let ResultValue::Expression { dependency, .. } = &item.value
         {
-            collect(dependency, &mut spans);
+            spans.extend(key_write_spans(dependency));
         }
     }
     [SnapshotSide::Before, SnapshotSide::After]

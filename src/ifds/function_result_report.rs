@@ -8,8 +8,12 @@ use super::snapshots::{AnalysisEnvironment, SnapshotProvider};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
+mod attribution;
+mod grouping;
 mod text;
 mod values;
+use attribution::*;
+use grouping::*;
 use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
@@ -278,6 +282,10 @@ fn findings(
             (&a.path, a.byte_start, a.byte_end).cmp(&(&b.path, b.byte_start, b.byte_end))
         });
         finding.after_locations.dedup();
+        if unique_dependency_edit(analysis, comparison, &finding.regions).is_some() {
+            finding.attribution_certain = true;
+            continue;
+        }
         if !finding.control_changed {
             let before_refs: BTreeSet<_> = finding
                 .regions
@@ -1118,12 +1126,44 @@ impl FunctionResultCompactReport {
             if self.common_domain_status == CommonDomainStatus::Unresolved {
                 lines.push("Common input feasibility is unresolved.".into());
             }
+            lines.extend(dependency_edit_lines(self, full));
+            let (shared_lines, shared_regions) = if verbose {
+                (Vec::new(), BTreeSet::new())
+            } else {
+                shared_computation_lines(self, full)
+            };
+            lines.extend(shared_lines);
+            let mut shown_controls = BTreeSet::new();
+            let (unchanged_lines, summary_regions) = unchanged_data_flow_summary(self, full);
+            let unchanged_regions = if verbose {
+                BTreeSet::new()
+            } else {
+                summary_regions.clone()
+            };
             lines.extend(equal_control_lines(
                 self,
                 full,
                 control_pair.as_ref(),
                 verbose,
+                &mut shown_controls,
+                &unchanged_regions,
             ));
+            if verbose {
+                // Equal regions without a control edit are otherwise omitted
+                // from the detailed effect loop. Keep the summary's individual
+                // computations available in verbose text as well.
+                for index in summary_regions {
+                    let region = &full.comparison.regions[index];
+                    if region.assessment == ResultAssessment::Equal
+                        && !region.control_changed
+                        && let Some(line) = unchanged_data_flow_line(full, region, names)
+                    {
+                        lines.push(line);
+                    }
+                }
+            } else {
+                lines.extend(unchanged_lines);
+            }
             if normal_results_unchanged(self, full) {
                 lines.push(format!(
                     "Normal results unchanged on common inputs: {} (under the recorded entry assumptions).",
@@ -1134,12 +1174,46 @@ impl FunctionResultCompactReport {
                 if finding.assessment == ResultAssessment::Equal {
                     continue;
                 }
+                if finding
+                    .effects
+                    .iter()
+                    .all(|effect| shared_regions.contains(&effect.evidence.index))
+                {
+                    continue;
+                }
                 let selected_values = finding.effects.iter().all(|effect| {
                     selected_operand_text(&effect.before_result, &full.analysis.before).is_some()
                         && selected_operand_text(&effect.after_result, &full.analysis.after)
                             .is_some()
                 });
-                let show_choices = !selected_values && (verbose || conditional_choices(finding));
+                let computations: Vec<_> = finding
+                    .effects
+                    .iter()
+                    .map(|effect| {
+                        if effect.assessment == ResultAssessment::Changed
+                            && effect
+                                .before_result
+                                .as_ref()
+                                .map(|result| &result.expression)
+                                == effect
+                                    .after_result
+                                    .as_ref()
+                                    .map(|result| &result.expression)
+                        {
+                            changed_computation_lines(
+                                full,
+                                &full.comparison.regions[effect.evidence.index],
+                                names,
+                            )
+                        } else {
+                            Vec::new()
+                        }
+                    })
+                    .collect();
+                let show_choices = !selected_values
+                    && (verbose
+                        || (conditional_choices(finding)
+                            && computations.iter().any(Vec::is_empty)));
                 let context = region_text(&finding.context, names);
                 if !selected_values
                     && (verbose || show_choices)
@@ -1151,11 +1225,14 @@ impl FunctionResultCompactReport {
                     lines.push("Edit attribution uncertain".into());
                 }
                 if !verbose && finding.control_changed {
-                    lines.push(control_text(
+                    let control = control_text(
                         full,
                         finding.effects.iter().map(|effect| effect.evidence.index),
                         control_pair.as_ref(),
-                    ));
+                    );
+                    if shown_controls.insert(control.clone()) {
+                        lines.push(control);
+                    }
                 }
                 if show_choices {
                     lines.push("Return choice | Before | After".into());
@@ -1168,8 +1245,10 @@ impl FunctionResultCompactReport {
                         ));
                     }
                 }
-                for effect in &finding.effects {
-                    if selected_values {
+                for (effect, computation) in finding.effects.iter().zip(computations) {
+                    if !computation.is_empty() {
+                        lines.extend(computation);
+                    } else if selected_values {
                         let mut condition = effect.region.clone();
                         condition.values.extend(&finding.context.values);
                         lines.push(format!(
@@ -1215,22 +1294,46 @@ impl FunctionResultCompactReport {
             }
             let mut marked_unknown_findings = BTreeSet::new();
             for unknown in &self.unknown_regions {
+                let unchanged = unchanged_data_flow_line(
+                    full,
+                    &full.comparison.regions[unknown.evidence.index],
+                    names,
+                );
                 for (index, finding) in full.findings.iter().enumerate() {
                     if finding.assessment == ResultAssessment::Unknown
                         && finding.regions.contains(&unknown.evidence.index)
                         && marked_unknown_findings.insert(index)
                     {
-                        if !finding.attribution_certain {
+                        if !finding.attribution_certain
+                            && finding.regions.iter().any(|index| {
+                                unchanged_data_flow_line(
+                                    full,
+                                    &full.comparison.regions[*index],
+                                    names,
+                                )
+                                .is_none()
+                            })
+                        {
                             lines.push("Edit attribution uncertain".into());
                         }
                         if !verbose && finding.control_changed {
-                            lines.push(control_text(
+                            let control = control_text(
                                 full,
                                 finding.regions.iter().copied(),
                                 control_pair.as_ref(),
-                            ));
+                            );
+                            if shown_controls.insert(control.clone()) {
+                                lines.push(control);
+                            }
                         }
                     }
+                }
+                if unchanged_regions.contains(&unknown.evidence.index) {
+                    continue;
+                }
+                if let Some(line) = unchanged {
+                    lines.push(line);
+                    continue;
                 }
                 lines.push(format!(
                     "Unknown under {}: {}",
@@ -1372,6 +1475,471 @@ mod tests {
     }
 
     #[test]
+    fn reordered_overwrites_report_all_four_data_flow_regions() {
+        let before = "function choose(a: number, b: number, first: boolean, second: boolean) {\n  let result = a;\n\n  if (first) result = a + b;\n  if (second) result = b * 2;\n\n  return result;\n}";
+        let after = "function choose(a: number, b: number, first: boolean, second: boolean) {\n  let result = a;\n\n  if (second) result = b * 2;\n  if (first) result = a + b;\n\n  return result;\n}";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let bytes = serde_json::to_vec(&full).unwrap();
+        for verbose in [false, true] {
+            let text = compact.render_text_with_detail(&full, verbose);
+            assert_eq!(
+                text.matches("Control: guard order first then second -> second then first")
+                    .count(),
+                1,
+                "{text}"
+            );
+            if verbose {
+                assert!(
+                    text.contains("Unchanged data flow under !first && !second: a (Equal)"),
+                    "{text}"
+                );
+                assert!(text.contains("Unchanged data flow under !first && second: (b * 2) (runtime value equality unresolved)"), "{text}");
+                assert!(text.contains("Unchanged data flow under first && !second: (a + b) (runtime value equality unresolved)"), "{text}");
+            } else {
+                assert!(text.contains("Unchanged data flow under !first || !second (runtime value equality unresolved in some regions)"), "{text}");
+                assert_eq!(text.matches("Unchanged data flow").count(), 1, "{text}");
+            }
+            assert!(
+                text.contains(
+                    "Changed computation under first && second:\n  (b * 2) -> (a + b) (Changed)"
+                ),
+                "{text}"
+            );
+            assert!(!text.contains("correspondence unresolved"), "{text}");
+            assert!(!text.contains("Unknown under"), "{text}");
+            assert!(!text.contains("Normal results unchanged"), "{text}");
+            if !verbose {
+                assert!(!text.contains("Return choice |"), "{text}");
+                assert_eq!(
+                    text.matches("Edit attribution uncertain").count(),
+                    1,
+                    "{text}"
+                );
+            }
+        }
+        // Presentation cannot upgrade unknown runtime equality to Equal or
+        // complete comparison coverage. Only the shared dependencies are known.
+        assert_eq!(full.comparison.regions.len(), 4);
+        for (first, second, assessment) in [
+            (false, false, ResultAssessment::Equal),
+            (false, true, ResultAssessment::Unknown),
+            (true, false, ResultAssessment::Unknown),
+            (true, true, ResultAssessment::Changed),
+        ] {
+            let region = full
+                .comparison
+                .regions
+                .iter()
+                .find(|region| region.region.values == BTreeMap::from([(2, first), (3, second)]))
+                .unwrap();
+            assert_eq!(region.assessment, assessment);
+            assert_eq!(region.value_dependency_changed, first && second);
+        }
+        assert_eq!(full.comparison.comparison_coverage, Coverage::Partial);
+        assert_eq!(serde_json::to_vec(&full).unwrap(), bytes);
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn unchanged_region_union_excludes_unknown_completion_and_omitted_groups() {
+        let source =
+            "function result(a, b) { if (a) { mystery(); return 0; } if (b) return 1; return 2; }";
+        let full = assemble_function_result_report(analyze(
+            source,
+            source,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let bytes = serde_json::to_vec(&full).unwrap();
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("Unchanged data flow under !a (Equal)"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Unknown under a: an unresolved call may prevent normal completion"),
+            "{text}"
+        );
+        assert!(!text.contains("Unchanged data flow under always"), "{text}");
+        let verbose = compact.render_verbose_text(&full);
+        assert!(
+            verbose.contains("Unchanged data flow under !a && !b: 2 (Equal)"),
+            "{verbose}"
+        );
+        assert!(
+            verbose.contains("Unchanged data flow under !a && b: 1 (Equal)"),
+            "{verbose}"
+        );
+        assert_eq!(serde_json::to_vec(&full).unwrap(), bytes);
+        compact.validate_with_full(&full).unwrap();
+
+        let (full, _) = review("priority");
+        let compact =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Unchanged data flow"), "{text}");
+        assert!(text.contains("presentation Partial"), "{text}");
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn unchanged_data_flow_does_not_require_runtime_value_equality() {
+        let full = assemble_function_result_report(analyze(
+            "function result(a, b) { return a + b; }",
+            "function result(left, right) { const saved = left + right; return saved; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains(
+                "Unchanged data flow under always: (a + b) (runtime value equality unresolved)"
+            ),
+            "{text}"
+        );
+        assert!(!text.contains("Unknown under"), "{text}");
+        assert!(!text.contains("(Equal)"), "{text}");
+        assert!(!text.contains("Normal results unchanged"), "{text}");
+        assert!(!text.contains("Edit attribution uncertain"), "{text}");
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn unresolved_selection_completion_or_pairing_cannot_claim_unchanged_data_flow() {
+        for source in [
+            "function result(a) { return mystery(a); }",
+            "function result(a) { mystery(); return a + 1; }",
+            "function result(a) { if (mystery(a)) return a + 1; return a + 2; }",
+            "function result(a) { if (a === 1) return a + 1; return a + 2; }",
+        ] {
+            let full = assemble_function_result_report(analyze(
+                source,
+                source,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert!(!text.contains("Unchanged data flow"), "{source}: {text}");
+            assert!(text.contains("Unknown under"), "{source}: {text}");
+            compact.validate_with_full(&full).unwrap();
+        }
+        let source = "function result(a) { return a + 1; }";
+        let mut analysis = analyze(
+            source,
+            source,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        analysis.input_mapping_coverage = Coverage::Partial;
+        analysis.input_correspondence.clear();
+        let full = assemble_function_result_report(analysis);
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Unchanged data flow"), "{text}");
+        assert!(text.contains("Unknown under"), "{text}");
+    }
+
+    #[test]
+    fn unchanged_flow_beside_an_unresolved_call_preserves_the_unknown_region() {
+        let source = "function result(flag, input) { if (flag) { mystery(); return input + 1; } return input + 1; }";
+        let full = assemble_function_result_report(analyze(
+            source,
+            source,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains(
+                "Unchanged data flow under !flag: (input + 1) (runtime value equality unresolved)"
+            ),
+            "{text}"
+        );
+        assert!(
+            text.contains("Unknown under flag: an unresolved call may prevent normal completion"),
+            "{text}"
+        );
+        assert_eq!(
+            text.matches("Edit attribution uncertain").count(),
+            1,
+            "{text}"
+        );
+        assert!(!text.contains("Unchanged data flow under flag:"), "{text}");
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn reordered_guard_versions_cannot_be_described_as_a_simple_permutation() {
+        let full = assemble_function_result_report(analyze(
+            "function result(a, b, first, second) { let flag = first; let value = a; if (flag) value = a + b; if (second) value = b * 2; return value; }",
+            "function result(a, b, first, second) { let flag = first; let value = a; if (second) value = b * 2; flag = !flag; if (flag) value = a + b; return value; }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(!text.contains("Control: guard order"), "{text}");
+        assert!(
+            text.contains("Control changed (guard correspondence unresolved)"),
+            "{text}"
+        );
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn shared_upstream_edit_is_attributed_across_return_paths() {
+        let before = "function calculate(a: number, b: number, flag: boolean) {\n  let current = a + b;\n  const saved = current * 2;\n\n  current = b;\n  if (flag) current = 100;\n\n  return saved + current;\n}";
+        let after = before.replace("a + b", "a - b");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(full.findings.len(), 1);
+        assert_eq!(full.findings[0].regions.len(), 2);
+        assert!(full.findings[0].attribution_certain);
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let full_bytes = serde_json::to_vec(&full).unwrap();
+        let compact_bytes = serde_json::to_vec(&compact).unwrap();
+        for text in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert_eq!(text.matches("Edit:").count(), 1, "{text}");
+            assert!(
+                text.contains(
+                    "Edit: (a + b) -> (a - b) (before src/fixture.ts:2; after src/fixture.ts:2)"
+                ),
+                "{text}"
+            );
+            assert!(!text.contains("Edit attribution uncertain"), "{text}");
+        }
+        let short = compact.render_text(&full);
+        assert_eq!(short.matches("Changed computation").count(), 1, "{short}");
+        assert_eq!(short.matches("Reaches return").count(), 1, "{short}");
+        assert!(
+            short.contains(
+                "Changed computation for saved:\n  ((a + b) * 2) -> ((a - b) * 2) (Changed)"
+            ),
+            "{short}"
+        );
+        assert!(short.contains("Return under !flag: (saved + b)\n  Context writes: before src/fixture.ts:5; after src/fixture.ts:5"), "{short}");
+        assert!(short.contains("Return under flag: (saved + 100)\n  Context writes: before src/fixture.ts:6; after src/fixture.ts:6"), "{short}");
+        assert_eq!(
+            short
+                .matches("Before shared writes: src/fixture.ts:2, src/fixture.ts:3")
+                .count(),
+            1,
+            "{short}"
+        );
+        let verbose = compact.render_verbose_text(&full);
+        assert!(
+            verbose.contains("Changed computation under flag"),
+            "{verbose}"
+        );
+        assert!(
+            verbose.contains("Changed computation under !flag"),
+            "{verbose}"
+        );
+        assert!(short.len() < verbose.len());
+        assert_eq!(serde_json::to_vec(&full).unwrap(), full_bytes);
+        assert_eq!(serde_json::to_vec(&compact).unwrap(), compact_bytes);
+        compact.validate_with_full(&full).unwrap();
+        let truncated =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        assert!(!truncated.render_text(&full).contains("Edit:"));
+        assert!(
+            !truncated
+                .render_text(&full)
+                .contains("Changed computation for")
+        );
+        let limited =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 1 });
+        assert!(
+            !limited
+                .render_text(&full)
+                .contains("Changed computation for")
+        );
+    }
+
+    #[test]
+    fn shared_computation_grouping_requires_one_unambiguous_return_component() {
+        for (before, after) in [
+            (
+                "function result(a, b, flag) {\nlet saved = a + b;\nif (flag) saved = a * b;\nlet tail = b;\nif (flag) tail = 100;\nreturn saved + tail;\n}",
+                "function result(a, b, flag) {\nlet saved = a - b;\nif (flag) saved = a / b;\nlet tail = b;\nif (flag) tail = 100;\nreturn saved + tail;\n}",
+            ),
+            (
+                "function result(a, b, flag) {\nconst saved = a + b;\nlet tail = b;\nif (flag) tail = 100;\nreturn saved * saved + tail;\n}",
+                "function result(a, b, flag) {\nconst saved = a - b;\nlet tail = b;\nif (flag) tail = 100;\nreturn saved * saved + tail;\n}",
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert!(!text.contains("Changed computation for"), "{text}");
+            assert!(text.contains("Changed computation under flag"), "{text}");
+            assert!(text.contains("Changed computation under !flag"), "{text}");
+            compact.validate_with_full(&full).unwrap();
+        }
+    }
+
+    #[test]
+    fn upstream_attribution_keeps_ambiguous_edits_and_boundaries_uncertain() {
+        for (before, after) in [
+            (
+                "function result(p) {\nconst first = p + 1;\nconst second = first * 2;\nreturn second;\n}",
+                "function result(p) {\nconst first = p + 3;\nconst second = first * 4;\nreturn second;\n}",
+            ),
+            (
+                "function result(p) {\nmystery();\nconst saved = p + 1;\nreturn saved;\n}",
+                "function result(p) {\nmystery();\nconst saved = p + 2;\nreturn saved;\n}",
+            ),
+            (
+                "function result(p) {\nconst saved = p + 1;\nreturn saved;\n}",
+                "function result(p) {\nconst extra = p;\nconst saved = extra + 2;\nreturn saved;\n}",
+            ),
+            (
+                "function result(p, flag) {\nlet saved = p + 1;\nif (flag) saved = p + 2;\nreturn saved;\n}",
+                "function result(p, flag) {\nlet saved = p + 3;\nif (flag) saved = p + 4;\nreturn saved;\n}",
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            assert!(
+                full.findings
+                    .iter()
+                    .all(|finding| !finding.attribution_certain),
+                "{full:#?}"
+            );
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert!(text.contains("Edit attribution uncertain"), "{text}");
+            assert!(!text.contains("Edit:"), "{text}");
+        }
+    }
+
+    #[test]
+    fn upstream_attribution_follows_changed_operand_and_ignores_killed_edits() {
+        let before = "function result(a, b) {\nlet current = a + 1;\nconst saved = current * 2;\ncurrent = 100;\nreturn saved;\n}";
+        let after = before
+            .replace("a + 1", "b + 1")
+            .replace("current = 100", "current = 200");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert!(full.findings[0].attribution_certain, "{full:#?}");
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("Edit: a -> b (before src/fixture.ts:2; after src/fixture.ts:2)"),
+            "{text}"
+        );
+        assert!(!text.contains("100 -> 200"), "{text}");
+        assert!(!text.contains("Edit attribution uncertain"), "{text}");
+    }
+
+    #[test]
+    fn changed_result_shows_computation_reaching_saved_return_without_input_types() {
+        let before = "function compute(input: number, useSaved: boolean) {\n  let current = input;\n  const saved = current + 1;\n  current = 100;\n  if (useSaved) { return saved; }\n  return current;\n}";
+        let after = before.replace("current + 1", "current + 2");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let full_bytes = serde_json::to_vec(&full).unwrap();
+        let compact_bytes = serde_json::to_vec(&compact).unwrap();
+        assert!(compact.unknown_regions.is_empty());
+        assert_eq!(compact.equal_regions.len(), 1);
+        assert_eq!(compact.findings[0].assessment, ResultAssessment::Changed);
+        assert_eq!(compact.coverage.result_comparison, Coverage::Complete);
+        for text in [
+            compact.render_text(&full),
+            compact.render_verbose_text(&full),
+        ] {
+            assert!(
+                text.contains("Changed computation under useSaved:\n  (input + 1) -> (input + 2) (Changed)\n  Reaches return saved"),
+                "{text}"
+            );
+            assert!(!text.contains("Unknown under"), "{text}");
+            assert!(
+                !text.contains("Changed computation under !useSaved"),
+                "{text}"
+            );
+            assert!(!text.contains("(Different)"), "{text}");
+        }
+        assert_eq!(full_bytes, serde_json::to_vec(&full).unwrap());
+        assert_eq!(compact_bytes, serde_json::to_vec(&compact).unwrap());
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn changed_computation_requires_resolved_changed_return_dependencies() {
+        for (before, after, changed) in [
+            (
+                "function result(input: number) { return input + 1; }",
+                "function result(input: number) { return input + 2; }",
+                true,
+            ),
+            (
+                "function result(input: number) { return input + 1; }",
+                "function result(renamed: number) { const saved = renamed + 1; return saved; }",
+                false,
+            ),
+            (
+                "function result(input: number) { let saved = input + 1; saved = 100; return saved; }",
+                "function result(input: number) { let saved = input + 2; saved = 100; return saved; }",
+                false,
+            ),
+            (
+                "function result(input: number) { mystery(); return input + 1; }",
+                "function result(input: number) { mystery(); return input + 2; }",
+                false,
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            let text = compact.render_text(&full);
+            assert_eq!(text.contains("(Changed)"), changed, "{text}");
+        }
+    }
+
+    #[test]
     fn ifds_fr004_short_replacements_and_verbose_details() {
         for name in [
             "literal",
@@ -1486,10 +2054,17 @@ mod tests {
     fn ifds_fr004_summarizes_scoped_equal_choices_without_losing_changed_selection() {
         let (full, compact) = review("priority");
         let text = compact.render_text(&full);
-        assert!(
-            text.contains("results unchanged (Equal) under !a || !b in the common input scope"),
+        assert_eq!(
+            text.matches("Control: guard order a then b -> b then a")
+                .count(),
+            1,
             "{text}"
         );
+        assert!(
+            text.contains("Unchanged data flow under !a || !b (Equal)"),
+            "{text}"
+        );
+        assert_eq!(text.matches("Unchanged data flow").count(), 1, "{text}");
         assert!(
             text.contains("a && b: x (2) -> x (1) (Different)"),
             "{text}"
@@ -1682,7 +2257,11 @@ mod tests {
                         text.contains("under enabled in the common input scope"),
                         "{text}"
                     );
-                    assert!(!text.contains("under always"), "{text}");
+                    let control = text
+                        .lines()
+                        .find(|line| line.starts_with("Control:"))
+                        .unwrap();
+                    assert!(!control.contains("under always"), "{text}");
                 } else {
                     assert!(text.contains("flag -> !renamed"), "{text}");
                 }
@@ -1809,7 +2388,12 @@ mod tests {
             let (full, compact) = review(name);
             let text = compact.render_text(&full);
             assert!(!text.contains("Normal results unchanged"), "{text}");
-            assert!(text.contains("Unknown under"), "{text}");
+            if name == "unknown" {
+                assert!(text.contains("Unknown under"), "{text}");
+            } else {
+                assert!(text.contains("(Changed)"), "{text}");
+                assert!(!text.contains("Unknown under"), "{text}");
+            }
         }
     }
 
@@ -1933,9 +2517,9 @@ mod tests {
                     );
                 }
                 "expression" => {
-                    assert!(text.contains("Unknown under"), "{text}");
+                    assert!(text.contains("input + 1 -> input + 2 (Changed)"), "{text}");
                     assert_eq!(
-                        compact.unknown_regions[0]
+                        compact.findings[0].effects[0]
                             .before_result
                             .as_ref()
                             .unwrap()

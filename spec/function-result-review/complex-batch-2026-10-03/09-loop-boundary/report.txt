@@ -1,0 +1,5 @@
+Function result: accumulate
+Edit attribution uncertain
+Unknown under always: normal completion or result selection is unresolved
+Coverage: result comparison Partial; source alignment Partial; before analysis Partial; after analysis Partial
+Evidence: full.json (ifds-function-3a2566e347420eeb)

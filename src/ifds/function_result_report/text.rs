@@ -1,9 +1,268 @@
 //! Text-only policy; serialized presentation and evidence remain unchanged.
 
 use super::*;
-use crate::ifds::model::NodeId;
+use crate::ifds::ir::PrimitiveOperator;
+use crate::ifds::model::{NodeId, Source};
 
 pub(super) type GuardPair = (NodeId, NodeId, String, String);
+
+pub(super) fn dependency_edit_lines(
+    compact: &FunctionResultCompactReport,
+    full: &FunctionResultReport,
+) -> Vec<String> {
+    let (Some(left), Some(right)) = (&full.analysis.before, &full.analysis.after) else {
+        return Vec::new();
+    };
+    let mut shown = BTreeSet::new();
+    let mut lines = Vec::new();
+    for finding in &full.findings {
+        if !compact.findings.iter().any(|visible| {
+            visible
+                .evidence
+                .iter()
+                .any(|evidence| finding.regions.contains(&evidence.index))
+        }) {
+            continue;
+        }
+        let Some(edit) = unique_dependency_edit(&full.analysis, &full.comparison, &finding.regions)
+        else {
+            continue;
+        };
+        let (Some((before, _)), Some((after, _)), Some(a), Some(b)) = (
+            dependency_expression(edit.before, left, &compact.input_names),
+            dependency_expression(edit.after, right, &compact.input_names),
+            &edit.before.span,
+            &edit.after.span,
+        ) else {
+            continue;
+        };
+        if shown.insert((&edit.before.node, &edit.after.node)) {
+            lines.push(format!(
+                "Edit: {before} -> {after} (before {}:{}; after {}:{})",
+                a.path, a.start_line, b.path, b.start_line
+            ));
+        }
+    }
+    lines
+}
+
+/// Expand resolved value dependencies for display, without evaluating them or
+/// inferring runtime types. Input names use paired positions across snapshots.
+pub(super) fn dependency_expression(
+    dependency: &ResultDependency,
+    side: &FunctionSnapshotResult,
+    names: &[String],
+) -> Option<(String, bool)> {
+    dependency_expression_with_replacement(dependency, side, names, None)
+}
+
+pub(super) fn dependency_expression_with_replacement(
+    dependency: &ResultDependency,
+    side: &FunctionSnapshotResult,
+    names: &[String],
+    replacement: Option<(&NodeId, &str)>,
+) -> Option<(String, bool)> {
+    if dependency.unresolved {
+        return None;
+    }
+    if let Some((node, label)) = replacement
+        && dependency.node == *node
+    {
+        return Some((label.into(), false));
+    }
+    if let Some(Source::FunctionInput(binding)) = &dependency.origin {
+        let slot = side.parameters.iter().position(|item| item == binding)?;
+        return Some((names.get(slot)?.clone(), false));
+    }
+    if let Some(literal) = &dependency.literal {
+        return Some((primitive_text(literal), false));
+    }
+    let inputs = dependency
+        .inputs
+        .iter()
+        .map(|input| dependency_expression_with_replacement(input, side, names, replacement))
+        .collect::<Option<Vec<_>>>()?;
+    if transparent(dependency) {
+        let first = inputs.first()?;
+        return inputs
+            .iter()
+            .all(|input| input == first)
+            .then(|| first.clone());
+    }
+    let operator = dependency.operator.as_ref()?;
+    let expression = match (operator, inputs.as_slice()) {
+        (PrimitiveOperator::UnaryPlus, [(input, _)]) => format!("(+{input})"),
+        (PrimitiveOperator::UnaryMinus, [(input, _)]) => format!("(-{input})"),
+        (PrimitiveOperator::LogicalNot, [(input, _)]) => format!("(!{input})"),
+        (_, [(left, _), (right, _)]) => {
+            let symbol = match operator {
+                PrimitiveOperator::Add => "+",
+                PrimitiveOperator::Subtract => "-",
+                PrimitiveOperator::Multiply => "*",
+                PrimitiveOperator::Divide => "/",
+                PrimitiveOperator::Remainder => "%",
+                PrimitiveOperator::StrictEqual => "===",
+                PrimitiveOperator::StrictNotEqual => "!==",
+                PrimitiveOperator::GreaterThan => ">",
+                PrimitiveOperator::LessThan => "<",
+                _ => return None,
+            };
+            format!("({left} {symbol} {right})")
+        }
+        _ => return None,
+    };
+    Some((expression, true))
+}
+
+pub(super) fn changed_computation_lines(
+    full: &FunctionResultReport,
+    region: &ComparedResultRegion,
+    names: &[String],
+) -> Vec<String> {
+    if !region.value_dependency_changed
+        || full.comparison.input_mapping_coverage != Coverage::Complete
+    {
+        return Vec::new();
+    }
+    let (Some((before_key, (before, before_compute))), Some((after_key, (after, after_compute)))) = (
+        resolved_computation(&full.analysis.before, &region.before_observations, names),
+        resolved_computation(&full.analysis.after, &region.after_observations, names),
+    ) else {
+        return Vec::new();
+    };
+    if before_key == after_key || before == after || !(before_compute || after_compute) {
+        return Vec::new();
+    }
+    let mut lines = vec![
+        format!(
+            "Changed computation under {}:",
+            region_text(&region.region, names)
+        ),
+        format!("  {before} -> {after} ({:?})", region.assessment),
+    ];
+    if let (Some(before), Some(after)) = (&region.before_result, &region.after_result) {
+        lines.push(if before == after {
+            format!("  Reaches return {before}")
+        } else {
+            format!("  Reaches return {before} -> return {after}")
+        });
+    }
+    lines
+}
+
+fn resolved_computation(
+    side: &Option<FunctionSnapshotResult>,
+    refs: &[ResultObservationRef],
+    names: &[String],
+) -> Option<(String, (String, bool))> {
+    let snapshot = side.as_ref()?;
+    let mut expressions = BTreeSet::new();
+    for reference in refs {
+        let (_, item) = observation(side, reference)?;
+        if item.dependency_coverage != Coverage::Complete || item.unknown_completion_before_return {
+            return None;
+        }
+        expressions.insert(match &item.value {
+            ResultValue::Undefined => ("undefined".into(), ("undefined".into(), false)),
+            ResultValue::Expression { dependency, .. } => (
+                dependency_key(dependency, snapshot)?,
+                dependency_expression(dependency, snapshot, names)?,
+            ),
+        });
+    }
+    (expressions.len() == 1).then(|| expressions.into_iter().next().unwrap())
+}
+
+/// Value equality and dependency identity are separate claims. Only the type
+/// theory may remain unresolved here; pairing, path selection and completion
+/// must already be established by the comparison.
+pub(super) fn unchanged_data_flow_line(
+    full: &FunctionResultReport,
+    region: &ComparedResultRegion,
+    names: &[String],
+) -> Option<String> {
+    if full.comparison.input_mapping_coverage != Coverage::Complete
+        || full.comparison.before_entry != full.comparison.after_entry
+        || region.value_dependency_changed
+        || !(region.assessment == ResultAssessment::Equal
+            || matches!(
+                &region.evidence,
+                crate::ifds::model::EvidenceKind::Unresolved {
+                    diagnostic: crate::ifds::model::DiagnosticCode::TypeResolutionUnavailable
+                }
+            ))
+    {
+        return None;
+    }
+    let before = resolved_computation(&full.analysis.before, &region.before_observations, names)?;
+    let after = resolved_computation(&full.analysis.after, &region.after_observations, names)?;
+    if before != after {
+        return None;
+    }
+    let status = if region.assessment == ResultAssessment::Equal {
+        "Equal"
+    } else {
+        "runtime value equality unresolved"
+    };
+    Some(format!(
+        "Unchanged data flow under {}: {} ({status})",
+        region_text(&region.region, names),
+        before.1.0
+    ))
+}
+
+pub(super) fn unchanged_data_flow_summary(
+    compact: &FunctionResultCompactReport,
+    full: &FunctionResultReport,
+) -> (Vec<String>, BTreeSet<usize>) {
+    // Omitted findings must not expand a summary's scope. A complete unchanged
+    // runtime-result summary already covers the all-equal, unchanged-control case.
+    if compact.coverage.presentation != Coverage::Complete
+        || normal_results_unchanged(compact, full)
+    {
+        return (Vec::new(), BTreeSet::new());
+    }
+    let indices: BTreeSet<_> = compact
+        .equal_regions
+        .iter()
+        .chain(&compact.unknown_regions)
+        .filter_map(|region| {
+            unchanged_data_flow_line(
+                full,
+                &full.comparison.regions[region.evidence.index],
+                &compact.input_names,
+            )
+            .map(|_| region.evidence.index)
+        })
+        .collect();
+    if indices.len() < 2 {
+        return (Vec::new(), BTreeSet::new());
+    }
+    let regions = simplify_regions(
+        indices
+            .iter()
+            .map(|index| full.comparison.regions[*index].region.clone())
+            .collect(),
+    );
+    let unknown_count = indices
+        .iter()
+        .filter(|index| full.comparison.regions[**index].assessment == ResultAssessment::Unknown)
+        .count();
+    let status = if unknown_count == 0 {
+        "Equal"
+    } else if unknown_count == indices.len() {
+        "runtime value equality unresolved"
+    } else {
+        "runtime value equality unresolved in some regions"
+    };
+    (
+        vec![format!(
+            "Unchanged data flow under {} ({status})",
+            regions_text(&regions, &compact.input_names)
+        )],
+        indices,
+    )
+}
 
 pub(super) fn conditional_choices(finding: &CompactResultFinding) -> bool {
     finding.effects.len() > 1
@@ -181,6 +440,8 @@ pub(super) fn equal_control_lines(
     full: &FunctionResultReport,
     pair: Option<&GuardPair>,
     verbose: bool,
+    shown_controls: &mut BTreeSet<String>,
+    grouped_unchanged: &BTreeSet<usize>,
 ) -> Vec<String> {
     let mut lines = Vec::new();
     for finding in &full.findings {
@@ -190,7 +451,7 @@ pub(super) fn equal_control_lines(
         // Equal control findings suppressed from JSON alongside changed results
         // are still available through equal_regions. Under a presentation limit,
         // only emit regions whose compact finding survived that limit.
-        let regions: Vec<_> = compact
+        let mut regions: Vec<_> = compact
             .equal_regions
             .iter()
             .filter(|region| {
@@ -203,6 +464,56 @@ pub(super) fn equal_control_lines(
             })
             .collect();
         if regions.is_empty() {
+            continue;
+        }
+        if regions
+            .iter()
+            .all(|region| grouped_unchanged.contains(&region.evidence.index))
+        {
+            let mut control = control_text(full, finding.regions.iter().copied(), pair);
+            if guard_order_text(full, finding.regions.iter().copied()).is_none() {
+                control.push_str(&format!(
+                    " under {} in the common input scope",
+                    regions_text(
+                        &simplify_regions(
+                            regions.iter().map(|region| region.region.clone()).collect()
+                        ),
+                        &compact.input_names
+                    )
+                ));
+                if !finding.attribution_certain {
+                    control.push_str("; Edit attribution uncertain");
+                }
+            }
+            if shown_controls.insert(control.clone()) {
+                lines.push(control);
+            }
+            continue;
+        }
+        regions.retain(|region| !grouped_unchanged.contains(&region.evidence.index));
+        if let Some(control) = guard_order_text(full, finding.regions.iter().copied()) {
+            if shown_controls.insert(control.clone()) {
+                lines.push(control);
+            }
+            for region in regions {
+                let compared = &full.comparison.regions[region.evidence.index];
+                if let Some(line) = unchanged_data_flow_line(full, compared, &compact.input_names) {
+                    lines.push(line);
+                } else {
+                    lines.push(format!(
+                        "Equal results under {}: {} / {}",
+                        region_text(&region.region, &compact.input_names),
+                        region
+                            .before_result
+                            .as_ref()
+                            .map_or_else(|| "unknown".into(), PresentedResult::display),
+                        region
+                            .after_result
+                            .as_ref()
+                            .map_or_else(|| "unknown".into(), PresentedResult::display),
+                    ));
+                }
+            }
             continue;
         }
         let mut results: BTreeMap<(String, String), Vec<BooleanRegion>> = BTreeMap::new();
@@ -257,6 +568,10 @@ pub(super) fn control_text(
     regions: impl Iterator<Item = usize>,
     pair: Option<&GuardPair>,
 ) -> String {
+    let regions: Vec<_> = regions.collect();
+    if let Some(order) = guard_order_text(full, regions.iter().copied()) {
+        return order;
+    }
     // A changed guard must contribute to the displayed regions, rather than
     // merely occur elsewhere in the function.
     let contributes =
@@ -279,6 +594,78 @@ pub(super) fn control_text(
     } else {
         "Control changed (guard correspondence unresolved)".into()
     }
+}
+
+/// A permutation of unique, stable paired-input guards can be described without
+/// matching branches by source position. Guard versions and outcomes must match.
+fn guard_order_text(
+    full: &FunctionResultReport,
+    regions: impl Iterator<Item = usize>,
+) -> Option<String> {
+    if full.comparison.input_mapping_coverage != Coverage::Complete {
+        return None;
+    }
+    let left = full.analysis.before.as_ref()?;
+    let right = full.analysis.after.as_ref()?;
+    let mut orders = BTreeSet::new();
+    for index in regions {
+        let region = &full.comparison.regions[index];
+        let ([left_ref], [right_ref]) = (
+            region.before_observations.as_slice(),
+            region.after_observations.as_slice(),
+        ) else {
+            return None;
+        };
+        let (_, before) = observation(&full.analysis.before, left_ref)?;
+        let (_, after) = observation(&full.analysis.after, right_ref)?;
+        let sequence = |item: &ResultObservation, side: &FunctionSnapshotResult| {
+            item.guards
+                .iter()
+                .map(|guard| {
+                    let (slot, inverted) = input_guard(&guard.condition, side)?;
+                    Some((slot, inverted, guard.outcome))
+                })
+                .collect::<Option<Vec<_>>>()
+        };
+        let before = sequence(before, left)?;
+        let after = sequence(after, right)?;
+        let before_set: BTreeSet<_> = before.iter().copied().collect();
+        let after_set: BTreeSet<_> = after.iter().copied().collect();
+        if before == after || before_set != after_set || before_set.len() != before.len() {
+            return None;
+        }
+        // Outcomes identify the selected path; only guard expressions describe
+        // their evaluation order, so all four truthiness paths share one label.
+        orders.insert((
+            before
+                .into_iter()
+                .map(|(slot, inverted, _)| (slot, inverted))
+                .collect::<Vec<_>>(),
+            after
+                .into_iter()
+                .map(|(slot, inverted, _)| (slot, inverted))
+                .collect::<Vec<_>>(),
+        ));
+    }
+    if orders.len() != 1 {
+        return None;
+    }
+    let (before, after) = orders.into_iter().next()?;
+    let label = |order: Vec<(u32, bool)>| -> Option<String> {
+        order
+            .into_iter()
+            .map(|(slot, inverted)| {
+                let name = left.parameter_names.get(slot as usize)?;
+                Some(format!("{}{name}", if inverted { "!" } else { "" }))
+            })
+            .collect::<Option<Vec<_>>>()
+            .map(|labels| labels.join(" then "))
+    };
+    Some(format!(
+        "Control: guard order {} -> {}",
+        label(before)?,
+        label(after)?
+    ))
 }
 
 pub(super) fn coverage_text(coverage: &FunctionReportCoverage) -> String {

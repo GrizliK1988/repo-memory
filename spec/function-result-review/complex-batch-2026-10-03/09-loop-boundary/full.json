@@ -1,0 +1,482 @@
+{
+  "schema_version": 2,
+  "analysis": {
+    "schema_version": 4,
+    "query": {
+      "before": {
+        "id": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-7aa63804ea43548f",
+          "content_id": "fnv1a64-7aa63804ea43548f"
+        },
+        "repository_id": "local-example"
+      },
+      "after": {
+        "id": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+          "content_id": "fnv1a64-2032045dc9aa1f5a"
+        },
+        "repository_id": "local-example"
+      },
+      "diff": {
+        "before_content_id": "fnv1a64-7aa63804ea43548f",
+        "after_content_id": "fnv1a64-2032045dc9aa1f5a",
+        "changes": [
+          {
+            "kind": "modified",
+            "before_path": "snippet.ts",
+            "after_path": "snippet.ts",
+            "before_content_id": "fnv1a64-7aa63804ea43548f",
+            "after_content_id": "fnv1a64-2032045dc9aa1f5a"
+          }
+        ]
+      },
+      "selected_function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-7aa63804ea43548f",
+          "content_id": "fnv1a64-7aa63804ea43548f"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 234,
+          "start_line": 1,
+          "end_line": 12
+        },
+        "expected_name": "accumulate",
+        "expected_enclosing_symbol": null
+      },
+      "counterpart": null,
+      "before_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "after_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "capabilities": {
+        "stage": 1,
+        "capabilities": [
+          "straight_line"
+        ],
+        "version": "stage-1"
+      },
+      "summaries": [],
+      "limits": {
+        "time_ms": 120000,
+        "memory_bytes": 4294967296,
+        "processed_path_edges": 1000000,
+        "witnesses_per_relation": 3,
+        "output_nodes": 100000
+      }
+    },
+    "counterpart_status": "matched",
+    "input_correspondence": [
+      {
+        "position": 0,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "local": 1
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "local": 1
+        }
+      },
+      {
+        "position": 1,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "local": 2
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "local": 2
+        }
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "before": {
+      "function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-7aa63804ea43548f",
+          "content_id": "fnv1a64-7aa63804ea43548f"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 234,
+          "start_line": 1,
+          "end_line": 12
+        },
+        "expected_name": "accumulate",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-7aa63804ea43548f",
+          "content_id": "fnv1a64-7aa63804ea43548f"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "local": 1
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "local": 2
+        }
+      ],
+      "parameter_names": [
+        "count",
+        "step"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [],
+      "unknown_boundaries": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "local": 8589934602
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_syntax",
+          "message": "unsupported TypeScript construct \"while_statement\"",
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "frontier": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-7aa63804ea43548f",
+              "content_id": "fnv1a64-7aa63804ea43548f"
+            },
+            "local": 8589934602
+          },
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 126,
+            "byte_end": 215,
+            "start_line": 6,
+            "end_line": 9
+          },
+          "affected_flows": []
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "unsupported TypeScript construct \"while_statement\"",
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-7aa63804ea43548f",
+            "content_id": "fnv1a64-7aa63804ea43548f"
+          },
+          "frontier": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-7aa63804ea43548f",
+              "content_id": "fnv1a64-7aa63804ea43548f"
+            },
+            "local": 8589934602
+          },
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 126,
+            "byte_end": 215,
+            "start_line": 6,
+            "end_line": 9
+          },
+          "affected_flows": [
+            "downstream"
+          ]
+        }
+      ],
+      "unknown_frontiers": [
+        {
+          "node": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-7aa63804ea43548f",
+              "content_id": "fnv1a64-7aa63804ea43548f"
+            },
+            "local": 8589934602
+          },
+          "next_operation": "unsupported TypeScript construct \"while_statement\"",
+          "diagnostic": "unsupported_syntax",
+          "affected_direction": "downstream"
+        }
+      ],
+      "coverage": "partial",
+      "limits_hit": []
+    },
+    "after": {
+      "function": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+          "content_id": "fnv1a64-2032045dc9aa1f5a"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 234,
+          "start_line": 1,
+          "end_line": 12
+        },
+        "expected_name": "accumulate",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+          "content_id": "fnv1a64-2032045dc9aa1f5a"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "local": 1
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "local": 2
+        }
+      ],
+      "parameter_names": [
+        "count",
+        "step"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [],
+      "unknown_boundaries": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "local": 8589934602
+        }
+      ],
+      "diagnostics": [
+        {
+          "code": "unsupported_syntax",
+          "message": "unsupported TypeScript construct \"while_statement\"",
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "frontier": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+              "content_id": "fnv1a64-2032045dc9aa1f5a"
+            },
+            "local": 8589934602
+          },
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 126,
+            "byte_end": 215,
+            "start_line": 6,
+            "end_line": 9
+          },
+          "affected_flows": []
+        },
+        {
+          "code": "unsupported_syntax",
+          "message": "unsupported TypeScript construct \"while_statement\"",
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+            "content_id": "fnv1a64-2032045dc9aa1f5a"
+          },
+          "frontier": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+              "content_id": "fnv1a64-2032045dc9aa1f5a"
+            },
+            "local": 8589934602
+          },
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 126,
+            "byte_end": 215,
+            "start_line": 6,
+            "end_line": 9
+          },
+          "affected_flows": [
+            "downstream"
+          ]
+        }
+      ],
+      "unknown_frontiers": [
+        {
+          "node": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-2032045dc9aa1f5a",
+              "content_id": "fnv1a64-2032045dc9aa1f5a"
+            },
+            "local": 8589934602
+          },
+          "next_operation": "unsupported TypeScript construct \"while_statement\"",
+          "diagnostic": "unsupported_syntax",
+          "affected_direction": "downstream"
+        }
+      ],
+      "coverage": "partial",
+      "limits_hit": []
+    }
+  },
+  "comparison": {
+    "function_presence": "both",
+    "before_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "after_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "before_observations": [],
+    "after_observations": [],
+    "common_domain_status": "present",
+    "common_domain": [
+      {
+        "values": {}
+      }
+    ],
+    "before_only_domain": [],
+    "after_only_domain": [],
+    "outside_both_domain": [],
+    "unresolved_domain": [],
+    "before_flow": [
+      {
+        "region": {
+          "values": {}
+        },
+        "result": null,
+        "observations": [],
+        "completion": "partial",
+        "unknown_reason": "normal completion or result selection is unresolved"
+      }
+    ],
+    "after_flow": [
+      {
+        "region": {
+          "values": {}
+        },
+        "result": null,
+        "observations": [],
+        "completion": "partial",
+        "unknown_reason": "normal completion or result selection is unresolved"
+      }
+    ],
+    "regions": [
+      {
+        "region": {
+          "values": {}
+        },
+        "before_result": null,
+        "after_result": null,
+        "before_observations": [],
+        "after_observations": [],
+        "assessment": "unknown",
+        "evidence": {
+          "unresolved": {
+            "diagnostic": "unproven_path_feasibility"
+          }
+        },
+        "proof": null,
+        "control_changed": false,
+        "value_dependency_changed": false,
+        "return_structure_changed": false,
+        "unknown_reason": "normal completion or result selection is unresolved"
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "source_alignment_coverage": "partial",
+    "comparison_coverage": "partial",
+    "limits_hit": []
+  },
+  "findings": [
+    {
+      "assessment": "unknown",
+      "before_result": null,
+      "after_result": null,
+      "regions": [
+        0
+      ],
+      "control_changed": false,
+      "value_dependency_changed": false,
+      "return_structure_changed": false,
+      "before_locations": [],
+      "after_locations": [],
+      "attribution_certain": false
+    }
+  ]
+}

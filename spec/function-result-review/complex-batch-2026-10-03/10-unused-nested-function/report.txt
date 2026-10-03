@@ -1,0 +1,4 @@
+Function result: outer
+Unchanged data flow under always (runtime value equality unresolved)
+Coverage: result comparison Partial; source alignment Partial
+Evidence: full.json (ifds-function-116ab92915820665)

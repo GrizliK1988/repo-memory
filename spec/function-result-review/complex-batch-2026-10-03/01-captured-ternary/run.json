@@ -1,0 +1,24 @@
+{
+  "slug": "01-captured-ternary",
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "/home/dima/Develop/repo-memory/Cargo.toml",
+    "--example",
+    "ifds_compare",
+    "--",
+    "before.ts",
+    "after.ts",
+    "--function",
+    "archive",
+    "--format",
+    "text",
+    "--evidence-out",
+    "full.json"
+  ],
+  "cwd": "/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/01-captured-ternary",
+  "exit_code": 0
+}

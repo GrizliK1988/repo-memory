@@ -196,6 +196,11 @@ reachable return computation or source-selection rule gives `changed`. Use
 `unknown` when reachability, input pairing, dependencies, or matching prevents
 even that structural conclusion. A separate finding still records a changed
 condition or expression when the value relation is `equal` or `different`.
+An established change needs no runtime type restriction on the paired inputs:
+`p + 1` becoming `p + 2`, `p + q` becoming `p + r`, or returning `q` instead of
+`p` gives `changed` when the selected result dependencies and normal completion
+are resolved. Type information used for pure-expression equality must not block
+that structural assessment.
 Do not evaluate an expression merely to produce `changed`. An edit overwritten
 before every return is not a changed result computation.
 
@@ -226,9 +231,11 @@ Evaluate only the supported operations with defined language semantics. Primitiv
 result equality is an observational comparison of type and value, not JavaScript
 strict equality. If special numeric values are modeled, use SameValue semantics:
 NaN equals NaN and positive and negative zero differ. The first delivery need not
-model those special values; until it does, their relations are unknown. Unsupported
-numeric reasoning, coercions, independent object identity, or expression
-equivalence stays unknown. Broader predicate theories remain owned by K032.
+model those special values; until it does, their value relations are unknown.
+Unsupported numeric reasoning, coercions, independent object identity, or
+expression equivalence cannot prove `equal` or `different`; an independently
+resolved change to result dependencies can still give `changed`. Broader predicate
+theories remain owned by K032.
 
 Paired input identity proves return of the same unchanged supplied value without
 evaluating it. It applies to direct returns, copies, and the selected operands of

@@ -1,0 +1,558 @@
+[
+  {
+    "slug": "01-captured-ternary",
+    "title": "Сохранённое вычисление, перезаписи и ранний выход",
+    "function": "archive",
+    "before": "function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {\n  if (!enabled) return 0;\n\n  let current = a + b;\n  const saved = current * 3;\n\n  current = a - b;\n  if (override) current = 100;\n\n  return useSaved ? saved + current : current;\n}\n",
+    "after": "function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {\n  if (!enabled) return 0;\n\n  let current = a - b;\n  const saved = current * 3;\n\n  current = a - b;\n  if (override) current = 100;\n\n  return useSaved ? saved + current : current;\n}\n",
+    "expectation": "Data flow меняется только при enabled && useSaved. Сохранённая копия переживает перезаписи current; override влияет на окружающее вычисление, но не на область изменения.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true,
+          true
+        ],
+        "before": 0,
+        "after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          false
+        ],
+        "before": 3,
+        "after": 3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          true
+        ],
+        "before": 100,
+        "after": 100
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          false
+        ],
+        "before": 24,
+        "after": 12
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true
+        ],
+        "before": 121,
+        "after": 109
+      }
+    ]
+  },
+  {
+    "slug": "02-killed-edit",
+    "title": "Изменённая запись уничтожена двумя уровнями присваиваний",
+    "function": "killed",
+    "before": "function killed(a: number, b: number, first: boolean, second: boolean) {\n  let value = a + b;\n  const unused = value * 2;\n\n  if (first) value = a;\n  else value = b;\n\n  if (second) value = 10;\n  else value = 20;\n\n  const copy = value;\n  return copy;\n}\n",
+    "after": "function killed(a: number, b: number, first: boolean, second: boolean) {\n  let value = a - b;\n  const unused = value * 2;\n\n  if (first) value = a;\n  else value = b;\n\n  if (second) value = 10;\n  else value = 20;\n\n  const copy = value;\n  return copy;\n}\n",
+    "expectation": "Изменение не достигает возврата ни в одной ветке: second выбирает 10 или 20. Сравниваются нормальные возвраты, а не все возможные эффекты выполнения арифметики.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 20,
+        "after": 20
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": 10,
+        "after": 10
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": 20,
+        "after": 20
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 10,
+        "after": 10
+      }
+    ]
+  },
+  {
+    "slug": "03-guard-version",
+    "title": "Снимок условия и новая версия изменяемого guard",
+    "function": "versioned",
+    "before": "function versioned(a: number, b: number, first: boolean, second: boolean) {\n  let decision = first;\n  const original = decision;\n  decision = !decision;\n\n  let value = a;\n  if (original) value = a + b;\n  if (decision) value = b - a;\n\n  return value;\n}\n",
+    "after": "function versioned(a: number, b: number, first: boolean, second: boolean) {\n  let decision = first;\n  const original = decision;\n  decision = second;\n\n  let value = a;\n  if (original) value = a + b;\n  if (decision) value = b - a;\n\n  return value;\n}\n",
+    "expectation": "До изменения decision равен !first, после — second. Data flow меняется при (!first && !second) || (first && second); original остаётся снимком first.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": -3,
+        "after": 5
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": -3,
+        "after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": 7,
+        "after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 7,
+        "after": -3
+      }
+    ]
+  },
+  {
+    "slug": "04-repeated-swapped-operands",
+    "title": "Перестановка операндов через копии и повторное чтение",
+    "function": "repeated",
+    "before": "function repeated(a: number, b: number, reverse: boolean, negate: boolean) {\n  let left = a;\n  let right = b;\n  if (reverse) {\n    left = b;\n    right = a;\n  }\n\n  const delta = left - right;\n  const doubled = delta + delta;\n  return negate ? -doubled : doubled;\n}\n",
+    "after": "function repeated(a: number, b: number, reverse: boolean, negate: boolean) {\n  let left = a;\n  let right = b;\n  if (reverse) {\n    left = b;\n    right = a;\n  }\n\n  const delta = right - left;\n  const doubled = delta + delta;\n  return negate ? -doubled : doubled;\n}\n",
+    "expectation": "Data flow меняется во всех четырёх сочетаниях reverse/negate: важны роли операндов, а не набор источников {a,b}. Повторное чтение delta не должно смешивать разные версии записи. Изменение не доказывает неравенство значений при любых входах.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 6,
+        "after": -6
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": -6,
+        "after": 6
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": -6,
+        "after": 6
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 6,
+        "after": -6
+      },
+      {
+        "args": [
+          2,
+          2,
+          false,
+          false
+        ],
+        "before": 0,
+        "after": 0
+      }
+    ]
+  },
+  {
+    "slug": "05-skipped-call",
+    "title": "Короткое замыкание и выполненный неизвестный вызов",
+    "function": "skipped",
+    "before": "function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {\n  const captured = enabled && mystery(a);\n  if (!enabled) return a + b;\n\n  const fallback = b - a;\n  return chooseCaptured ? captured : fallback;\n}\n",
+    "after": "function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {\n  const captured = enabled && mystery(b);\n  if (!enabled) return a + b;\n\n  const fallback = b - a;\n  return chooseCaptured ? captured : fallback;\n}\n",
+    "expectation": "При !enabled вызов пропущен и data flow возврата не меняется. При enabled результат/завершение неизвестны даже при !chooseCaptured: вызов уже был выполнен. Для числовых контрольных сценариев отдельно задана модель mystery(x)=x*3; CLI этой модели не получает.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 7,
+        "after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": 7,
+        "after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": -3,
+        "after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 15,
+        "after": 6
+      }
+    ]
+  },
+  {
+    "slug": "06-nested-selectors",
+    "title": "Два условных источника, ранний выход и смена знака",
+    "function": "selectors",
+    "before": "function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {\n  if (!enabled) return 0;\n\n  const left = first ? a : b;\n  const right = second ? b : a;\n  const frozen = left - right;\n\n  return negate ? -frozen : frozen;\n}\n",
+    "after": "function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {\n  if (!enabled) return 0;\n\n  const left = first ? a : b;\n  const right = second ? a : b;\n  const frozen = left - right;\n\n  return negate ? -frozen : frozen;\n}\n",
+    "expectation": "При enabled выбранный правый операнд меняется во всех сочетаниях first/second/negate. При !enabled возврат 0 не меняется. Источники после изменения могут совпасть внутри одного вычисления — это не повод потерять роли операндов.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          false,
+          false
+        ],
+        "before": 0,
+        "after": 3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true,
+          false
+        ],
+        "before": 3,
+        "after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          false,
+          false
+        ],
+        "before": -3,
+        "after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true,
+          true
+        ],
+        "before": -3,
+        "after": {
+          "special": "-0"
+        }
+      }
+    ]
+  },
+  {
+    "slug": "07-nullish-and-overwrite",
+    "title": "Nullish-выбор, сохранённая копия и независимый возврат",
+    "function": "nullish",
+    "before": "function nullish(a: number, b: number, useSaved: boolean) {\n  let selected = a ?? b;\n  const saved = selected + 1;\n\n  selected = 100;\n  if (useSaved) return saved;\n  return selected;\n}\n",
+    "after": "function nullish(a: number, b: number, useSaved: boolean) {\n  let selected = a ?? b;\n  const saved = selected + 2;\n\n  selected = 100;\n  if (useSaved) return saved;\n  return selected;\n}\n",
+    "expectation": "Логически вычисление saved меняется при useSaved, а при !useSaved возвращается 100. На unrestricted-входе falsy не означает nullish: 0 должен остаться выбранным a, null должен выбрать b. Консервативный Unknown при неясном выборе — ограничение точности, а не доказательство отсутствия изменения.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          true
+        ],
+        "before": 6,
+        "after": 7
+      },
+      {
+        "args": [
+          0,
+          2,
+          true
+        ],
+        "before": 1,
+        "after": 2
+      },
+      {
+        "args": [
+          null,
+          2,
+          true
+        ],
+        "before": 3,
+        "after": 4
+      },
+      {
+        "args": [
+          null,
+          2,
+          false
+        ],
+        "before": 100,
+        "after": 100
+      },
+      {
+        "args": [
+          0,
+          2,
+          false
+        ],
+        "before": 100,
+        "after": 100
+      }
+    ]
+  },
+  {
+    "slug": "08-reassociation",
+    "title": "Перегруппировка арифметики с округлением и ранним возвратом",
+    "function": "association",
+    "before": "function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {\n  const total = (a + b) + c;\n  const doubled = total * 2;\n\n  if (skip) return 0;\n  return negate ? -doubled : doubled;\n}\n",
+    "after": "function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {\n  const total = a + (b + c);\n  const doubled = total * 2;\n\n  if (skip) return 0;\n  return negate ? -doubled : doubled;\n}\n",
+    "expectation": "Структура вычисления меняется при !skip, при skip возврат 0 прежний. Алгебраическая ассоциативность не доказывает равенство JS number: при [1e16,-1e16,1,false,false] результат 2 -> 0. При [1,2,3,false,false] значения совпадают, хотя data flow изменился.",
+    "samples": [
+      {
+        "args": [
+          10000000000000000,
+          -10000000000000000,
+          1,
+          false,
+          false
+        ],
+        "before": 2,
+        "after": 0
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          false,
+          false
+        ],
+        "before": 12,
+        "after": 12
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          false,
+          true
+        ],
+        "before": -12,
+        "after": -12
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": 0
+      }
+    ]
+  },
+  {
+    "slug": "09-loop-boundary",
+    "title": "Накопление в цикле и ветка нулевых итераций",
+    "function": "accumulate",
+    "before": "function accumulate(count: number, step: number) {\n  let remaining = count;\n  let total = 0;\n  const increment = step + 1;\n\n  while (remaining > 0) {\n    total = total + increment;\n    remaining = remaining - 1;\n  }\n\n  return total;\n}\n",
+    "after": "function accumulate(count: number, step: number) {\n  let remaining = count;\n  let total = 0;\n  const increment = step + 2;\n\n  while (remaining > 0) {\n    total = total + increment;\n    remaining = remaining - 1;\n  }\n\n  return total;\n}\n",
+    "expectation": "Для положительного конечного целого count нормальный числовой результат меняется; при count=0 результат 0. Циклы исключены из первого function-result subset: нужен явный Unknown/Unsupported, а не заявление об общей неизменности или завершении цикла для всех unrestricted-входов.",
+    "samples": [
+      {
+        "args": [
+          0,
+          3
+        ],
+        "before": 0,
+        "after": 0
+      },
+      {
+        "args": [
+          1,
+          3
+        ],
+        "before": 4,
+        "after": 5
+      },
+      {
+        "args": [
+          2,
+          3
+        ],
+        "before": 8,
+        "after": 10
+      },
+      {
+        "args": [
+          3,
+          0
+        ],
+        "before": 3,
+        "after": 6
+      }
+    ]
+  },
+  {
+    "slug": "10-unused-nested-function",
+    "title": "Изменение невызванной вложенной функции с захватом входов",
+    "function": "outer",
+    "before": "function outer(a: number, b: number, flag: boolean) {\n  function helper(value: number) {\n    let candidate = value + a;\n    if (flag) candidate = candidate + b;\n    return candidate * 2;\n  }\n\n  let current = a - b;\n  const saved = current;\n  current = b - a;\n  if (flag) return saved;\n  return current;\n}\n",
+    "after": "function outer(a: number, b: number, flag: boolean) {\n  function helper(value: number) {\n    let candidate = value - a;\n    if (flag) candidate = candidate + b;\n    return candidate * 2;\n  }\n\n  let current = a - b;\n  const saved = current;\n  current = b - a;\n  if (flag) return saved;\n  return current;\n}\n",
+    "expectation": "helper не вызывается; его возвраты и изменённое вычисление не должны попадать в результат outer. Data flow outer не меняется на всех входах с установленным нормальным возвратом; глобальная source alignment может остаться Partial из-за изменения файла.",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false
+        ],
+        "before": -3,
+        "after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true
+        ],
+        "before": 3,
+        "after": 3
+      },
+      {
+        "args": [
+          2,
+          5,
+          false
+        ],
+        "before": 3,
+        "after": 3
+      },
+      {
+        "args": [
+          2,
+          5,
+          true
+        ],
+        "before": -3,
+        "after": -3
+      }
+    ]
+  }
+]

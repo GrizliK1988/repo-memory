@@ -1,0 +1,17 @@
+Function result: versioned
+Unchanged data flow under (!first && second) || (first && !second) (runtime value equality unresolved)
+Edit attribution uncertain
+Control changed (guard correspondence unresolved)
+Changed computation under first && second:
+  (a + b) -> (b - a) (Changed)
+  Reaches return value
+Before contributing writes: snippet.ts:7
+After contributing writes: snippet.ts:8
+Edit attribution uncertain
+Changed computation under !first && !second:
+  (b - a) -> a (Changed)
+  Reaches return value
+Before contributing writes: snippet.ts:8
+After contributing writes: snippet.ts:6
+Coverage: result comparison Partial; source alignment Partial
+Evidence: full.json (ifds-function-b3094789d161c137)

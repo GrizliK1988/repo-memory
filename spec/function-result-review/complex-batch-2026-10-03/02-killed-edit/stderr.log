@@ -1,0 +1,2 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dima/Develop/repo-memory/target/debug/examples/ifds_compare before.ts after.ts --function killed --format text --evidence-out full.json`

@@ -51,6 +51,55 @@ restrictions, independent analysis/comparison coverage, limits, presentation
 omissions, open boundaries, and the exact evidence link. The flag works only with
 text format, for either target; JSON combinations fail before source/evidence I/O.
 
+For function targets, a resolved change to return dependencies is `Changed`
+without runtime type information or a proof of unequal values. When the return
+expression stays the same through a saved copy, text shows
+`Changed computation under <condition>` with the expanded before/after
+dependencies and the return they reach. This requires complete input
+correspondence and resolved dependencies through normal completion; transparent
+copies are expanded using paired input names. Unresolved calls, input pairing,
+and result selection retain `Unknown` and their reasons.
+
+When resolved return dependencies match but runtime value equality lacks a type
+proof, function text states `Unchanged data flow` with the expanded computation
+and `runtime value equality unresolved`. This requires complete input pairing,
+established path selection and normal completion, and identical entry assumptions.
+The structured assessment remains `Unknown`, so result-comparison coverage is
+still partial. Matching source text or unresolved calls do not establish this
+dependency identity.
+
+Short function text groups established unchanged dependency regions by their
+union, even when different computations supply their results. For example,
+three unchanged paths in a two-guard overwrite become `!first || !second`.
+The summary preserves whether runtime equality is proven everywhere, unresolved
+everywhere, or unresolved in part of that union. Verbose text retains the separate
+computations and conditions. Unknown dependencies and omitted presentation groups
+cannot enlarge this union; structured regions and evidence remain unchanged.
+
+A proven permutation of unique pure paired-input guards is shown once as
+`Control: guard order ... -> ...`. Guard versions and outcomes must match;
+unsupported predicates and ambiguous correspondence retain uncertainty.
+Short text omits the return-choice table when expanded computations already
+explain every changed effect with its full same-input condition.
+
+Function edit attribution also follows resolved dependencies behind unchanged
+return expressions. One source operation shared by all affected return paths
+can establish attribution even when there are several observations. Pairing
+requires matching relative source lines, node shapes, operand roles, guards, and
+positional inputs; unresolved dependencies, changed entry assumptions, or several
+candidate edits retain uncertainty. Text shows the unique edit once with both
+source positions. This local attribution does not imply complete alignment of
+every source operation in the file.
+
+When one changed read in a return expression has the same resolved dependency
+on several paths, short text shows that computation and its shared writes once.
+Each path then shows the surrounding return expression using the read's source
+name, its exact condition, and the remaining before/after writes. Grouping
+requires a unique shared edit, identical shared dependencies and writes, and all
+grouped regions to survive the presentation limit. Independent edits and
+ambiguous repeated reads retain separate effects. Verbose text retains the full
+before/after computation for every path; JSON and evidence are unchanged.
+
 The API's `render_text(&full)` and `render_verbose_text(&full)` consume the same
 compact facts and exact full report. These methods now require the full evidence
 to expose its limits and boundaries and verify report identity. The original

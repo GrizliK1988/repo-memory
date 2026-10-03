@@ -1,0 +1,15 @@
+Function result: association
+Edit attribution uncertain
+Changed computation under !skip && !negate:
+  (((a + b) + c) * 2) -> ((a + (b + c)) * 2) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:2, snippet.ts:3
+After contributing writes: snippet.ts:2, snippet.ts:3
+Edit attribution uncertain
+Changed computation under !skip && negate:
+  (-(((a + b) + c) * 2)) -> (-((a + (b + c)) * 2)) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:2, snippet.ts:3
+After contributing writes: snippet.ts:2, snippet.ts:3
+Coverage: result comparison Complete; source alignment Partial
+Evidence: full.json (ifds-function-6558469aee1be67a)

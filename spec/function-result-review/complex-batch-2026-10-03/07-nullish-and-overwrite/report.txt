@@ -1,0 +1,11 @@
+Function result: nullish
+Edit: 1 -> 2 (before snippet.ts:3; after snippet.ts:3)
+Changed computation under a && useSaved:
+  (a + 1) -> (a + 2) (Changed)
+  Reaches return saved
+Before contributing writes: snippet.ts:2, snippet.ts:3
+After contributing writes: snippet.ts:2, snippet.ts:3
+Edit attribution uncertain
+Unknown under !a: normal completion or result selection is unresolved
+Coverage: result comparison Partial; source alignment Partial
+Evidence: full.json (ifds-function-29c914b997a7bb2c)

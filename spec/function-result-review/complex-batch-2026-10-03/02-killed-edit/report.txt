@@ -1,0 +1,4 @@
+Function result: killed
+Normal results unchanged on common inputs: always (under the recorded entry assumptions).
+Coverage: result comparison Complete; source alignment Partial
+Evidence: full.json (ifds-function-cdd967feba9cf6b7)

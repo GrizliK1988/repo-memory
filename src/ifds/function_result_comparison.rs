@@ -11,6 +11,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub enum ResultAssessment {
     Equal,
     Different,
+    /// Resolved result computation or source selection changed; runtime values
+    /// need not be evaluated or proven unequal.
     Changed,
     Unknown,
 }
@@ -352,28 +354,15 @@ fn assess(
     }
     let before = normalized_known_term(before, before_entry);
     let after = normalized_known_term(after, after_entry);
-    if let (ValueTerm::Literal(a), ValueTerm::Literal(b)) = (&before, &after) {
-        let assessment = literal_relation(a, b).unwrap_or(ResultAssessment::Unknown);
-        return (
-            assessment,
-            (assessment != ResultAssessment::Unknown).then_some(ResultProof::PrimitiveValues),
-        );
-    }
-    if term_type(&before, before_entry, after_entry).is_none()
-        || term_type(&after, before_entry, after_entry).is_none()
+    if let (ValueTerm::Literal(a), ValueTerm::Literal(b)) = (&before, &after)
+        && let Some(assessment) = literal_relation(a, b)
     {
-        (ResultAssessment::Unknown, None)
-    } else if before == after {
-        (
-            ResultAssessment::Equal,
-            Some(if matches!(before, ValueTerm::Input(_)) {
-                ResultProof::PairedInputIdentity
-            } else {
-                ResultProof::PureExpressionIdentity
-            }),
-        )
-    } else {
-        (
+        return (assessment, Some(ResultProof::PrimitiveValues));
+    }
+    // A resolved structural change is sufficient evidence of changed data flow.
+    // Runtime type information is needed only for pure-expression equality.
+    if before != after {
+        return (
             ResultAssessment::Changed,
             Some(
                 if matches!(
@@ -385,6 +374,16 @@ fn assess(
                     ResultProof::ChangedComputation
                 },
             ),
+        );
+    }
+    if term_type(&before, before_entry, after_entry).is_none()
+        || term_type(&after, before_entry, after_entry).is_none()
+    {
+        (ResultAssessment::Unknown, None)
+    } else {
+        (
+            ResultAssessment::Equal,
+            Some(ResultProof::PureExpressionIdentity),
         )
     }
 }
@@ -1555,11 +1554,31 @@ mod tests {
             assert_eq!(result.comparison_coverage, Coverage::Complete);
         }
 
-        for after in [
-            "function result(p, q) { return q; }",
-            "function result(p, q) { p = q; return p; }",
-            "function result(p, q) { return p + 1; }",
-            "function result(p, q) { mystery(); return p; }",
+        for (after, assessment, proof, coverage) in [
+            (
+                "function result(p, q) { return q; }",
+                ResultAssessment::Changed,
+                Some(ResultProof::ChangedSourceSelection),
+                Coverage::Complete,
+            ),
+            (
+                "function result(p, q) { p = q; return p; }",
+                ResultAssessment::Changed,
+                Some(ResultProof::ChangedSourceSelection),
+                Coverage::Complete,
+            ),
+            (
+                "function result(p, q) { return p + 1; }",
+                ResultAssessment::Changed,
+                Some(ResultProof::ChangedComputation),
+                Coverage::Complete,
+            ),
+            (
+                "function result(p, q) { mystery(); return p; }",
+                ResultAssessment::Unknown,
+                None,
+                Coverage::Partial,
+            ),
         ] {
             let result = compare_sources(
                 "function result(p, q) { return p; }",
@@ -1568,11 +1587,11 @@ mod tests {
                 FunctionEntry::default(),
             );
             assert_eq!(
-                result.regions[0].assessment,
-                ResultAssessment::Unknown,
+                result.regions[0].assessment, assessment,
                 "{after}: {result:#?}"
             );
-            assert_eq!(result.comparison_coverage, Coverage::Partial);
+            assert_eq!(result.regions[0].proof, proof);
+            assert_eq!(result.comparison_coverage, coverage);
         }
         let mut analysis = analyze_sources(
             "function result(p) { return p; }",
@@ -2109,15 +2128,55 @@ mod tests {
         let before = "function add(input: number) { return input + 1; }";
         let after = "function add(input: number) { return input + 2; }";
         let entry = entry(&[(0, PrimitiveDomain::Number)]);
-        let changed = compare_sources(before, after, entry.clone(), entry.clone());
-        assert_eq!(changed.regions.len(), 1, "{changed:#?}");
-        assert_eq!(changed.regions[0].assessment, ResultAssessment::Changed);
+        for scope in [FunctionEntry::default(), entry.clone()] {
+            let changed = compare_sources(before, after, scope.clone(), scope);
+            assert_eq!(changed.regions.len(), 1, "{changed:#?}");
+            assert_eq!(changed.regions[0].assessment, ResultAssessment::Changed);
+            assert_eq!(
+                changed.regions[0].proof,
+                Some(ResultProof::ChangedComputation)
+            );
+            assert_eq!(changed.comparison_coverage, Coverage::Complete);
+        }
         let equal = compare_sources(before, before, entry.clone(), entry);
         assert_eq!(
             equal.regions[0].assessment,
             ResultAssessment::Equal,
             "{equal:#?}"
         );
+    }
+
+    #[test]
+    fn changed_flow_between_two_inputs_requires_no_runtime_type_or_value_proof() {
+        let before = "function sum(a, b, c) { const saved = a + b; a = 100; return saved; }";
+        for after in [
+            "function sum(a, b, c) { const saved = a - b; a = 100; return saved; }",
+            "function sum(a, b, c) { const saved = a + c; a = 100; return saved; }",
+        ] {
+            let result = compare_sources(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            assert_eq!(result.regions.len(), 1, "{result:#?}");
+            let region = &result.regions[0];
+            assert_eq!(region.assessment, ResultAssessment::Changed);
+            assert_eq!(region.proof, Some(ResultProof::ChangedComputation));
+            assert!(region.value_dependency_changed);
+            assert_eq!(region.evidence, EvidenceKind::Supported);
+            assert!(region.unknown_reason.is_none());
+            assert_eq!(result.comparison_coverage, Coverage::Complete);
+        }
+        let overwritten = "function sum(a, b, c) { let saved = a + b; saved = 100; return saved; }";
+        let result = compare_sources(
+            overwritten,
+            &overwritten.replace("a + b", "a + c"),
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        assert_eq!(result.regions[0].assessment, ResultAssessment::Equal);
+        assert!(!result.regions[0].value_dependency_changed);
     }
 
     #[test]

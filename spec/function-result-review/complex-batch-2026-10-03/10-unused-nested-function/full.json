@@ -1,0 +1,4151 @@
+{
+  "schema_version": 2,
+  "analysis": {
+    "schema_version": 4,
+    "query": {
+      "before": {
+        "id": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-66ff595c126ac171",
+          "content_id": "fnv1a64-66ff595c126ac171"
+        },
+        "repository_id": "local-example"
+      },
+      "after": {
+        "id": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+        },
+        "repository_id": "local-example"
+      },
+      "diff": {
+        "before_content_id": "fnv1a64-66ff595c126ac171",
+        "after_content_id": "fnv1a64-c501c14ff5fb4cbf",
+        "changes": [
+          {
+            "kind": "modified",
+            "before_path": "snippet.ts",
+            "after_path": "snippet.ts",
+            "before_content_id": "fnv1a64-66ff595c126ac171",
+            "after_content_id": "fnv1a64-c501c14ff5fb4cbf"
+          }
+        ]
+      },
+      "selected_function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-66ff595c126ac171",
+          "content_id": "fnv1a64-66ff595c126ac171"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 304,
+          "start_line": 1,
+          "end_line": 13
+        },
+        "expected_name": "outer",
+        "expected_enclosing_symbol": null
+      },
+      "counterpart": null,
+      "before_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "after_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "capabilities": {
+        "stage": 1,
+        "capabilities": [
+          "straight_line"
+        ],
+        "version": "stage-1"
+      },
+      "summaries": [],
+      "limits": {
+        "time_ms": 120000,
+        "memory_bytes": 4294967296,
+        "processed_path_edges": 1000000,
+        "witnesses_per_relation": 3,
+        "output_nodes": 100000
+      }
+    },
+    "counterpart_status": "matched",
+    "input_correspondence": [
+      {
+        "position": 0,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 1
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 1
+        }
+      },
+      {
+        "position": 1,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 2
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 2
+        }
+      },
+      {
+        "position": 2,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 3
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 3
+        }
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "before": {
+      "function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-66ff595c126ac171",
+          "content_id": "fnv1a64-66ff595c126ac171"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 304,
+          "start_line": 1,
+          "end_line": 13
+        },
+        "expected_name": "outer",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-66ff595c126ac171",
+          "content_id": "fnv1a64-66ff595c126ac171"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 1
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 2
+        },
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 3
+        }
+      ],
+      "parameter_names": [
+        "a",
+        "b",
+        "flag"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-66ff595c126ac171",
+              "content_id": "fnv1a64-66ff595c126ac171"
+            },
+            "local": 8589934609
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 271,
+            "byte_end": 284,
+            "start_line": 11,
+            "end_line": 11
+          },
+          "effective_condition": "flag",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934606
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 264,
+                "byte_end": 270,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "outcome": true,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                    "content_id": "fnv1a64-66ff595c126ac171"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 265,
+                  "byte_end": 269,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                        "content_id": "fnv1a64-66ff595c126ac171"
+                      },
+                      "local": 8589934605
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 265,
+                      "byte_end": 269,
+                      "start_line": 11,
+                      "end_line": 11
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                              "content_id": "fnv1a64-66ff595c126ac171"
+                            },
+                            "local": 3
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "saved",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 278,
+              "byte_end": 283,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934608
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 278,
+                "byte_end": 283,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                      "content_id": "fnv1a64-66ff595c126ac171"
+                    },
+                    "local": 8589934608
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 278,
+                    "byte_end": 283,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934600
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 223,
+                        "byte_end": 238,
+                        "start_line": 9,
+                        "end_line": 9
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934600
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                              "content_id": "fnv1a64-66ff595c126ac171"
+                            },
+                            "local": 8589934599
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 231,
+                            "byte_end": 238,
+                            "start_line": 9,
+                            "end_line": 9
+                          },
+                          "role": null,
+                          "operation": "read",
+                          "literal": null,
+                          "operator": null,
+                          "origin": null,
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "before",
+                                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                  "content_id": "fnv1a64-66ff595c126ac171"
+                                },
+                                "local": 8589934599
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 231,
+                                "byte_end": 238,
+                                "start_line": 9,
+                                "end_line": 9
+                              },
+                              "role": null,
+                              "operation": "binding_value",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "before",
+                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                    },
+                                    "local": 8589934598
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 198,
+                                    "byte_end": 213,
+                                    "start_line": 8,
+                                    "end_line": 8
+                                  },
+                                  "role": null,
+                                  "operation": "write",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": {
+                                    "kind": "write",
+                                    "value": {
+                                      "snapshot": {
+                                        "side": "before",
+                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                      },
+                                      "local": 8589934598
+                                    }
+                                  },
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "before",
+                                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                          "content_id": "fnv1a64-66ff595c126ac171"
+                                        },
+                                        "local": 8589934597
+                                      },
+                                      "span": {
+                                        "path": "snippet.ts",
+                                        "byte_start": 208,
+                                        "byte_end": 213,
+                                        "start_line": 8,
+                                        "end_line": 8
+                                      },
+                                      "role": null,
+                                      "operation": "compute:Subtract",
+                                      "literal": null,
+                                      "operator": {
+                                        "kind": "subtract"
+                                      },
+                                      "origin": null,
+                                      "inputs": [
+                                        {
+                                          "node": {
+                                            "snapshot": {
+                                              "side": "before",
+                                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                              "content_id": "fnv1a64-66ff595c126ac171"
+                                            },
+                                            "local": 8589934595
+                                          },
+                                          "span": {
+                                            "path": "snippet.ts",
+                                            "byte_start": 208,
+                                            "byte_end": 209,
+                                            "start_line": 8,
+                                            "end_line": 8
+                                          },
+                                          "role": {
+                                            "kind": "operand",
+                                            "index": 0
+                                          },
+                                          "operation": "read",
+                                          "literal": null,
+                                          "operator": null,
+                                          "origin": null,
+                                          "inputs": [
+                                            {
+                                              "node": {
+                                                "snapshot": {
+                                                  "side": "before",
+                                                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                  "content_id": "fnv1a64-66ff595c126ac171"
+                                                },
+                                                "local": 8589934595
+                                              },
+                                              "span": {
+                                                "path": "snippet.ts",
+                                                "byte_start": 208,
+                                                "byte_end": 209,
+                                                "start_line": 8,
+                                                "end_line": 8
+                                              },
+                                              "role": null,
+                                              "operation": "binding_value",
+                                              "literal": null,
+                                              "operator": null,
+                                              "origin": null,
+                                              "inputs": [
+                                                {
+                                                  "node": {
+                                                    "snapshot": {
+                                                      "side": "before",
+                                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                                    },
+                                                    "local": 8589934593
+                                                  },
+                                                  "span": null,
+                                                  "role": null,
+                                                  "operation": "positional_input",
+                                                  "literal": null,
+                                                  "operator": null,
+                                                  "origin": {
+                                                    "kind": "function_input",
+                                                    "value": {
+                                                      "snapshot": {
+                                                        "side": "before",
+                                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                                      },
+                                                      "local": 1
+                                                    }
+                                                  },
+                                                  "inputs": [],
+                                                  "unresolved": false
+                                                }
+                                              ],
+                                              "unresolved": false
+                                            }
+                                          ],
+                                          "unresolved": false
+                                        },
+                                        {
+                                          "node": {
+                                            "snapshot": {
+                                              "side": "before",
+                                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                              "content_id": "fnv1a64-66ff595c126ac171"
+                                            },
+                                            "local": 8589934596
+                                          },
+                                          "span": {
+                                            "path": "snippet.ts",
+                                            "byte_start": 212,
+                                            "byte_end": 213,
+                                            "start_line": 8,
+                                            "end_line": 8
+                                          },
+                                          "role": {
+                                            "kind": "operand",
+                                            "index": 1
+                                          },
+                                          "operation": "read",
+                                          "literal": null,
+                                          "operator": null,
+                                          "origin": null,
+                                          "inputs": [
+                                            {
+                                              "node": {
+                                                "snapshot": {
+                                                  "side": "before",
+                                                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                  "content_id": "fnv1a64-66ff595c126ac171"
+                                                },
+                                                "local": 8589934596
+                                              },
+                                              "span": {
+                                                "path": "snippet.ts",
+                                                "byte_start": 212,
+                                                "byte_end": 213,
+                                                "start_line": 8,
+                                                "end_line": 8
+                                              },
+                                              "role": null,
+                                              "operation": "binding_value",
+                                              "literal": null,
+                                              "operator": null,
+                                              "origin": null,
+                                              "inputs": [
+                                                {
+                                                  "node": {
+                                                    "snapshot": {
+                                                      "side": "before",
+                                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                                    },
+                                                    "local": 8589934593
+                                                  },
+                                                  "span": null,
+                                                  "role": null,
+                                                  "operation": "positional_input",
+                                                  "literal": null,
+                                                  "operator": null,
+                                                  "origin": {
+                                                    "kind": "function_input",
+                                                    "value": {
+                                                      "snapshot": {
+                                                        "side": "before",
+                                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                                      },
+                                                      "local": 2
+                                                    }
+                                                  },
+                                                  "inputs": [],
+                                                  "unresolved": false
+                                                }
+                                              ],
+                                              "unresolved": false
+                                            }
+                                          ],
+                                          "unresolved": false
+                                        }
+                                      ],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        },
+        {
+          "site": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-66ff595c126ac171",
+              "content_id": "fnv1a64-66ff595c126ac171"
+            },
+            "local": 8589934613
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 287,
+            "byte_end": 302,
+            "start_line": 12,
+            "end_line": 12
+          },
+          "effective_condition": "!flag",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934606
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 264,
+                "byte_end": 270,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "outcome": false,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                    "content_id": "fnv1a64-66ff595c126ac171"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 265,
+                  "byte_end": 269,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                        "content_id": "fnv1a64-66ff595c126ac171"
+                      },
+                      "local": 8589934605
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 265,
+                      "byte_end": 269,
+                      "start_line": 11,
+                      "end_line": 11
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                              "content_id": "fnv1a64-66ff595c126ac171"
+                            },
+                            "local": 3
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "current",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 294,
+              "byte_end": 301,
+              "start_line": 12,
+              "end_line": 12
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934612
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 294,
+                "byte_end": 301,
+                "start_line": 12,
+                "end_line": 12
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                      "content_id": "fnv1a64-66ff595c126ac171"
+                    },
+                    "local": 8589934612
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 294,
+                    "byte_end": 301,
+                    "start_line": 12,
+                    "end_line": 12
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934604
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 242,
+                        "byte_end": 257,
+                        "start_line": 10,
+                        "end_line": 10
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934604
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-66ff595c126ac171",
+                              "content_id": "fnv1a64-66ff595c126ac171"
+                            },
+                            "local": 8589934603
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 252,
+                            "byte_end": 257,
+                            "start_line": 10,
+                            "end_line": 10
+                          },
+                          "role": null,
+                          "operation": "compute:Subtract",
+                          "literal": null,
+                          "operator": {
+                            "kind": "subtract"
+                          },
+                          "origin": null,
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "before",
+                                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                  "content_id": "fnv1a64-66ff595c126ac171"
+                                },
+                                "local": 8589934601
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 252,
+                                "byte_end": 253,
+                                "start_line": 10,
+                                "end_line": 10
+                              },
+                              "role": {
+                                "kind": "operand",
+                                "index": 0
+                              },
+                              "operation": "read",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "before",
+                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                    },
+                                    "local": 8589934601
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 252,
+                                    "byte_end": 253,
+                                    "start_line": 10,
+                                    "end_line": 10
+                                  },
+                                  "role": null,
+                                  "operation": "binding_value",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": null,
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "before",
+                                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                          "content_id": "fnv1a64-66ff595c126ac171"
+                                        },
+                                        "local": 8589934593
+                                      },
+                                      "span": null,
+                                      "role": null,
+                                      "operation": "positional_input",
+                                      "literal": null,
+                                      "operator": null,
+                                      "origin": {
+                                        "kind": "function_input",
+                                        "value": {
+                                          "snapshot": {
+                                            "side": "before",
+                                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                            "content_id": "fnv1a64-66ff595c126ac171"
+                                          },
+                                          "local": 2
+                                        }
+                                      },
+                                      "inputs": [],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            },
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "before",
+                                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                  "content_id": "fnv1a64-66ff595c126ac171"
+                                },
+                                "local": 8589934602
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 256,
+                                "byte_end": 257,
+                                "start_line": 10,
+                                "end_line": 10
+                              },
+                              "role": {
+                                "kind": "operand",
+                                "index": 1
+                              },
+                              "operation": "read",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "before",
+                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                    },
+                                    "local": 8589934602
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 256,
+                                    "byte_end": 257,
+                                    "start_line": 10,
+                                    "end_line": 10
+                                  },
+                                  "role": null,
+                                  "operation": "binding_value",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": null,
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "before",
+                                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                          "content_id": "fnv1a64-66ff595c126ac171"
+                                        },
+                                        "local": 8589934593
+                                      },
+                                      "span": null,
+                                      "role": null,
+                                      "operation": "positional_input",
+                                      "literal": null,
+                                      "operator": null,
+                                      "origin": {
+                                        "kind": "function_input",
+                                        "value": {
+                                          "snapshot": {
+                                            "side": "before",
+                                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                            "content_id": "fnv1a64-66ff595c126ac171"
+                                          },
+                                          "local": 1
+                                        }
+                                      },
+                                      "inputs": [],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    },
+    "after": {
+      "function": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 304,
+          "start_line": 1,
+          "end_line": 13
+        },
+        "expected_name": "outer",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 1
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 2
+        },
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 3
+        }
+      ],
+      "parameter_names": [
+        "a",
+        "b",
+        "flag"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+            },
+            "local": 8589934609
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 271,
+            "byte_end": 284,
+            "start_line": 11,
+            "end_line": 11
+          },
+          "effective_condition": "flag",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934606
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 264,
+                "byte_end": 270,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "outcome": true,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 265,
+                  "byte_end": 269,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                      },
+                      "local": 8589934605
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 265,
+                      "byte_end": 269,
+                      "start_line": 11,
+                      "end_line": 11
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                            },
+                            "local": 3
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "saved",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 278,
+              "byte_end": 283,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934608
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 278,
+                "byte_end": 283,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                    },
+                    "local": 8589934608
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 278,
+                    "byte_end": 283,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934600
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 223,
+                        "byte_end": 238,
+                        "start_line": 9,
+                        "end_line": 9
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934600
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                            },
+                            "local": 8589934599
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 231,
+                            "byte_end": 238,
+                            "start_line": 9,
+                            "end_line": 9
+                          },
+                          "role": null,
+                          "operation": "read",
+                          "literal": null,
+                          "operator": null,
+                          "origin": null,
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "after",
+                                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                },
+                                "local": 8589934599
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 231,
+                                "byte_end": 238,
+                                "start_line": 9,
+                                "end_line": 9
+                              },
+                              "role": null,
+                              "operation": "binding_value",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "after",
+                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                    },
+                                    "local": 8589934598
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 198,
+                                    "byte_end": 213,
+                                    "start_line": 8,
+                                    "end_line": 8
+                                  },
+                                  "role": null,
+                                  "operation": "write",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": {
+                                    "kind": "write",
+                                    "value": {
+                                      "snapshot": {
+                                        "side": "after",
+                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                      },
+                                      "local": 8589934598
+                                    }
+                                  },
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "after",
+                                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                        },
+                                        "local": 8589934597
+                                      },
+                                      "span": {
+                                        "path": "snippet.ts",
+                                        "byte_start": 208,
+                                        "byte_end": 213,
+                                        "start_line": 8,
+                                        "end_line": 8
+                                      },
+                                      "role": null,
+                                      "operation": "compute:Subtract",
+                                      "literal": null,
+                                      "operator": {
+                                        "kind": "subtract"
+                                      },
+                                      "origin": null,
+                                      "inputs": [
+                                        {
+                                          "node": {
+                                            "snapshot": {
+                                              "side": "after",
+                                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                            },
+                                            "local": 8589934595
+                                          },
+                                          "span": {
+                                            "path": "snippet.ts",
+                                            "byte_start": 208,
+                                            "byte_end": 209,
+                                            "start_line": 8,
+                                            "end_line": 8
+                                          },
+                                          "role": {
+                                            "kind": "operand",
+                                            "index": 0
+                                          },
+                                          "operation": "read",
+                                          "literal": null,
+                                          "operator": null,
+                                          "origin": null,
+                                          "inputs": [
+                                            {
+                                              "node": {
+                                                "snapshot": {
+                                                  "side": "after",
+                                                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                },
+                                                "local": 8589934595
+                                              },
+                                              "span": {
+                                                "path": "snippet.ts",
+                                                "byte_start": 208,
+                                                "byte_end": 209,
+                                                "start_line": 8,
+                                                "end_line": 8
+                                              },
+                                              "role": null,
+                                              "operation": "binding_value",
+                                              "literal": null,
+                                              "operator": null,
+                                              "origin": null,
+                                              "inputs": [
+                                                {
+                                                  "node": {
+                                                    "snapshot": {
+                                                      "side": "after",
+                                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                    },
+                                                    "local": 8589934593
+                                                  },
+                                                  "span": null,
+                                                  "role": null,
+                                                  "operation": "positional_input",
+                                                  "literal": null,
+                                                  "operator": null,
+                                                  "origin": {
+                                                    "kind": "function_input",
+                                                    "value": {
+                                                      "snapshot": {
+                                                        "side": "after",
+                                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                      },
+                                                      "local": 1
+                                                    }
+                                                  },
+                                                  "inputs": [],
+                                                  "unresolved": false
+                                                }
+                                              ],
+                                              "unresolved": false
+                                            }
+                                          ],
+                                          "unresolved": false
+                                        },
+                                        {
+                                          "node": {
+                                            "snapshot": {
+                                              "side": "after",
+                                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                            },
+                                            "local": 8589934596
+                                          },
+                                          "span": {
+                                            "path": "snippet.ts",
+                                            "byte_start": 212,
+                                            "byte_end": 213,
+                                            "start_line": 8,
+                                            "end_line": 8
+                                          },
+                                          "role": {
+                                            "kind": "operand",
+                                            "index": 1
+                                          },
+                                          "operation": "read",
+                                          "literal": null,
+                                          "operator": null,
+                                          "origin": null,
+                                          "inputs": [
+                                            {
+                                              "node": {
+                                                "snapshot": {
+                                                  "side": "after",
+                                                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                },
+                                                "local": 8589934596
+                                              },
+                                              "span": {
+                                                "path": "snippet.ts",
+                                                "byte_start": 212,
+                                                "byte_end": 213,
+                                                "start_line": 8,
+                                                "end_line": 8
+                                              },
+                                              "role": null,
+                                              "operation": "binding_value",
+                                              "literal": null,
+                                              "operator": null,
+                                              "origin": null,
+                                              "inputs": [
+                                                {
+                                                  "node": {
+                                                    "snapshot": {
+                                                      "side": "after",
+                                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                    },
+                                                    "local": 8589934593
+                                                  },
+                                                  "span": null,
+                                                  "role": null,
+                                                  "operation": "positional_input",
+                                                  "literal": null,
+                                                  "operator": null,
+                                                  "origin": {
+                                                    "kind": "function_input",
+                                                    "value": {
+                                                      "snapshot": {
+                                                        "side": "after",
+                                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                      },
+                                                      "local": 2
+                                                    }
+                                                  },
+                                                  "inputs": [],
+                                                  "unresolved": false
+                                                }
+                                              ],
+                                              "unresolved": false
+                                            }
+                                          ],
+                                          "unresolved": false
+                                        }
+                                      ],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        },
+        {
+          "site": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+            },
+            "local": 8589934613
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 287,
+            "byte_end": 302,
+            "start_line": 12,
+            "end_line": 12
+          },
+          "effective_condition": "!flag",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934606
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 264,
+                "byte_end": 270,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "outcome": false,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 265,
+                  "byte_end": 269,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                      },
+                      "local": 8589934605
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 265,
+                      "byte_end": 269,
+                      "start_line": 11,
+                      "end_line": 11
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                            },
+                            "local": 3
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "current",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 294,
+              "byte_end": 301,
+              "start_line": 12,
+              "end_line": 12
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934612
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 294,
+                "byte_end": 301,
+                "start_line": 12,
+                "end_line": 12
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                    },
+                    "local": 8589934612
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 294,
+                    "byte_end": 301,
+                    "start_line": 12,
+                    "end_line": 12
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934604
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 242,
+                        "byte_end": 257,
+                        "start_line": 10,
+                        "end_line": 10
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934604
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                              "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                            },
+                            "local": 8589934603
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 252,
+                            "byte_end": 257,
+                            "start_line": 10,
+                            "end_line": 10
+                          },
+                          "role": null,
+                          "operation": "compute:Subtract",
+                          "literal": null,
+                          "operator": {
+                            "kind": "subtract"
+                          },
+                          "origin": null,
+                          "inputs": [
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "after",
+                                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                },
+                                "local": 8589934601
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 252,
+                                "byte_end": 253,
+                                "start_line": 10,
+                                "end_line": 10
+                              },
+                              "role": {
+                                "kind": "operand",
+                                "index": 0
+                              },
+                              "operation": "read",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "after",
+                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                    },
+                                    "local": 8589934601
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 252,
+                                    "byte_end": 253,
+                                    "start_line": 10,
+                                    "end_line": 10
+                                  },
+                                  "role": null,
+                                  "operation": "binding_value",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": null,
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "after",
+                                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                        },
+                                        "local": 8589934593
+                                      },
+                                      "span": null,
+                                      "role": null,
+                                      "operation": "positional_input",
+                                      "literal": null,
+                                      "operator": null,
+                                      "origin": {
+                                        "kind": "function_input",
+                                        "value": {
+                                          "snapshot": {
+                                            "side": "after",
+                                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                          },
+                                          "local": 2
+                                        }
+                                      },
+                                      "inputs": [],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            },
+                            {
+                              "node": {
+                                "snapshot": {
+                                  "side": "after",
+                                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                },
+                                "local": 8589934602
+                              },
+                              "span": {
+                                "path": "snippet.ts",
+                                "byte_start": 256,
+                                "byte_end": 257,
+                                "start_line": 10,
+                                "end_line": 10
+                              },
+                              "role": {
+                                "kind": "operand",
+                                "index": 1
+                              },
+                              "operation": "read",
+                              "literal": null,
+                              "operator": null,
+                              "origin": null,
+                              "inputs": [
+                                {
+                                  "node": {
+                                    "snapshot": {
+                                      "side": "after",
+                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                    },
+                                    "local": 8589934602
+                                  },
+                                  "span": {
+                                    "path": "snippet.ts",
+                                    "byte_start": 256,
+                                    "byte_end": 257,
+                                    "start_line": 10,
+                                    "end_line": 10
+                                  },
+                                  "role": null,
+                                  "operation": "binding_value",
+                                  "literal": null,
+                                  "operator": null,
+                                  "origin": null,
+                                  "inputs": [
+                                    {
+                                      "node": {
+                                        "snapshot": {
+                                          "side": "after",
+                                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                        },
+                                        "local": 8589934593
+                                      },
+                                      "span": null,
+                                      "role": null,
+                                      "operation": "positional_input",
+                                      "literal": null,
+                                      "operator": null,
+                                      "origin": {
+                                        "kind": "function_input",
+                                        "value": {
+                                          "snapshot": {
+                                            "side": "after",
+                                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                          },
+                                          "local": 1
+                                        }
+                                      },
+                                      "inputs": [],
+                                      "unresolved": false
+                                    }
+                                  ],
+                                  "unresolved": false
+                                }
+                              ],
+                              "unresolved": false
+                            }
+                          ],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    }
+  },
+  "comparison": {
+    "function_presence": "both",
+    "before_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "after_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "before_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 8589934609
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 271,
+          "byte_end": 284,
+          "start_line": 11,
+          "end_line": 11
+        },
+        "effective_condition": "flag",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934606
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 264,
+              "byte_end": 270,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "outcome": true,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 265,
+                "byte_end": 269,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                      "content_id": "fnv1a64-66ff595c126ac171"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 265,
+                    "byte_end": 269,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 3
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "saved",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 278,
+            "byte_end": 283,
+            "start_line": 11,
+            "end_line": 11
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934608
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 278,
+              "byte_end": 283,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                    "content_id": "fnv1a64-66ff595c126ac171"
+                  },
+                  "local": 8589934608
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 278,
+                  "byte_end": 283,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                        "content_id": "fnv1a64-66ff595c126ac171"
+                      },
+                      "local": 8589934600
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 223,
+                      "byte_end": 238,
+                      "start_line": 9,
+                      "end_line": 9
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934600
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934599
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 231,
+                          "byte_end": 238,
+                          "start_line": 9,
+                          "end_line": 9
+                        },
+                        "role": null,
+                        "operation": "read",
+                        "literal": null,
+                        "operator": null,
+                        "origin": null,
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                "content_id": "fnv1a64-66ff595c126ac171"
+                              },
+                              "local": 8589934599
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 231,
+                              "byte_end": 238,
+                              "start_line": 9,
+                              "end_line": 9
+                            },
+                            "role": null,
+                            "operation": "binding_value",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "before",
+                                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                    "content_id": "fnv1a64-66ff595c126ac171"
+                                  },
+                                  "local": 8589934598
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 198,
+                                  "byte_end": 213,
+                                  "start_line": 8,
+                                  "end_line": 8
+                                },
+                                "role": null,
+                                "operation": "write",
+                                "literal": null,
+                                "operator": null,
+                                "origin": {
+                                  "kind": "write",
+                                  "value": {
+                                    "snapshot": {
+                                      "side": "before",
+                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                    },
+                                    "local": 8589934598
+                                  }
+                                },
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "before",
+                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                      },
+                                      "local": 8589934597
+                                    },
+                                    "span": {
+                                      "path": "snippet.ts",
+                                      "byte_start": 208,
+                                      "byte_end": 213,
+                                      "start_line": 8,
+                                      "end_line": 8
+                                    },
+                                    "role": null,
+                                    "operation": "compute:Subtract",
+                                    "literal": null,
+                                    "operator": {
+                                      "kind": "subtract"
+                                    },
+                                    "origin": null,
+                                    "inputs": [
+                                      {
+                                        "node": {
+                                          "snapshot": {
+                                            "side": "before",
+                                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                            "content_id": "fnv1a64-66ff595c126ac171"
+                                          },
+                                          "local": 8589934595
+                                        },
+                                        "span": {
+                                          "path": "snippet.ts",
+                                          "byte_start": 208,
+                                          "byte_end": 209,
+                                          "start_line": 8,
+                                          "end_line": 8
+                                        },
+                                        "role": {
+                                          "kind": "operand",
+                                          "index": 0
+                                        },
+                                        "operation": "read",
+                                        "literal": null,
+                                        "operator": null,
+                                        "origin": null,
+                                        "inputs": [
+                                          {
+                                            "node": {
+                                              "snapshot": {
+                                                "side": "before",
+                                                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                "content_id": "fnv1a64-66ff595c126ac171"
+                                              },
+                                              "local": 8589934595
+                                            },
+                                            "span": {
+                                              "path": "snippet.ts",
+                                              "byte_start": 208,
+                                              "byte_end": 209,
+                                              "start_line": 8,
+                                              "end_line": 8
+                                            },
+                                            "role": null,
+                                            "operation": "binding_value",
+                                            "literal": null,
+                                            "operator": null,
+                                            "origin": null,
+                                            "inputs": [
+                                              {
+                                                "node": {
+                                                  "snapshot": {
+                                                    "side": "before",
+                                                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                    "content_id": "fnv1a64-66ff595c126ac171"
+                                                  },
+                                                  "local": 8589934593
+                                                },
+                                                "span": null,
+                                                "role": null,
+                                                "operation": "positional_input",
+                                                "literal": null,
+                                                "operator": null,
+                                                "origin": {
+                                                  "kind": "function_input",
+                                                  "value": {
+                                                    "snapshot": {
+                                                      "side": "before",
+                                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                                    },
+                                                    "local": 1
+                                                  }
+                                                },
+                                                "inputs": [],
+                                                "unresolved": false
+                                              }
+                                            ],
+                                            "unresolved": false
+                                          }
+                                        ],
+                                        "unresolved": false
+                                      },
+                                      {
+                                        "node": {
+                                          "snapshot": {
+                                            "side": "before",
+                                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                            "content_id": "fnv1a64-66ff595c126ac171"
+                                          },
+                                          "local": 8589934596
+                                        },
+                                        "span": {
+                                          "path": "snippet.ts",
+                                          "byte_start": 212,
+                                          "byte_end": 213,
+                                          "start_line": 8,
+                                          "end_line": 8
+                                        },
+                                        "role": {
+                                          "kind": "operand",
+                                          "index": 1
+                                        },
+                                        "operation": "read",
+                                        "literal": null,
+                                        "operator": null,
+                                        "origin": null,
+                                        "inputs": [
+                                          {
+                                            "node": {
+                                              "snapshot": {
+                                                "side": "before",
+                                                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                "content_id": "fnv1a64-66ff595c126ac171"
+                                              },
+                                              "local": 8589934596
+                                            },
+                                            "span": {
+                                              "path": "snippet.ts",
+                                              "byte_start": 212,
+                                              "byte_end": 213,
+                                              "start_line": 8,
+                                              "end_line": 8
+                                            },
+                                            "role": null,
+                                            "operation": "binding_value",
+                                            "literal": null,
+                                            "operator": null,
+                                            "origin": null,
+                                            "inputs": [
+                                              {
+                                                "node": {
+                                                  "snapshot": {
+                                                    "side": "before",
+                                                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                    "content_id": "fnv1a64-66ff595c126ac171"
+                                                  },
+                                                  "local": 8589934593
+                                                },
+                                                "span": null,
+                                                "role": null,
+                                                "operation": "positional_input",
+                                                "literal": null,
+                                                "operator": null,
+                                                "origin": {
+                                                  "kind": "function_input",
+                                                  "value": {
+                                                    "snapshot": {
+                                                      "side": "before",
+                                                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                                      "content_id": "fnv1a64-66ff595c126ac171"
+                                                    },
+                                                    "local": 2
+                                                  }
+                                                },
+                                                "inputs": [],
+                                                "unresolved": false
+                                              }
+                                            ],
+                                            "unresolved": false
+                                          }
+                                        ],
+                                        "unresolved": false
+                                      }
+                                    ],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      },
+      {
+        "site": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-66ff595c126ac171",
+            "content_id": "fnv1a64-66ff595c126ac171"
+          },
+          "local": 8589934613
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 287,
+          "byte_end": 302,
+          "start_line": 12,
+          "end_line": 12
+        },
+        "effective_condition": "!flag",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934606
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 264,
+              "byte_end": 270,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "outcome": false,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-66ff595c126ac171",
+                  "content_id": "fnv1a64-66ff595c126ac171"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 265,
+                "byte_end": 269,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-66ff595c126ac171",
+                      "content_id": "fnv1a64-66ff595c126ac171"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 265,
+                    "byte_end": 269,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 3
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "current",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 294,
+            "byte_end": 301,
+            "start_line": 12,
+            "end_line": 12
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934612
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 294,
+              "byte_end": 301,
+              "start_line": 12,
+              "end_line": 12
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                    "content_id": "fnv1a64-66ff595c126ac171"
+                  },
+                  "local": 8589934612
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 294,
+                  "byte_end": 301,
+                  "start_line": 12,
+                  "end_line": 12
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                        "content_id": "fnv1a64-66ff595c126ac171"
+                      },
+                      "local": 8589934604
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 242,
+                      "byte_end": 257,
+                      "start_line": 10,
+                      "end_line": 10
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                          "content_id": "fnv1a64-66ff595c126ac171"
+                        },
+                        "local": 8589934604
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-66ff595c126ac171",
+                            "content_id": "fnv1a64-66ff595c126ac171"
+                          },
+                          "local": 8589934603
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 252,
+                          "byte_end": 257,
+                          "start_line": 10,
+                          "end_line": 10
+                        },
+                        "role": null,
+                        "operation": "compute:Subtract",
+                        "literal": null,
+                        "operator": {
+                          "kind": "subtract"
+                        },
+                        "origin": null,
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                "content_id": "fnv1a64-66ff595c126ac171"
+                              },
+                              "local": 8589934601
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 252,
+                              "byte_end": 253,
+                              "start_line": 10,
+                              "end_line": 10
+                            },
+                            "role": {
+                              "kind": "operand",
+                              "index": 0
+                            },
+                            "operation": "read",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "before",
+                                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                    "content_id": "fnv1a64-66ff595c126ac171"
+                                  },
+                                  "local": 8589934601
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 252,
+                                  "byte_end": 253,
+                                  "start_line": 10,
+                                  "end_line": 10
+                                },
+                                "role": null,
+                                "operation": "binding_value",
+                                "literal": null,
+                                "operator": null,
+                                "origin": null,
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "before",
+                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                      },
+                                      "local": 8589934593
+                                    },
+                                    "span": null,
+                                    "role": null,
+                                    "operation": "positional_input",
+                                    "literal": null,
+                                    "operator": null,
+                                    "origin": {
+                                      "kind": "function_input",
+                                      "value": {
+                                        "snapshot": {
+                                          "side": "before",
+                                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                          "content_id": "fnv1a64-66ff595c126ac171"
+                                        },
+                                        "local": 2
+                                      }
+                                    },
+                                    "inputs": [],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          },
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                "content_id": "fnv1a64-66ff595c126ac171"
+                              },
+                              "local": 8589934602
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 256,
+                              "byte_end": 257,
+                              "start_line": 10,
+                              "end_line": 10
+                            },
+                            "role": {
+                              "kind": "operand",
+                              "index": 1
+                            },
+                            "operation": "read",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "before",
+                                    "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                    "content_id": "fnv1a64-66ff595c126ac171"
+                                  },
+                                  "local": 8589934602
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 256,
+                                  "byte_end": 257,
+                                  "start_line": 10,
+                                  "end_line": 10
+                                },
+                                "role": null,
+                                "operation": "binding_value",
+                                "literal": null,
+                                "operator": null,
+                                "origin": null,
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "before",
+                                        "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                        "content_id": "fnv1a64-66ff595c126ac171"
+                                      },
+                                      "local": 8589934593
+                                    },
+                                    "span": null,
+                                    "role": null,
+                                    "operation": "positional_input",
+                                    "literal": null,
+                                    "operator": null,
+                                    "origin": {
+                                      "kind": "function_input",
+                                      "value": {
+                                        "snapshot": {
+                                          "side": "before",
+                                          "revision": "local-before-fnv1a64-66ff595c126ac171",
+                                          "content_id": "fnv1a64-66ff595c126ac171"
+                                        },
+                                        "local": 1
+                                      }
+                                    },
+                                    "inputs": [],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "after_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 8589934609
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 271,
+          "byte_end": 284,
+          "start_line": 11,
+          "end_line": 11
+        },
+        "effective_condition": "flag",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934606
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 264,
+              "byte_end": 270,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "outcome": true,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 265,
+                "byte_end": 269,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 265,
+                    "byte_end": 269,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 3
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "saved",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 278,
+            "byte_end": 283,
+            "start_line": 11,
+            "end_line": 11
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934608
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 278,
+              "byte_end": 283,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                  },
+                  "local": 8589934608
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 278,
+                  "byte_end": 283,
+                  "start_line": 11,
+                  "end_line": 11
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                      },
+                      "local": 8589934600
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 223,
+                      "byte_end": 238,
+                      "start_line": 9,
+                      "end_line": 9
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934600
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934599
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 231,
+                          "byte_end": 238,
+                          "start_line": 9,
+                          "end_line": 9
+                        },
+                        "role": null,
+                        "operation": "read",
+                        "literal": null,
+                        "operator": null,
+                        "origin": null,
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                              },
+                              "local": 8589934599
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 231,
+                              "byte_end": 238,
+                              "start_line": 9,
+                              "end_line": 9
+                            },
+                            "role": null,
+                            "operation": "binding_value",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "after",
+                                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                  },
+                                  "local": 8589934598
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 198,
+                                  "byte_end": 213,
+                                  "start_line": 8,
+                                  "end_line": 8
+                                },
+                                "role": null,
+                                "operation": "write",
+                                "literal": null,
+                                "operator": null,
+                                "origin": {
+                                  "kind": "write",
+                                  "value": {
+                                    "snapshot": {
+                                      "side": "after",
+                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                    },
+                                    "local": 8589934598
+                                  }
+                                },
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "after",
+                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                      },
+                                      "local": 8589934597
+                                    },
+                                    "span": {
+                                      "path": "snippet.ts",
+                                      "byte_start": 208,
+                                      "byte_end": 213,
+                                      "start_line": 8,
+                                      "end_line": 8
+                                    },
+                                    "role": null,
+                                    "operation": "compute:Subtract",
+                                    "literal": null,
+                                    "operator": {
+                                      "kind": "subtract"
+                                    },
+                                    "origin": null,
+                                    "inputs": [
+                                      {
+                                        "node": {
+                                          "snapshot": {
+                                            "side": "after",
+                                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                          },
+                                          "local": 8589934595
+                                        },
+                                        "span": {
+                                          "path": "snippet.ts",
+                                          "byte_start": 208,
+                                          "byte_end": 209,
+                                          "start_line": 8,
+                                          "end_line": 8
+                                        },
+                                        "role": {
+                                          "kind": "operand",
+                                          "index": 0
+                                        },
+                                        "operation": "read",
+                                        "literal": null,
+                                        "operator": null,
+                                        "origin": null,
+                                        "inputs": [
+                                          {
+                                            "node": {
+                                              "snapshot": {
+                                                "side": "after",
+                                                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                              },
+                                              "local": 8589934595
+                                            },
+                                            "span": {
+                                              "path": "snippet.ts",
+                                              "byte_start": 208,
+                                              "byte_end": 209,
+                                              "start_line": 8,
+                                              "end_line": 8
+                                            },
+                                            "role": null,
+                                            "operation": "binding_value",
+                                            "literal": null,
+                                            "operator": null,
+                                            "origin": null,
+                                            "inputs": [
+                                              {
+                                                "node": {
+                                                  "snapshot": {
+                                                    "side": "after",
+                                                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                  },
+                                                  "local": 8589934593
+                                                },
+                                                "span": null,
+                                                "role": null,
+                                                "operation": "positional_input",
+                                                "literal": null,
+                                                "operator": null,
+                                                "origin": {
+                                                  "kind": "function_input",
+                                                  "value": {
+                                                    "snapshot": {
+                                                      "side": "after",
+                                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                    },
+                                                    "local": 1
+                                                  }
+                                                },
+                                                "inputs": [],
+                                                "unresolved": false
+                                              }
+                                            ],
+                                            "unresolved": false
+                                          }
+                                        ],
+                                        "unresolved": false
+                                      },
+                                      {
+                                        "node": {
+                                          "snapshot": {
+                                            "side": "after",
+                                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                          },
+                                          "local": 8589934596
+                                        },
+                                        "span": {
+                                          "path": "snippet.ts",
+                                          "byte_start": 212,
+                                          "byte_end": 213,
+                                          "start_line": 8,
+                                          "end_line": 8
+                                        },
+                                        "role": {
+                                          "kind": "operand",
+                                          "index": 1
+                                        },
+                                        "operation": "read",
+                                        "literal": null,
+                                        "operator": null,
+                                        "origin": null,
+                                        "inputs": [
+                                          {
+                                            "node": {
+                                              "snapshot": {
+                                                "side": "after",
+                                                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                              },
+                                              "local": 8589934596
+                                            },
+                                            "span": {
+                                              "path": "snippet.ts",
+                                              "byte_start": 212,
+                                              "byte_end": 213,
+                                              "start_line": 8,
+                                              "end_line": 8
+                                            },
+                                            "role": null,
+                                            "operation": "binding_value",
+                                            "literal": null,
+                                            "operator": null,
+                                            "origin": null,
+                                            "inputs": [
+                                              {
+                                                "node": {
+                                                  "snapshot": {
+                                                    "side": "after",
+                                                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                  },
+                                                  "local": 8589934593
+                                                },
+                                                "span": null,
+                                                "role": null,
+                                                "operation": "positional_input",
+                                                "literal": null,
+                                                "operator": null,
+                                                "origin": {
+                                                  "kind": "function_input",
+                                                  "value": {
+                                                    "snapshot": {
+                                                      "side": "after",
+                                                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                                    },
+                                                    "local": 2
+                                                  }
+                                                },
+                                                "inputs": [],
+                                                "unresolved": false
+                                              }
+                                            ],
+                                            "unresolved": false
+                                          }
+                                        ],
+                                        "unresolved": false
+                                      }
+                                    ],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      },
+      {
+        "site": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+          },
+          "local": 8589934613
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 287,
+          "byte_end": 302,
+          "start_line": 12,
+          "end_line": 12
+        },
+        "effective_condition": "!flag",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934606
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 264,
+              "byte_end": 270,
+              "start_line": 11,
+              "end_line": 11
+            },
+            "outcome": false,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                  "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 265,
+                "byte_end": 269,
+                "start_line": 11,
+                "end_line": 11
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                      "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 265,
+                    "byte_end": 269,
+                    "start_line": 11,
+                    "end_line": 11
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 3
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "current",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 294,
+            "byte_end": 301,
+            "start_line": 12,
+            "end_line": 12
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934612
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 294,
+              "byte_end": 301,
+              "start_line": 12,
+              "end_line": 12
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                  },
+                  "local": 8589934612
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 294,
+                  "byte_end": 301,
+                  "start_line": 12,
+                  "end_line": 12
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                      },
+                      "local": 8589934604
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 242,
+                      "byte_end": 257,
+                      "start_line": 10,
+                      "end_line": 10
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                        },
+                        "local": 8589934604
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                            "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                          },
+                          "local": 8589934603
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 252,
+                          "byte_end": 257,
+                          "start_line": 10,
+                          "end_line": 10
+                        },
+                        "role": null,
+                        "operation": "compute:Subtract",
+                        "literal": null,
+                        "operator": {
+                          "kind": "subtract"
+                        },
+                        "origin": null,
+                        "inputs": [
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                              },
+                              "local": 8589934601
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 252,
+                              "byte_end": 253,
+                              "start_line": 10,
+                              "end_line": 10
+                            },
+                            "role": {
+                              "kind": "operand",
+                              "index": 0
+                            },
+                            "operation": "read",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "after",
+                                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                  },
+                                  "local": 8589934601
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 252,
+                                  "byte_end": 253,
+                                  "start_line": 10,
+                                  "end_line": 10
+                                },
+                                "role": null,
+                                "operation": "binding_value",
+                                "literal": null,
+                                "operator": null,
+                                "origin": null,
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "after",
+                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                      },
+                                      "local": 8589934593
+                                    },
+                                    "span": null,
+                                    "role": null,
+                                    "operation": "positional_input",
+                                    "literal": null,
+                                    "operator": null,
+                                    "origin": {
+                                      "kind": "function_input",
+                                      "value": {
+                                        "snapshot": {
+                                          "side": "after",
+                                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                        },
+                                        "local": 2
+                                      }
+                                    },
+                                    "inputs": [],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          },
+                          {
+                            "node": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                              },
+                              "local": 8589934602
+                            },
+                            "span": {
+                              "path": "snippet.ts",
+                              "byte_start": 256,
+                              "byte_end": 257,
+                              "start_line": 10,
+                              "end_line": 10
+                            },
+                            "role": {
+                              "kind": "operand",
+                              "index": 1
+                            },
+                            "operation": "read",
+                            "literal": null,
+                            "operator": null,
+                            "origin": null,
+                            "inputs": [
+                              {
+                                "node": {
+                                  "snapshot": {
+                                    "side": "after",
+                                    "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                    "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                  },
+                                  "local": 8589934602
+                                },
+                                "span": {
+                                  "path": "snippet.ts",
+                                  "byte_start": 256,
+                                  "byte_end": 257,
+                                  "start_line": 10,
+                                  "end_line": 10
+                                },
+                                "role": null,
+                                "operation": "binding_value",
+                                "literal": null,
+                                "operator": null,
+                                "origin": null,
+                                "inputs": [
+                                  {
+                                    "node": {
+                                      "snapshot": {
+                                        "side": "after",
+                                        "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                        "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                      },
+                                      "local": 8589934593
+                                    },
+                                    "span": null,
+                                    "role": null,
+                                    "operation": "positional_input",
+                                    "literal": null,
+                                    "operator": null,
+                                    "origin": {
+                                      "kind": "function_input",
+                                      "value": {
+                                        "snapshot": {
+                                          "side": "after",
+                                          "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                                          "content_id": "fnv1a64-c501c14ff5fb4cbf"
+                                        },
+                                        "local": 1
+                                      }
+                                    },
+                                    "inputs": [],
+                                    "unresolved": false
+                                  }
+                                ],
+                                "unresolved": false
+                              }
+                            ],
+                            "unresolved": false
+                          }
+                        ],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "common_domain_status": "present",
+    "common_domain": [
+      {
+        "values": {}
+      }
+    ],
+    "before_only_domain": [],
+    "after_only_domain": [],
+    "outside_both_domain": [],
+    "unresolved_domain": [],
+    "before_flow": [
+      {
+        "region": {
+          "values": {
+            "2": false
+          }
+        },
+        "result": "current",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934613
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      {
+        "region": {
+          "values": {
+            "2": true
+          }
+        },
+        "result": "saved",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934609
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "after_flow": [
+      {
+        "region": {
+          "values": {
+            "2": false
+          }
+        },
+        "result": "current",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934613
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      },
+      {
+        "region": {
+          "values": {
+            "2": true
+          }
+        },
+        "result": "saved",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934609
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "regions": [
+      {
+        "region": {
+          "values": {
+            "2": false
+          }
+        },
+        "before_result": "current",
+        "after_result": "current",
+        "before_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934613
+            },
+            "path_index": 0
+          }
+        ],
+        "after_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934613
+            },
+            "path_index": 0
+          }
+        ],
+        "assessment": "unknown",
+        "evidence": {
+          "unresolved": {
+            "diagnostic": "type_resolution_unavailable"
+          }
+        },
+        "proof": null,
+        "control_changed": false,
+        "value_dependency_changed": false,
+        "return_structure_changed": false,
+        "unknown_reason": "result value theory is insufficient"
+      },
+      {
+        "region": {
+          "values": {
+            "2": true
+          }
+        },
+        "before_result": "saved",
+        "after_result": "saved",
+        "before_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-66ff595c126ac171",
+                "content_id": "fnv1a64-66ff595c126ac171"
+              },
+              "local": 8589934609
+            },
+            "path_index": 0
+          }
+        ],
+        "after_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-c501c14ff5fb4cbf",
+                "content_id": "fnv1a64-c501c14ff5fb4cbf"
+              },
+              "local": 8589934609
+            },
+            "path_index": 0
+          }
+        ],
+        "assessment": "unknown",
+        "evidence": {
+          "unresolved": {
+            "diagnostic": "type_resolution_unavailable"
+          }
+        },
+        "proof": null,
+        "control_changed": false,
+        "value_dependency_changed": false,
+        "return_structure_changed": false,
+        "unknown_reason": "result value theory is insufficient"
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "source_alignment_coverage": "partial",
+    "comparison_coverage": "partial",
+    "limits_hit": []
+  },
+  "findings": [
+    {
+      "assessment": "unknown",
+      "before_result": "current",
+      "after_result": "current",
+      "regions": [
+        0
+      ],
+      "control_changed": false,
+      "value_dependency_changed": false,
+      "return_structure_changed": false,
+      "before_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 287,
+          "byte_end": 302,
+          "start_line": 12,
+          "end_line": 12
+        }
+      ],
+      "after_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 287,
+          "byte_end": 302,
+          "start_line": 12,
+          "end_line": 12
+        }
+      ],
+      "attribution_certain": false
+    },
+    {
+      "assessment": "unknown",
+      "before_result": "saved",
+      "after_result": "saved",
+      "regions": [
+        1
+      ],
+      "control_changed": false,
+      "value_dependency_changed": false,
+      "return_structure_changed": false,
+      "before_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 271,
+          "byte_end": 284,
+          "start_line": 11,
+          "end_line": 11
+        }
+      ],
+      "after_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 271,
+          "byte_end": 284,
+          "start_line": 11,
+          "end_line": 11
+        }
+      ],
+      "attribution_certain": false
+    }
+  ]
+}

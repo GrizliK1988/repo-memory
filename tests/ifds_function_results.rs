@@ -492,6 +492,27 @@ fn dependency_and_control_cases_have_independent_relations() {
             Some(PrimitiveDomain::Number),
         ),
         (
+            "function next(p) { return p + 1; }",
+            "function next(p) { return p + 2; }",
+            vec![],
+            ResultAssessment::Changed,
+            None,
+        ),
+        (
+            "function sum(a, b, c) { const saved = a + b; a = 100; return saved; }",
+            "function sum(a, b, c) { const saved = a + c; a = 100; return saved; }",
+            vec![],
+            ResultAssessment::Changed,
+            None,
+        ),
+        (
+            "function select(p, q) { return p; }",
+            "function select(p, q) { return q; }",
+            vec![],
+            ResultAssessment::Changed,
+            None,
+        ),
+        (
             "function outer() { function inner() { return 1; } return 3; }",
             "function outer() { function inner() { return 2; } return 3; }",
             vec![],

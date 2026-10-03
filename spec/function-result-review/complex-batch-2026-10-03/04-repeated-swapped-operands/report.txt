@@ -1,0 +1,27 @@
+Function result: repeated
+Edit attribution uncertain
+Changed computation under !reverse && !negate:
+  ((a - b) + (a - b)) -> ((b - a) + (b - a)) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:2, snippet.ts:3, snippet.ts:9, snippet.ts:10
+After contributing writes: snippet.ts:2, snippet.ts:3, snippet.ts:9, snippet.ts:10
+Edit attribution uncertain
+Changed computation under reverse && !negate:
+  ((b - a) + (b - a)) -> ((a - b) + (a - b)) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:5, snippet.ts:6, snippet.ts:9, snippet.ts:10
+After contributing writes: snippet.ts:5, snippet.ts:6, snippet.ts:9, snippet.ts:10
+Edit attribution uncertain
+Changed computation under !reverse && negate:
+  (-((a - b) + (a - b))) -> (-((b - a) + (b - a))) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:2, snippet.ts:3, snippet.ts:9, snippet.ts:10
+After contributing writes: snippet.ts:2, snippet.ts:3, snippet.ts:9, snippet.ts:10
+Edit attribution uncertain
+Changed computation under reverse && negate:
+  (-((b - a) + (b - a))) -> (-((a - b) + (a - b))) (Changed)
+  Reaches return negate ? -doubled : doubled
+Before contributing writes: snippet.ts:5, snippet.ts:6, snippet.ts:9, snippet.ts:10
+After contributing writes: snippet.ts:5, snippet.ts:6, snippet.ts:9, snippet.ts:10
+Coverage: result comparison Complete; source alignment Partial
+Evidence: full.json (ifds-function-3f1a4f08e3513034)

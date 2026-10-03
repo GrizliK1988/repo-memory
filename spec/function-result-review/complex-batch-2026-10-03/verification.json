@@ -1,0 +1,108 @@
+{
+  "commands": 10,
+  "successful_commands": 10,
+  "runtime_samples": 45,
+  "boolean_assignments_checked": 47,
+  "cases": [
+    {
+      "slug": "01-captured-ternary",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 5,
+      "boolean_assignments_checked": 8,
+      "runtime_samples": 5,
+      "text_bytes": 773,
+      "attribution_uncertain_mentions": 0
+    },
+    {
+      "slug": "02-killed-edit",
+      "exit_code": 0,
+      "result_comparison": "complete",
+      "regions": 2,
+      "boolean_assignments_checked": 2,
+      "runtime_samples": 4,
+      "text_bytes": 230,
+      "attribution_uncertain_mentions": 0
+    },
+    {
+      "slug": "03-guard-version",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 4,
+      "boolean_assignments_checked": 4,
+      "runtime_samples": 4,
+      "text_bytes": 701,
+      "attribution_uncertain_mentions": 2
+    },
+    {
+      "slug": "04-repeated-swapped-operands",
+      "exit_code": 0,
+      "result_comparison": "complete",
+      "regions": 4,
+      "boolean_assignments_checked": 4,
+      "runtime_samples": 5,
+      "text_bytes": 1514,
+      "attribution_uncertain_mentions": 4
+    },
+    {
+      "slug": "05-skipped-call",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 2,
+      "boolean_assignments_checked": 2,
+      "runtime_samples": 4,
+      "text_bytes": 371,
+      "attribution_uncertain_mentions": 1
+    },
+    {
+      "slug": "06-nested-selectors",
+      "exit_code": 0,
+      "result_comparison": "complete",
+      "regions": 9,
+      "boolean_assignments_checked": 16,
+      "runtime_samples": 6,
+      "text_bytes": 2595,
+      "attribution_uncertain_mentions": 8
+    },
+    {
+      "slug": "07-nullish-and-overwrite",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 3,
+      "boolean_assignments_checked": 4,
+      "runtime_samples": 5,
+      "text_bytes": 496,
+      "attribution_uncertain_mentions": 1
+    },
+    {
+      "slug": "08-reassociation",
+      "exit_code": 0,
+      "result_comparison": "complete",
+      "regions": 3,
+      "boolean_assignments_checked": 4,
+      "runtime_samples": 4,
+      "text_bytes": 710,
+      "attribution_uncertain_mentions": 2
+    },
+    {
+      "slug": "09-loop-boundary",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 1,
+      "boolean_assignments_checked": 1,
+      "runtime_samples": 4,
+      "text_bytes": 293,
+      "attribution_uncertain_mentions": 1
+    },
+    {
+      "slug": "10-unused-nested-function",
+      "exit_code": 0,
+      "result_comparison": "partial",
+      "regions": 2,
+      "boolean_assignments_checked": 2,
+      "runtime_samples": 4,
+      "text_bytes": 207,
+      "attribution_uncertain_mentions": 0
+    }
+  ]
+}

@@ -1,0 +1,600 @@
+[
+  {
+    "slug": "01-captured-ternary",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true,
+          true
+        ],
+        "before": 0,
+        "after": 0,
+        "expected_before": 0,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          false
+        ],
+        "before": 3,
+        "after": 3,
+        "expected_before": 3,
+        "expected_after": 3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          true
+        ],
+        "before": 100,
+        "after": 100,
+        "expected_before": 100,
+        "expected_after": 100
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          false
+        ],
+        "before": 24,
+        "after": 12,
+        "expected_before": 24,
+        "expected_after": 12
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true
+        ],
+        "before": 121,
+        "after": 109,
+        "expected_before": 121,
+        "expected_after": 109
+      }
+    ]
+  },
+  {
+    "slug": "02-killed-edit",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 20,
+        "after": 20,
+        "expected_before": 20,
+        "expected_after": 20
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": 10,
+        "after": 10,
+        "expected_before": 10,
+        "expected_after": 10
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": 20,
+        "after": 20,
+        "expected_before": 20,
+        "expected_after": 20
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 10,
+        "after": 10,
+        "expected_before": 10,
+        "expected_after": 10
+      }
+    ]
+  },
+  {
+    "slug": "03-guard-version",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": -3,
+        "after": 5,
+        "expected_before": -3,
+        "expected_after": 5
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": -3,
+        "after": -3,
+        "expected_before": -3,
+        "expected_after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": 7,
+        "after": 7,
+        "expected_before": 7,
+        "expected_after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 7,
+        "after": -3,
+        "expected_before": 7,
+        "expected_after": -3
+      }
+    ]
+  },
+  {
+    "slug": "04-repeated-swapped-operands",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 6,
+        "after": -6,
+        "expected_before": 6,
+        "expected_after": -6
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": -6,
+        "after": 6,
+        "expected_before": -6,
+        "expected_after": 6
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": -6,
+        "after": 6,
+        "expected_before": -6,
+        "expected_after": 6
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 6,
+        "after": -6,
+        "expected_before": 6,
+        "expected_after": -6
+      },
+      {
+        "args": [
+          2,
+          2,
+          false,
+          false
+        ],
+        "before": 0,
+        "after": 0,
+        "expected_before": 0,
+        "expected_after": 0
+      }
+    ]
+  },
+  {
+    "slug": "05-skipped-call",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          false
+        ],
+        "before": 7,
+        "after": 7,
+        "expected_before": 7,
+        "expected_after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true
+        ],
+        "before": 7,
+        "after": 7,
+        "expected_before": 7,
+        "expected_after": 7
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false
+        ],
+        "before": -3,
+        "after": -3,
+        "expected_before": -3,
+        "expected_after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true
+        ],
+        "before": 15,
+        "after": 6,
+        "expected_before": 15,
+        "expected_after": 6
+      }
+    ]
+  },
+  {
+    "slug": "06-nested-selectors",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false,
+          true,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": 0,
+        "expected_before": 0,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          false,
+          false
+        ],
+        "before": 0,
+        "after": 3,
+        "expected_before": 0,
+        "expected_after": 3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true,
+          false
+        ],
+        "before": 3,
+        "after": 0,
+        "expected_before": 3,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          false,
+          false
+        ],
+        "before": -3,
+        "after": 0,
+        "expected_before": -3,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          false,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": -3,
+        "expected_before": 0,
+        "expected_after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true,
+          true,
+          true,
+          true
+        ],
+        "before": -3,
+        "after": {
+          "special": "-0"
+        },
+        "expected_before": -3,
+        "expected_after": {
+          "special": "-0"
+        }
+      }
+    ]
+  },
+  {
+    "slug": "07-nullish-and-overwrite",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          true
+        ],
+        "before": 6,
+        "after": 7,
+        "expected_before": 6,
+        "expected_after": 7
+      },
+      {
+        "args": [
+          0,
+          2,
+          true
+        ],
+        "before": 1,
+        "after": 2,
+        "expected_before": 1,
+        "expected_after": 2
+      },
+      {
+        "args": [
+          null,
+          2,
+          true
+        ],
+        "before": 3,
+        "after": 4,
+        "expected_before": 3,
+        "expected_after": 4
+      },
+      {
+        "args": [
+          null,
+          2,
+          false
+        ],
+        "before": 100,
+        "after": 100,
+        "expected_before": 100,
+        "expected_after": 100
+      },
+      {
+        "args": [
+          0,
+          2,
+          false
+        ],
+        "before": 100,
+        "after": 100,
+        "expected_before": 100,
+        "expected_after": 100
+      }
+    ]
+  },
+  {
+    "slug": "08-reassociation",
+    "samples": [
+      {
+        "args": [
+          10000000000000000,
+          -10000000000000000,
+          1,
+          false,
+          false
+        ],
+        "before": 2,
+        "after": 0,
+        "expected_before": 2,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          false,
+          false
+        ],
+        "before": 12,
+        "after": 12,
+        "expected_before": 12,
+        "expected_after": 12
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          false,
+          true
+        ],
+        "before": -12,
+        "after": -12,
+        "expected_before": -12,
+        "expected_after": -12
+      },
+      {
+        "args": [
+          1,
+          2,
+          3,
+          true,
+          false
+        ],
+        "before": 0,
+        "after": 0,
+        "expected_before": 0,
+        "expected_after": 0
+      }
+    ]
+  },
+  {
+    "slug": "09-loop-boundary",
+    "samples": [
+      {
+        "args": [
+          0,
+          3
+        ],
+        "before": 0,
+        "after": 0,
+        "expected_before": 0,
+        "expected_after": 0
+      },
+      {
+        "args": [
+          1,
+          3
+        ],
+        "before": 4,
+        "after": 5,
+        "expected_before": 4,
+        "expected_after": 5
+      },
+      {
+        "args": [
+          2,
+          3
+        ],
+        "before": 8,
+        "after": 10,
+        "expected_before": 8,
+        "expected_after": 10
+      },
+      {
+        "args": [
+          3,
+          0
+        ],
+        "before": 3,
+        "after": 6,
+        "expected_before": 3,
+        "expected_after": 6
+      }
+    ]
+  },
+  {
+    "slug": "10-unused-nested-function",
+    "samples": [
+      {
+        "args": [
+          5,
+          2,
+          false
+        ],
+        "before": -3,
+        "after": -3,
+        "expected_before": -3,
+        "expected_after": -3
+      },
+      {
+        "args": [
+          5,
+          2,
+          true
+        ],
+        "before": 3,
+        "after": 3,
+        "expected_before": 3,
+        "expected_after": 3
+      },
+      {
+        "args": [
+          2,
+          5,
+          false
+        ],
+        "before": 3,
+        "after": 3,
+        "expected_before": 3,
+        "expected_after": 3
+      },
+      {
+        "args": [
+          2,
+          5,
+          true
+        ],
+        "before": -3,
+        "after": -3,
+        "expected_before": -3,
+        "expected_after": -3
+      }
+    ]
+  }
+]

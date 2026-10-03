@@ -34,6 +34,11 @@ For compact or full JSON, replace `text` with `compact-json` or `full-json`. The
 
 The [semantic expectations and sources](EXAMPLES.md) cover every case. Findings and presentation suggestions are documented separately in [001](001-report-values-and-attribution.md), [002](002-short-circuit-precision.md), and [003](003-compact-readable-text.md).
 
+The [2026-10-03 review of ten complex return-flow examples](complex-batch-2026-10-03/README.md)
+includes before/after source, exact CLI output, full evidence, independent concrete
+checks, and findings about missing unchanged branches, attribution, and uncertainty
+explanations. The archived outputs preserve the working tree used for that review.
+
 [003](003-compact-readable-text.md#agreed-scope) is scoped to text output and its
 documentation, preserving JSON structures and versions. Its presentation
 requirements and acceptance criteria are implemented and verified; see the

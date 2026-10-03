@@ -1,0 +1,51 @@
+Function result: selectors
+Edit attribution uncertain
+Changed computation under enabled && first && !second && !negate:
+  (a - a) -> (a - b) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && first && second && !negate:
+  (a - b) -> (a - a) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && !first && !second && !negate:
+  (b - a) -> (b - b) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && !first && second && !negate:
+  (b - b) -> (b - a) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && first && !second && negate:
+  (-(a - a)) -> (-(a - b)) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && first && second && negate:
+  (-(a - b)) -> (-(a - a)) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && !first && !second && negate:
+  (-(b - a)) -> (-(b - b)) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Edit attribution uncertain
+Changed computation under enabled && !first && second && negate:
+  (-(b - b)) -> (-(b - a)) (Changed)
+  Reaches return negate ? -frozen : frozen
+Before contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+After contributing writes: snippet.ts:4, snippet.ts:5, snippet.ts:6
+Coverage: result comparison Complete; source alignment Partial
+Evidence: full.json (ifds-function-9989c5f4a604d3d5)

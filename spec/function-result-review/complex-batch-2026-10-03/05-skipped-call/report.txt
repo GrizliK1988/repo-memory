@@ -1,0 +1,6 @@
+Function result: skipped
+Unchanged data flow under !enabled: (a + b) (runtime value equality unresolved)
+Edit attribution uncertain
+Unknown under enabled: normal completion or result selection is unresolved
+Coverage: result comparison Partial; source alignment Partial; before analysis Partial; after analysis Partial
+Evidence: full.json (ifds-function-2ed9604500d4d8b6)

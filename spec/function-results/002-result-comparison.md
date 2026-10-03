@@ -43,6 +43,11 @@ Fixture examples: [FR002 acceptance test sketches](TEST_EXAMPLES.md).
 - A changed argument to an unresolved call is a dependency finding, not a
   proved change to that call's returned computation. For example,
   `return mystery(p)` -> `return mystery(q)` has an `unknown` result relation.
+- Resolved changes to the selected return computation or input sources give
+  `changed` without runtime input types or a proof of unequal values. This
+  includes arithmetic over two unrestricted inputs and a copied result that
+  survives a later overwrite. Type requirements for pure-expression equality
+  must not hide an established structural change.
 - A declared `number` input domain includes all JavaScript number values,
   including `NaN`, infinities, and signed zero. Until special values are modeled,
   direct comparisons involving them are unknown. Structural identity of the

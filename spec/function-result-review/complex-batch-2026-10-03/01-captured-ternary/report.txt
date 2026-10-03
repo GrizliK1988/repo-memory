@@ -1,0 +1,14 @@
+Function result: archive
+Edit: (a + b) -> (a - b) (before snippet.ts:4; after snippet.ts:4)
+Changed computation for saved:
+  ((a + b) * 3) -> ((a - b) * 3) (Changed)
+  Reaches return useSaved ? saved + current : current
+Before shared writes: snippet.ts:4, snippet.ts:5
+After shared writes: snippet.ts:4, snippet.ts:5
+Return under enabled && useSaved && !override: (saved + (a - b))
+  Context writes: before snippet.ts:7; after snippet.ts:7
+Return under enabled && useSaved && override: (saved + 100)
+  Context writes: before snippet.ts:8; after snippet.ts:8
+Unchanged data flow under !enabled || !useSaved (runtime value equality unresolved in some regions)
+Coverage: result comparison Partial; source alignment Partial
+Evidence: full.json (ifds-function-cf15c3064f8f3fba)
