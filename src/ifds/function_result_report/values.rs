@@ -343,7 +343,7 @@ pub(super) fn symmetric_guard(
     if ab.identity != ba.identity || aa.identity != bb.identity || ab.identity == aa.identity {
         return false;
     }
-    if a.region.values.keys().ne(b.region.values.keys()) {
+    if a.region.values.keys().ne(b.region.values.keys()) || a.region.nullish != b.region.nullish {
         return false;
     }
     let flipped: Vec<_> = a

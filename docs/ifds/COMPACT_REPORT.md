@@ -75,6 +75,27 @@ The summary preserves whether runtime equality is proven everywhere, unresolved
 everywhere, or unresolved in part of that union. Verbose text retains the separate
 computations and conditions. Unknown dependencies and omitted presentation groups
 cannot enlarge this union; structured regions and evidence remain unchanged.
+An individual established equal region is shown as well, including an early
+return alongside changed computations. Verbose text keeps the separate return
+computations and conditions rather than replacing them with the short union.
+
+Function result regions carry two independent input predicates: `values` records
+truthiness and `nullish` records whether an input is `null` or `undefined`.
+Unlisted predicates are unconstrained. A nullish input is always falsy; a truthy
+input is non-nullish. Impossible truthy/nullish combinations are excluded.
+Resolved `IsNullish` dependencies on positional inputs and their captured copies
+are partitioned separately from truthiness, so `0`, `false`, and empty strings
+retain the left operand of `??`, while `null` and `undefined` select its fallback.
+Arbitrary unresolved computed predicates and unknown calls retain uncertainty.
+The comparison budget counts predicate dimensions and remains bounded at 12.
+
+Coverage separately records `data_flow` and `result_comparison`. Complete data
+flow requires established return selection/completion and dependencies across
+the common input domain, complete input correspondence, and unexhausted analysis
+and comparison budgets. `result_comparison` can remain partial solely because
+runtime equality of unchanged computations is unresolved; text explicitly
+explains this case. Source alignment and presentation completeness remain
+independent coverage dimensions.
 
 A proven permutation of unique pure paired-input guards is shown once as
 `Control: guard order ... -> ...`. Guard versions and outcomes must match;
@@ -101,7 +122,7 @@ candidate edits retain uncertainty. Text shows the unique edit once with both
 source positions. This local attribution does not imply complete alignment of
 every source operation in the file.
 
-Function report schema 3 also attributes a single changed guard through its
+Function reports also attribute a single changed guard through its
 reaching assignments. The full report's `causes` records paired before/after
 observation and guard indices, branch IDs, expanded condition expressions, and
 the source edit's dependency path, node, operation, location, and expanded input
@@ -120,7 +141,7 @@ edits, ambiguous same-line anchors, changed return computations, unknown calls,
 and exhausted analysis/comparison budgets retain uncertainty. Direct predicate
 edits are supported when no upstream assignment changed. Text prints the shared
 edit once with both source locations; rendering does not mutate evidence.
-Full and compact function reports use schema 3; analysis remains schema 4.
+Full and compact function reports use schema 4; analysis remains schema 4.
 Older report schemas are rejected, and historical archived reports are unchanged.
 
 When one changed read in a return expression has the same resolved dependency

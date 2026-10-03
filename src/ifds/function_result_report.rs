@@ -23,8 +23,8 @@ use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
 
-pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 3;
-pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 3;
+pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 4;
+pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -134,6 +134,7 @@ pub struct FunctionReportCoverage {
     pub source_alignment: Coverage,
     pub input_mapping: Coverage,
     pub result_comparison: Coverage,
+    pub data_flow: Coverage,
     pub presentation: Coverage,
     pub analysis_limits_hit: BTreeSet<String>,
     pub comparison_limits_hit: BTreeSet<String>,
@@ -456,15 +457,22 @@ fn choice_regions(flows: &[CompactSideFlow], identity: &str) -> Vec<BooleanRegio
         })
         .map(|flow| flow.flow.region.clone())
         .collect();
-    regions.sort_by(|a, b| a.values.cmp(&b.values));
+    regions.sort_by(|a, b| (&a.values, &a.nullish).cmp(&(&b.values, &b.nullish)));
     regions.dedup();
     simplify_regions(regions)
 }
 
 fn simplify_regions(mut regions: Vec<BooleanRegion>) -> Vec<BooleanRegion> {
-    let slots: Vec<u32> = regions
+    let slots: Vec<(bool, u32)> = regions
         .iter()
-        .flat_map(|region| region.values.keys().copied())
+        .flat_map(|region| {
+            region.values.keys().map(|slot| (false, *slot)).chain(
+                region
+                    .nullish
+                    .keys()
+                    .flat_map(|slot| [(false, *slot), (true, *slot)]),
+            )
+        })
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect();
@@ -473,13 +481,22 @@ fn simplify_regions(mut regions: Vec<BooleanRegion>) -> Vec<BooleanRegion> {
     }
     let covered = |candidate: &BooleanRegion, others: &[BooleanRegion]| {
         (0..(1_usize << slots.len())).all(|mask| {
-            let matches = |region: &BooleanRegion| {
-                region.values.iter().all(|(slot, value)| {
-                    let position = slots.binary_search(slot).expect("listed slot");
-                    (mask & (1 << position) != 0) == *value
-                })
+            let mut assignment = BooleanRegion {
+                values: BTreeMap::new(),
+                nullish: BTreeMap::new(),
             };
-            !matches(candidate) || others.iter().any(matches)
+            for (position, (nullish, slot)) in slots.iter().enumerate() {
+                if *nullish {
+                    assignment
+                        .nullish
+                        .insert(*slot, mask & (1 << position) != 0);
+                } else {
+                    assignment.values.insert(*slot, mask & (1 << position) != 0);
+                }
+            }
+            !assignment.feasible()
+                || !candidate.matches(&assignment)
+                || others.iter().any(|region| region.matches(&assignment))
         })
     };
     let original = regions.clone();
@@ -492,8 +509,16 @@ fn simplify_regions(mut regions: Vec<BooleanRegion>) -> Vec<BooleanRegion> {
                 *region = candidate;
             }
         }
+        let keys: Vec<_> = region.nullish.keys().copied().collect();
+        for key in keys {
+            let mut candidate = region.clone();
+            candidate.nullish.remove(&key);
+            if covered(&candidate, &original) {
+                *region = candidate;
+            }
+        }
     }
-    regions.sort_by(|a, b| a.values.cmp(&b.values));
+    regions.sort_by(|a, b| (&a.values, &a.nullish).cmp(&(&b.values, &b.nullish)));
     regions.dedup();
     let mut index = 0;
     while index < regions.len() {
@@ -513,7 +538,11 @@ fn common_context(regions: &[BooleanRegion]) -> BooleanRegion {
         .first()
         .map_or_else(BTreeMap::new, |r| r.values.clone());
     values.retain(|slot, value| regions.iter().all(|r| r.values.get(slot) == Some(value)));
-    BooleanRegion { values }
+    let mut nullish = regions
+        .first()
+        .map_or_else(BTreeMap::new, |r| r.nullish.clone());
+    nullish.retain(|slot, value| regions.iter().all(|r| r.nullish.get(slot) == Some(value)));
+    BooleanRegion { values, nullish }
 }
 
 fn relative(regions: Vec<BooleanRegion>, context: &BooleanRegion) -> Vec<BooleanRegion> {
@@ -522,6 +551,9 @@ fn relative(regions: Vec<BooleanRegion>, context: &BooleanRegion) -> Vec<Boolean
         .map(|mut region| {
             for slot in context.values.keys() {
                 region.values.remove(slot);
+            }
+            for slot in context.nullish.keys() {
+                region.nullish.remove(slot);
             }
             region
         })
@@ -668,7 +700,9 @@ pub fn compact_function_result_report(
         if merged.contains(&index) {
             continue;
         }
-        effects.sort_by(|a, b| a.region.values.cmp(&b.region.values));
+        effects.sort_by(|a, b| {
+            (&a.region.values, &a.region.nullish).cmp(&(&b.region.values, &b.region.nullish))
+        });
         let identities: BTreeSet<_> = effects
             .iter()
             .flat_map(|effect| [&effect.before_result, &effect.after_result])
@@ -703,6 +737,9 @@ pub fn compact_function_result_report(
         for item in &mut effects {
             for slot in context.values.keys() {
                 item.region.values.remove(slot);
+            }
+            for slot in context.nullish.keys() {
+                item.region.nullish.remove(slot);
             }
         }
         all_findings.push(CompactResultFinding {
@@ -812,6 +849,7 @@ pub fn compact_function_result_report(
             source_alignment: comparison.source_alignment_coverage,
             input_mapping: comparison.input_mapping_coverage,
             result_comparison: comparison.comparison_coverage,
+            data_flow: data_flow_coverage(full),
             presentation: if omitted_groups == 0 {
                 Coverage::Complete
             } else {
@@ -838,7 +876,7 @@ pub fn analyze_function_result_reports<P: SnapshotProvider>(
 }
 
 fn region_text(region: &BooleanRegion, names: &[String]) -> String {
-    if region.values.is_empty() {
+    if region.is_unconstrained() {
         return "always".into();
     }
     region
@@ -851,6 +889,17 @@ fn region_text(region: &BooleanRegion, names: &[String]) -> String {
                 .unwrap_or_else(|| format!("arg{slot}"));
             if *value { name } else { format!("!{name}") }
         })
+        .chain(region.nullish.iter().map(|(slot, value)| {
+            let name = names
+                .get(*slot as usize)
+                .cloned()
+                .unwrap_or_else(|| format!("arg{slot}"));
+            if *value {
+                format!("{name} is nullish")
+            } else {
+                format!("{name} is non-nullish")
+            }
+        }))
         .collect::<Vec<_>>()
         .join(" && ")
 }
@@ -863,7 +912,7 @@ fn regions_text(regions: &[BooleanRegion], names: &[String]) -> String {
         .iter()
         .map(|r| {
             let text = region_text(r, names);
-            if r.values.len() > 1 && regions.len() > 1 {
+            if r.values.len() + r.nullish.len() > 1 && regions.len() > 1 {
                 format!("({text})")
             } else {
                 text
@@ -874,7 +923,7 @@ fn regions_text(regions: &[BooleanRegion], names: &[String]) -> String {
 }
 
 fn truthiness_text(region: &BooleanRegion, names: &[String]) -> String {
-    if region.values.is_empty() {
+    if region.is_unconstrained() {
         return "always".into();
     }
     region
@@ -887,6 +936,16 @@ fn truthiness_text(region: &BooleanRegion, names: &[String]) -> String {
                 .unwrap_or_else(|| format!("arg{slot}"));
             format!("{name} is {}", if *value { "truthy" } else { "falsy" })
         })
+        .chain(region.nullish.iter().map(|(slot, value)| {
+            let name = names
+                .get(*slot as usize)
+                .cloned()
+                .unwrap_or_else(|| format!("arg{slot}"));
+            format!(
+                "{name} is {}",
+                if *value { "nullish" } else { "non-nullish" }
+            )
+        }))
         .collect::<Vec<_>>()
         .join(" && ")
 }
@@ -1269,7 +1328,7 @@ impl FunctionResultCompactReport {
                 let context = region_text(&finding.context, names);
                 if !selected_values
                     && (verbose || show_choices)
-                    && !finding.context.values.is_empty()
+                    && !finding.context.is_unconstrained()
                 {
                     lines.push(format!("Context: {context}"));
                 }
@@ -1303,6 +1362,7 @@ impl FunctionResultCompactReport {
                     } else if selected_values {
                         let mut condition = effect.region.clone();
                         condition.values.extend(&finding.context.values);
+                        condition.nullish.extend(&finding.context.nullish);
                         lines.push(format!(
                             "when {}: {} -> {} ({:?})",
                             truthiness_text(&condition, names),
@@ -1316,6 +1376,7 @@ impl FunctionResultCompactReport {
                         let mut condition = effect.region.clone();
                         if !verbose && !show_choices {
                             condition.values.extend(&finding.context.values);
+                            condition.nullish.extend(&finding.context.nullish);
                         }
                         lines.push(format!(
                             "Effect: {}: {} -> {} ({:?})",
@@ -1395,6 +1456,11 @@ impl FunctionResultCompactReport {
             }
         }
         lines.push(coverage_text(&self.coverage));
+        if self.coverage.data_flow == Coverage::Complete
+            && self.coverage.result_comparison == Coverage::Partial
+        {
+            lines.push("Coverage detail: return data flow is fully compared; runtime equality of unchanged computations is unresolved. Source alignment is assessed separately.".into());
+        }
         lines.push(format!(
             "Evidence: {} ({})",
             self.evidence_file, self.full_report_id
@@ -1580,6 +1646,208 @@ mod tests {
         assert_eq!(serde_json::to_vec(&full).unwrap(), full_bytes);
         assert_eq!(serde_json::to_vec(&compact).unwrap(), compact_bytes);
         compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn single_equal_region_is_visible_beside_changed_results() {
+        for (before, after, expected) in [
+            (
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/06-nested-selectors/before.ts"
+                ),
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/06-nested-selectors/after.ts"
+                ),
+                "Unchanged data flow under !enabled: 0 (Equal)",
+            ),
+            (
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/08-reassociation/before.ts"
+                ),
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/08-reassociation/after.ts"
+                ),
+                "Unchanged data flow under skip: 0 (Equal)",
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            assert_eq!(compact.equal_regions.len(), 1);
+            let bytes = serde_json::to_vec(&full).unwrap();
+            for verbose in [false, true] {
+                let text = compact.render_text_with_detail(&full, verbose);
+                assert_eq!(text.matches(expected).count(), 1, "{text}");
+                assert!(text.contains("Changed computation"), "{text}");
+            }
+            assert_eq!(serde_json::to_vec(&full).unwrap(), bytes);
+            let omitted = compact_function_result_report(
+                &full,
+                FunctionPresentationOptions { max_groups: 0 },
+            );
+            assert!(!omitted.render_text(&full).contains(expected));
+        }
+    }
+
+    #[test]
+    fn nullish_overwrite_covers_all_inputs_and_preserves_the_independent_return() {
+        let before = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/07-nullish-and-overwrite/before.ts"
+        );
+        let after = include_str!(
+            "../../spec/function-result-review/complex-batch-2026-10-03/07-nullish-and-overwrite/after.ts"
+        );
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert_eq!(compact.coverage.result_comparison, Coverage::Complete);
+        assert_eq!(compact.coverage.data_flow, Coverage::Complete);
+        assert!(compact.unknown_regions.is_empty());
+        for (truthy, nullish) in [(true, false), (false, false), (false, true)] {
+            for use_saved in [false, true] {
+                let assignment = BooleanRegion {
+                    values: BTreeMap::from([(0, truthy), (2, use_saved)]),
+                    nullish: BTreeMap::from([(0, nullish)]),
+                };
+                let matching = full
+                    .comparison
+                    .regions
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, region)| region.region.matches(&assignment))
+                    .collect::<Vec<_>>();
+                assert_eq!(matching.len(), 1, "{assignment:?}: {matching:?}");
+                let (index, region) = matching[0];
+                assert_eq!(
+                    region.assessment,
+                    if use_saved {
+                        ResultAssessment::Changed
+                    } else {
+                        ResultAssessment::Equal
+                    }
+                );
+                assert_eq!(region.value_dependency_changed, use_saved);
+                if !use_saved {
+                    let presented = compact_region(&full, &compact.full_report_id, index);
+                    for result in [presented.before_result, presented.after_result] {
+                        assert_eq!(
+                            result.unwrap().proven_value,
+                            Some(FunctionKnownValue::Number {
+                                value: "100".into()
+                            })
+                        );
+                    }
+                }
+            }
+        }
+        for verbose in [false, true] {
+            let text = compact.render_text_with_detail(&full, verbose);
+            if verbose {
+                assert!(
+                    text.contains("Unchanged data flow under !a && !useSaved: 100 (Equal)"),
+                    "{text}"
+                );
+                assert!(
+                    text.contains("Unchanged data flow under a && !useSaved: 100 (Equal)"),
+                    "{text}"
+                );
+            } else {
+                assert!(
+                    text.contains("Unchanged data flow under !useSaved (Equal)"),
+                    "{text}"
+                );
+            }
+            assert!(
+                text.contains("Changed computation under useSaved && a is non-nullish"),
+                "{text}"
+            );
+            assert!(
+                text.contains("Changed computation under useSaved && a is nullish"),
+                "{text}"
+            );
+            assert!(!text.contains("Unknown under"), "{text}");
+        }
+        let restored =
+            FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap()).unwrap();
+        let restored_compact =
+            FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap();
+        restored_compact.validate_with_full(&restored).unwrap();
+        assert_eq!(restored_compact, compact);
+    }
+
+    #[test]
+    fn coverage_separates_data_flow_from_runtime_equality_and_real_unknown_paths() {
+        for (before, after) in [
+            (
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/01-captured-ternary/before.ts"
+                ),
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/01-captured-ternary/after.ts"
+                ),
+            ),
+            (
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/10-unused-nested-function/before.ts"
+                ),
+                include_str!(
+                    "../../spec/function-result-review/complex-batch-2026-10-03/10-unused-nested-function/after.ts"
+                ),
+            ),
+        ] {
+            let analysis = analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            );
+            let full = assemble_function_result_report(analysis.clone());
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            assert_eq!(compact.coverage.data_flow, Coverage::Complete);
+            assert_eq!(compact.coverage.result_comparison, Coverage::Partial);
+            assert_eq!(compact.coverage.source_alignment, Coverage::Partial);
+            let text = compact.render_text(&full);
+            assert!(text.contains("data flow Complete"), "{text}");
+            assert!(
+                text.contains("runtime equality of unchanged computations is unresolved"),
+                "{text}"
+            );
+            let limited = assemble_function_result_report_with_comparison_limit(analysis, 1);
+            let partial =
+                compact_function_result_report(&limited, FunctionPresentationOptions::default());
+            assert_eq!(partial.coverage.data_flow, Coverage::Partial);
+            assert!(
+                !partial
+                    .render_text(&limited)
+                    .contains("return data flow is fully compared")
+            );
+        }
+        let full = assemble_function_result_report(analyze(
+            "function result(a) { return a; }",
+            "function result(a) { return mystery(a); }",
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let mut compact =
+            compact_function_result_report(&full, FunctionPresentationOptions::default());
+        assert_eq!(compact.coverage.data_flow, Coverage::Partial);
+        assert!(
+            !compact
+                .render_text(&full)
+                .contains("return data flow is fully compared")
+        );
+        compact.coverage.data_flow = Coverage::Complete;
+        assert!(compact.validate_with_full(&full).is_err());
     }
 
     #[test]
@@ -2469,7 +2737,10 @@ mod tests {
             text.contains("when flag is truthy: \"old\" -> \"new\" (Different)"),
             "{text}"
         );
-        assert!(!text.contains("Equal"), "{text}");
+        assert!(
+            text.contains("Unchanged data flow under !flag: flag (Equal)"),
+            "{text}"
+        );
         assert!(!text.contains("Unknown"), "{text}");
         assert!(!text.contains("Return choice"), "{text}");
         assert!(!text.contains("flag &&"), "{text}");
@@ -3017,9 +3288,9 @@ mod tests {
     #[test]
     fn ifds_fr003_typed_value_validation() {
         let (full, compact) = review("copy");
-        assert_eq!(full.schema_version, 3);
+        assert_eq!(full.schema_version, 4);
         assert_eq!(full.analysis.schema_version, 4);
-        assert_eq!(compact.schema_version, 3);
+        assert_eq!(compact.schema_version, 4);
         assert_eq!(
             FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap(),
             compact

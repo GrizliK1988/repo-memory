@@ -138,7 +138,13 @@ fn short_circuit_identity_reports_and_skipped_calls() {
                 ResultAssessment::Equal,
             );
             assert_eq!(compact.equal_regions.len(), 1);
-            assert!(!text.contains("Equal"), "{text}");
+            let unchanged = if skipped { "flag" } else { "!flag" };
+            assert!(
+                text.contains(&format!(
+                    "Unchanged data flow under {unchanged}: flag (Equal)"
+                )),
+                "{text}"
+            );
             assert!(!text.contains("Unchanged choices"), "{text}");
             if rhs == "mystery()" {
                 assert_eq!(compact.coverage.result_comparison, Coverage::Partial);
@@ -397,9 +403,9 @@ fn readable_review_text_preserves_structured_evidence() {
         assert_eq!(restored_compact.render_text(&restored_full), text);
         assert_eq!(restored_full, full);
         assert_eq!(restored_compact, compact);
-        assert_eq!(full.schema_version, 3);
+        assert_eq!(full.schema_version, 4);
         assert_eq!(full.analysis.schema_version, 4);
-        assert_eq!(compact.schema_version, 3);
+        assert_eq!(compact.schema_version, 4);
         assert_eq!(
             compact.equal_regions.len(),
             full.comparison

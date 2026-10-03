@@ -50,6 +50,51 @@ pub struct BooleanRegion {
     /// A missing slot is unconstrained. Interpret this predicate together with
     /// the applicable before/after entry assumptions in the enclosing report.
     pub values: BTreeMap<u32, bool>,
+    /// Nullishness is independent of truthiness: falsy includes 0, false and
+    /// empty strings. Nullish inputs are always falsy.
+    pub nullish: BTreeMap<u32, bool>,
+}
+
+impl BooleanRegion {
+    pub(crate) fn is_unconstrained(&self) -> bool {
+        self.values.is_empty() && self.nullish.is_empty()
+    }
+
+    pub(crate) fn matches(&self, assignment: &Self) -> bool {
+        self.values
+            .iter()
+            .all(|(slot, value)| assignment.truthiness(*slot) == Some(*value))
+            && self
+                .nullish
+                .iter()
+                .all(|(slot, value)| assignment.nullishness(*slot) == Some(*value))
+    }
+
+    fn truthiness(&self, slot: u32) -> Option<bool> {
+        self.values
+            .get(&slot)
+            .copied()
+            .or_else(|| (self.nullish.get(&slot) == Some(&true)).then_some(false))
+    }
+
+    fn nullishness(&self, slot: u32) -> Option<bool> {
+        self.nullish
+            .get(&slot)
+            .copied()
+            .or_else(|| (self.values.get(&slot) == Some(&true)).then_some(false))
+    }
+
+    pub(crate) fn feasible(&self) -> bool {
+        self.nullish
+            .iter()
+            .all(|(slot, value)| !*value || self.values.get(slot) != Some(&true))
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum RegionSlot {
+    Truthiness(u32),
+    Nullish(u32),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -388,16 +433,11 @@ fn assess(
     }
 }
 
-fn bool_term(
-    term: &ValueTerm,
-    values: &BTreeMap<u32, bool>,
-    entry: &FunctionEntry,
-) -> Option<bool> {
+fn bool_term(term: &ValueTerm, values: &BooleanRegion, entry: &FunctionEntry) -> Option<bool> {
     match term {
         ValueTerm::Input(index) => {
             values
-                .get(index)
-                .copied()
+                .truthiness(*index)
                 .or_else(|| match entry.known_values.get(index) {
                     Some(FunctionKnownValue::Boolean { value }) => Some(*value),
                     _ => None,
@@ -418,6 +458,9 @@ fn bool_term(
                     value,
                     FunctionKnownValue::Null | FunctionKnownValue::Undefined
                 )),
+                ValueTerm::Input(slot) if values.nullishness(slot).is_some() => {
+                    values.nullishness(slot)
+                }
                 term => match term_type(&term, entry, entry) {
                     Some(PrimitiveDomain::Nullish) => Some(true),
                     Some(_) => Some(false),
@@ -548,13 +591,41 @@ fn assumption_bool(
     }
 }
 
-fn entry_truth(entry: &FunctionEntry, values: &BTreeMap<u32, bool>) -> Truth {
+fn entry_truth(entry: &FunctionEntry, values: &BooleanRegion) -> Truth {
+    if !values.feasible() {
+        return Truth::No;
+    }
+    if entry.domains.iter().any(|(slot, domain)| {
+        *domain == PrimitiveDomain::Nullish && values.truthiness(*slot) == Some(true)
+    }) {
+        return Truth::No;
+    }
+    for (slot, nullish) in &values.nullish {
+        let expected = entry
+            .known_values
+            .get(slot)
+            .map(|value| {
+                matches!(
+                    value,
+                    FunctionKnownValue::Null | FunctionKnownValue::Undefined
+                )
+            })
+            .or_else(|| {
+                entry
+                    .domains
+                    .get(slot)
+                    .map(|domain| *domain == PrimitiveDomain::Nullish)
+            });
+        if expected.is_some_and(|expected| expected != *nullish) {
+            return Truth::No;
+        }
+    }
     let mut unknown = entry.known_values.values().any(|value| match value {
         FunctionKnownValue::Number { value } => known_number(value).is_none(),
         _ => false,
     });
     for (index, known) in &entry.known_values {
-        if let Some(actual) = values.get(index) {
+        if let Some(actual) = values.truthiness(*index) {
             let truthiness = match known {
                 FunctionKnownValue::Boolean { value } => Some(*value),
                 FunctionKnownValue::Number { value } => known_number(value).map(|n| n != 0.0),
@@ -562,14 +633,20 @@ fn entry_truth(entry: &FunctionEntry, values: &BTreeMap<u32, bool>) -> Truth {
                 FunctionKnownValue::Null | FunctionKnownValue::Undefined => Some(false),
             };
             match truthiness {
-                Some(value) if value == *actual => {}
+                Some(value) if value == actual => {}
                 Some(_) => return Truth::No,
                 None => unknown = true,
             }
         }
     }
+    let mut truthiness = values.values.clone();
+    for (slot, nullish) in &values.nullish {
+        if *nullish {
+            truthiness.insert(*slot, false);
+        }
+    }
     for assumption in &entry.assumptions {
-        match assumption_bool(assumption, values, entry) {
+        match assumption_bool(assumption, &truthiness, entry) {
             Some(false) => return Truth::No,
             Some(true) => {}
             None => unknown = true,
@@ -622,7 +699,7 @@ fn entries_disjoint(before: &FunctionEntry, after: &FunctionEntry) -> bool {
 
 fn select_observation<'a>(
     side: &'a FunctionSnapshotResult,
-    values: &BTreeMap<u32, bool>,
+    values: &BooleanRegion,
 ) -> Selection<'a> {
     let mut selected = Vec::new();
     let mut unresolved = false;
@@ -819,17 +896,45 @@ fn merge_cubes(mut cubes: Vec<Vec<Option<bool>>>) -> Vec<Vec<Option<bool>>> {
     }
 }
 
-fn region(slots: &[u32], cube: &[Option<bool>]) -> BooleanRegion {
-    BooleanRegion {
-        values: slots
-            .iter()
-            .zip(cube)
-            .filter_map(|(slot, value)| value.map(|value| (*slot, value)))
-            .collect(),
+fn region(slots: &[RegionSlot], cube: &[Option<bool>]) -> BooleanRegion {
+    let mut output = BooleanRegion {
+        values: BTreeMap::new(),
+        nullish: BTreeMap::new(),
+    };
+    for (slot, value) in slots.iter().zip(cube) {
+        if let Some(value) = value {
+            match slot {
+                RegionSlot::Truthiness(slot) => {
+                    output.values.insert(*slot, *value);
+                }
+                RegionSlot::Nullish(slot) => {
+                    output.nullish.insert(*slot, *value);
+                }
+            }
+        }
     }
+    // Remove constraints implied by JS truthiness, without broadening the
+    // feasible input set. Keep region matching aware of the same implications.
+    if !output.feasible() {
+        return output;
+    }
+    for (slot, nullish) in &output.nullish {
+        if *nullish {
+            output.values.remove(slot);
+        }
+    }
+    let truthy: Vec<_> = output
+        .values
+        .iter()
+        .filter_map(|(slot, value)| value.then_some(*slot))
+        .collect();
+    for slot in truthy {
+        output.nullish.remove(&slot);
+    }
+    output
 }
 
-fn grouped_domains(slots: &[u32], assignments: &[Vec<bool>]) -> Vec<BooleanRegion> {
+fn grouped_domains(slots: &[RegionSlot], assignments: &[Vec<bool>]) -> Vec<BooleanRegion> {
     merge_cubes(
         assignments
             .iter()
@@ -841,7 +946,7 @@ fn grouped_domains(slots: &[u32], assignments: &[Vec<bool>]) -> Vec<BooleanRegio
     .collect()
 }
 
-fn collect_slots(analysis: &FunctionResultAnalysis) -> Vec<u32> {
+fn collect_slots(analysis: &FunctionResultAnalysis) -> Vec<RegionSlot> {
     fn term_slots(term: &ValueTerm, slots: &mut BTreeSet<u32>) {
         match term {
             ValueTerm::Input(index) => {
@@ -903,7 +1008,30 @@ fn collect_slots(analysis: &FunctionResultAnalysis) -> Vec<u32> {
             }
         }
     }
-    slots.into_iter().collect()
+    let mut output = slots
+        .into_iter()
+        .map(RegionSlot::Truthiness)
+        .collect::<BTreeSet<_>>();
+    fn nullish_slots(term: &ValueTerm, slots: &mut BTreeSet<RegionSlot>) {
+        if let ValueTerm::Compute(operator, inputs) = term {
+            if *operator == PrimitiveOperator::IsNullish
+                && let [ValueTerm::Input(slot)] = inputs.as_slice()
+            {
+                slots.insert(RegionSlot::Nullish(*slot));
+            }
+            for input in inputs {
+                nullish_slots(input, slots);
+            }
+        }
+    }
+    for side in [&analysis.before, &analysis.after].into_iter().flatten() {
+        for guard in side.observations.iter().flat_map(|item| &item.guards) {
+            if let Some(term) = dependency_term(&guard.condition, &side.parameters) {
+                nullish_slots(&term, &mut output);
+            }
+        }
+    }
+    output.into_iter().collect()
 }
 
 type FlowAtom = (
@@ -914,7 +1042,7 @@ type FlowAtom = (
     Option<String>,
 );
 
-fn group_flows(slots: &[u32], atoms: &[FlowAtom]) -> Vec<SnapshotResultFlow> {
+fn group_flows(slots: &[RegionSlot], atoms: &[FlowAtom]) -> Vec<SnapshotResultFlow> {
     let mut pending = atoms.to_vec();
     let mut output = Vec::new();
     while let Some(seed) = pending.pop() {
@@ -959,7 +1087,9 @@ fn group_flows(slots: &[u32], atoms: &[FlowAtom]) -> Vec<SnapshotResultFlow> {
             });
         }
     }
-    output.sort_by(|a, b| a.region.values.cmp(&b.region.values));
+    output.sort_by(|a, b| {
+        (&a.region.values, &a.region.nullish).cmp(&(&b.region.values, &b.region.nullish))
+    });
     output
 }
 
@@ -989,13 +1119,8 @@ pub(crate) fn split_result_flows(
             let bits: Vec<_> = (0..slots.len())
                 .map(|index| mask & (1 << index) != 0)
                 .collect();
-            let values: BTreeMap<_, _> = slots.iter().copied().zip(bits.iter().copied()).collect();
-            if !flow
-                .region
-                .values
-                .iter()
-                .all(|(slot, value)| values.get(slot) == Some(value))
-            {
+            let values = region(&slots, &bits.iter().copied().map(Some).collect::<Vec<_>>());
+            if !values.feasible() || !flow.region.matches(&values) {
                 continue;
             }
             let selection = select_observation(side, &values);
@@ -1024,7 +1149,11 @@ pub(crate) fn split_result_flows(
         }
     }
     output.sort_by(|a, b| {
-        (&a.region.values, &a.observations).cmp(&(&b.region.values, &b.observations))
+        (&a.region.values, &a.region.nullish, &a.observations).cmp(&(
+            &b.region.values,
+            &b.region.nullish,
+            &b.observations,
+        ))
     });
     output
 }
@@ -1118,11 +1247,15 @@ pub fn compare_function_results_with_limit(
         let bits: Vec<bool> = (0..slots.len())
             .map(|index| mask & (1 << index) != 0)
             .collect();
+        let values = region(&slots, &bits.iter().copied().map(Some).collect::<Vec<_>>());
+        // Impossible truthy-nullish assignments belong to no input domain.
+        if !values.feasible() {
+            continue;
+        }
         if mask >= examined_assignments {
             unresolved.push(bits);
             continue;
         }
-        let values: BTreeMap<u32, bool> = slots.iter().copied().zip(bits.iter().copied()).collect();
         let before_truth = entry_truth(&analysis.query.before_entry, &values);
         let after_truth = entry_truth(&analysis.query.after_entry, &values);
         match (before_truth, after_truth) {
@@ -1363,7 +1496,9 @@ pub fn compare_function_results_with_limit(
             });
         }
     }
-    regions.sort_by(|a, b| a.region.values.cmp(&b.region.values));
+    regions.sort_by(|a, b| {
+        (&a.region.values, &a.region.nullish).cmp(&(&b.region.values, &b.region.nullish))
+    });
     let comparison_coverage = if function_presence != FunctionPresence::Both {
         Coverage::Unsupported
     } else if unresolved.is_empty()
@@ -1732,17 +1867,15 @@ mod tests {
             FunctionEntry::default(),
         );
         assert!(
-            result
-                .regions
-                .iter()
-                .any(|region| region.region.values == BTreeMap::from([(0, true)])
-                    && region.assessment == ResultAssessment::Equal),
+            result.regions.iter().any(|region| region.region.nullish
+                == BTreeMap::from([(0, false)])
+                && region.assessment == ResultAssessment::Equal),
             "{result:#?}"
         );
-        assert!(result.regions.iter().any(|region| region.region.values
-            == BTreeMap::from([(0, false)])
-            && region.assessment == ResultAssessment::Unknown));
-        assert_eq!(result.comparison_coverage, Coverage::Partial);
+        assert!(result.regions.iter().any(|region| region.region.nullish
+            == BTreeMap::from([(0, true)])
+            && region.assessment == ResultAssessment::Different));
+        assert_eq!(result.comparison_coverage, Coverage::Complete);
     }
 
     #[test]
@@ -1782,6 +1915,94 @@ mod tests {
             }
             assert_eq!(result.comparison_coverage, Coverage::Partial);
         }
+    }
+
+    #[test]
+    fn nullish_regions_preserve_truthiness_and_partition_nested_selection() {
+        let before = "function result(a, b, c) { const selected = a ?? b ?? c; if (a) return selected; return selected; }";
+        let after = before.replace("b ?? c", "b ?? 'new'");
+        let comparison = compare_sources(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        assert_eq!(
+            comparison.comparison_coverage,
+            Coverage::Complete,
+            "{comparison:#?}"
+        );
+        for (a_truthy, a_nullish) in [(false, false), (true, false), (false, true)] {
+            for (b_truthy, b_nullish) in [(false, false), (true, false), (false, true)] {
+                let assignment = BooleanRegion {
+                    values: BTreeMap::from([(0, a_truthy), (1, b_truthy)]),
+                    nullish: BTreeMap::from([(0, a_nullish), (1, b_nullish)]),
+                };
+                let matching = comparison
+                    .regions
+                    .iter()
+                    .filter(|region| region.region.matches(&assignment))
+                    .collect::<Vec<_>>();
+                assert_eq!(matching.len(), 1, "{assignment:?}: {matching:?}");
+                assert_eq!(
+                    matching[0].assessment,
+                    if a_nullish && b_nullish {
+                        ResultAssessment::Changed
+                    } else {
+                        ResultAssessment::Equal
+                    }
+                );
+            }
+        }
+        assert!(
+            comparison
+                .regions
+                .iter()
+                .all(|region| region.region.feasible())
+        );
+        let analysis = analyze_sources(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        let limited = compare_function_results_with_limit(&analysis, 1);
+        assert_eq!(limited.comparison_coverage, Coverage::Partial);
+        assert!(limited.limits_hit.contains("comparison_assignments"));
+        assert!(!limited.unresolved_domain.is_empty());
+    }
+
+    #[test]
+    fn non_nullish_falsy_copies_skip_calls_without_masking_nullish_completion() {
+        let before = "function result(a, b) { const saved = a; a = b; return saved ?? 'old'; }";
+        let after = before.replace("'old'", "mystery()");
+        let comparison = compare_sources(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        for (truthy, nullish) in [(false, false), (true, false), (false, true)] {
+            let assignment = BooleanRegion {
+                values: BTreeMap::from([(0, truthy)]),
+                nullish: BTreeMap::from([(0, nullish)]),
+            };
+            let matching = comparison
+                .regions
+                .iter()
+                .filter(|region| region.region.matches(&assignment))
+                .collect::<Vec<_>>();
+            assert_eq!(matching.len(), 1, "{assignment:?}: {comparison:#?}");
+            assert_eq!(
+                matching[0].assessment,
+                if nullish {
+                    ResultAssessment::Unknown
+                } else {
+                    ResultAssessment::Equal
+                }
+            );
+        }
+        assert_eq!(comparison.comparison_coverage, Coverage::Partial);
     }
 
     #[test]

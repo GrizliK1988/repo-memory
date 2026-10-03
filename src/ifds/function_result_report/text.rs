@@ -235,6 +235,16 @@ pub(super) fn unchanged_data_flow_summary(
             .map(|_| region.evidence.index)
         })
         .collect();
+    if indices.len() == 1 {
+        let index = *indices.first().unwrap();
+        let region = &full.comparison.regions[index];
+        if region.assessment == ResultAssessment::Equal && !region.control_changed {
+            return (
+                vec![unchanged_data_flow_line(full, region, &compact.input_names).unwrap()],
+                indices,
+            );
+        }
+    }
     if indices.len() < 2 {
         return (Vec::new(), BTreeSet::new());
     }
@@ -271,7 +281,7 @@ pub(super) fn conditional_choices(finding: &CompactResultFinding) -> bool {
                 .before
                 .iter()
                 .chain(&choice.after)
-                .any(|region| !region.values.is_empty())
+                .any(|region| !region.is_unconstrained())
         })
 }
 
@@ -672,10 +682,44 @@ fn guard_order_text(
     ))
 }
 
+pub(super) fn data_flow_coverage(full: &FunctionResultReport) -> Coverage {
+    if full.comparison.function_presence != FunctionPresence::Both {
+        return Coverage::Unsupported;
+    }
+    if full.comparison.input_mapping_coverage != Coverage::Complete
+        || !full.comparison.unresolved_domain.is_empty()
+        || !full.comparison.limits_hit.is_empty()
+        || [&full.analysis.before, &full.analysis.after]
+            .iter()
+            .any(|side| {
+                side.as_ref().is_none_or(|side| {
+                    side.coverage != Coverage::Complete || !side.limits_hit.is_empty()
+                })
+            })
+        || full.comparison.common_domain_status == CommonDomainStatus::Unresolved
+    {
+        return Coverage::Partial;
+    }
+    let names = full
+        .analysis
+        .before
+        .as_ref()
+        .map_or(&[][..], |side| side.parameter_names.as_slice());
+    if full.comparison.regions.iter().all(|region| {
+        region.assessment != ResultAssessment::Unknown
+            || unchanged_data_flow_line(full, region, names).is_some()
+    }) {
+        Coverage::Complete
+    } else {
+        Coverage::Partial
+    }
+}
+
 pub(super) fn coverage_text(coverage: &FunctionReportCoverage) -> String {
     let mut fields = vec![
         format!("result comparison {:?}", coverage.result_comparison),
         format!("source alignment {:?}", coverage.source_alignment),
+        format!("data flow {:?}", coverage.data_flow),
     ];
     for (name, status) in [
         ("before analysis", coverage.before_analysis),

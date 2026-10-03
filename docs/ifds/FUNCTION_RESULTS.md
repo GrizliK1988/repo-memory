@@ -274,7 +274,7 @@ Provide text, compact JSON, and full evidence modes. The conceptual
 | Dependencies | Shared sources, computations, operand roles, controls, and upstream links. |
 | Result regions | Same-input conditions, before/after results, assessment, evidence category, and proof or unknown-reason references. |
 | Findings | Changed conditions, computations, result selection, observations, or function presence, linked to affected regions and supported edit evidence. |
-| Coverage | Per-snapshot analysis, source alignment, input mapping, result comparison, presentation completeness, and open caller continuations. |
+| Coverage | Per-snapshot analysis, source alignment, input mapping, data-flow comparison, result comparison, presentation completeness, and open caller continuations. |
 
 Each finding answers: what changed, under which inputs, what was returned before
 and after, and how the dependency evidence connects the edit to the result. Link
@@ -354,7 +354,13 @@ for value identity as well as expression text. Symmetric effects of a proven
 common guard inversion share one finding while retaining separate directional
 results, regions, and evidence. Dependency source positions support concise
 links from returns to contributing writes. These structures use full report
-schema 3, analysis schema 4, and compact schema 3. Full reports also retain
+schema 4, analysis schema 4, and compact schema 4. Regions separately preserve
+input truthiness (`values`) and nullishness (`nullish`), with JS implications
+between these predicates. Captured input copies retain the original input's
+predicates after later reassignment. This distinguishes non-nullish falsy inputs
+from `null` and `undefined` in `??` without inventing concrete numeric values.
+Data-flow coverage is independent of unresolved runtime equality and of source
+alignment. Full reports also retain
 supported control-source causes with paired dependency witnesses and absolute
 region indices; full and compact findings reference the shared cause. A witness
 path starts at an observation's guard condition and identifies the original
