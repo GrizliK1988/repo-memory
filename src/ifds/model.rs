@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// The only report schema currently accepted by this crate.
-pub const REPORT_SCHEMA_VERSION: u32 = 3;
+pub const REPORT_SCHEMA_VERSION: u32 = 4;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -583,6 +583,8 @@ pub struct ResolvedQuery {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct VariableFlowReport {
+    pub before_loops: Vec<super::loops::LoopSummary>,
+    pub after_loops: Vec<super::loops::LoopSummary>,
     pub schema_version: u32,
     pub analysis_version: String,
     pub snapshots: BTreeSet<SnapshotId>,

@@ -762,6 +762,7 @@ mod tests {
 
     fn procedure(nodes: Vec<IrNode>, edges: BTreeSet<IrEdge>, exits: &[u64]) -> ProcedureIr {
         ProcedureIr {
+            loops: Vec::new(),
             id: ProcedureId::new(snapshot(), 0),
             parameters: Vec::new(),
             entry: node(0),

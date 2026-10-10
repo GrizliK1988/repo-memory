@@ -124,9 +124,14 @@ fn run() -> Result<(), Box<dyn Error>> {
         },
     ]);
     let capabilities = CapabilitySet {
-        stage: 1,
-        capabilities: BTreeSet::from(["straight_line".into()]),
-        version: "stage-1".into(),
+        stage: 3,
+        capabilities: BTreeSet::from([
+            "straight_line".into(),
+            "branches".into(),
+            "short_circuit".into(),
+            "loops".into(),
+        ]),
+        version: "stage-3".into(),
     };
     let environment = AnalysisEnvironment {
         capabilities: capabilities.clone(),

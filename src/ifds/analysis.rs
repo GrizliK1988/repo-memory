@@ -280,6 +280,26 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         &after.procedure,
         &before_source,
         &after_source,
+        super::loops::summarize_loops(
+            &before.procedure,
+            &super::branches::BranchPaths::build(
+                &before.procedure,
+                seed_entry_facts(&before.procedure),
+                4096,
+            ),
+            &before_index,
+            &before_source,
+        ),
+        super::loops::summarize_loops(
+            &after.procedure,
+            &super::branches::BranchPaths::build(
+                &after.procedure,
+                seed_entry_facts(&after.procedure),
+                4096,
+            ),
+            &after_index,
+            &after_source,
+        ),
     )
 }
 
@@ -330,6 +350,8 @@ fn assemble_report(
     after_ir: &super::ir::ProcedureIr,
     before_source: &str,
     after_source: &str,
+    before_loops: Vec<super::loops::LoopSummary>,
+    after_loops: Vec<super::loops::LoopSummary>,
 ) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
     let mut diagnostics: BTreeSet<_> = before
         .diagnostics
@@ -444,6 +466,8 @@ fn assemble_report(
         })
         .collect();
     let mut report = VariableFlowReport {
+        before_loops,
+        after_loops,
         schema_version: REPORT_SCHEMA_VERSION,
         analysis_version: env!("CARGO_PKG_VERSION").into(),
         snapshots: BTreeSet::from([query.before.id.clone(), query.after.id.clone()]),
@@ -2188,5 +2212,129 @@ mod tests {
             "{short}"
         );
         assert!(!short.contains("No established changes at uses"));
+    }
+
+    #[test]
+    fn ifds_k016_binding_loop_change_text() {
+        let before = "function f(count: number, step: number) { let remaining = count; let x = 0; while (remaining > 0) { x = x + step; remaining = remaining - 1; } return x; }";
+        let after = before.replace("x + step", "x + step + 1");
+        let (full, compact) = run_reports(before, &after, "x");
+        let short = compact.render_text(&full);
+        assert!(
+            short.contains("Loop change: while (remaining > 0)"),
+            "{short}"
+        );
+        assert!(
+            short.contains("Write changed: x = x + step -> x = x + step + 1"),
+            "{short}"
+        );
+        assert!(
+            !short.contains("Loop (before)") && !short.contains("Loop (after)"),
+            "{short}"
+        );
+        let verbose = compact.render_verbose_text(&full);
+        assert!(
+            verbose.contains("Loop (before)") && verbose.contains("Loop (after)"),
+            "{verbose}"
+        );
+        compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn ifds_k016_insert_loop_write() {
+        let before = "function f(again: boolean) {\n  let x = 0;\n  while (again) {\n    again = false;\n  }\n  return x;\n}\n";
+        let after = "function f(again: boolean) {\n  let x = 0;\n  while (again) {\n    x = 1;\n    again = false;\n  }\n  return x;\n}\n";
+        let (full, compact) = run_reports(before, after, "x");
+        let node = |graph: &FlowGraph, needle: &str| {
+            graph
+                .nodes
+                .iter()
+                .find(|item| item.operation == needle)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "missing {needle}; nodes: {:?}",
+                        graph
+                            .nodes
+                            .iter()
+                            .map(|item| &item.operation)
+                            .collect::<Vec<_>>()
+                    )
+                })
+                .id
+                .clone()
+        };
+        let a_before = node(&full.before_graph, "write `x = 0`");
+        let a_after = node(&full.after_graph, "write `x = 0`");
+        let b = node(&full.after_graph, "write `x = 1`");
+        let r_before = node(&full.before_graph, "return `return x;`");
+        let r_after = node(&full.after_graph, "return `return x;`");
+        assert_eq!(full.completeness, Completeness::CompleteForQuery);
+        assert!(
+            full.before_graph
+                .edges
+                .iter()
+                .any(|edge| edge.source == a_before
+                    && edge.target == r_before
+                    && edge.relation == RelationKind::Reaches
+                    && edge.condition.is_none())
+        );
+        assert!(
+            full.after_graph
+                .edges
+                .iter()
+                .any(|edge| edge.source == a_after
+                    && edge.target == r_after
+                    && edge.relation == RelationKind::Reaches
+                    && edge.condition.as_deref() == Some("!again"))
+        );
+        assert!(full.after_graph.edges.iter().any(|edge| edge.source == b
+            && edge.target == r_after
+            && edge.relation == RelationKind::Reaches
+            && edge.condition.as_deref() == Some("again")));
+        assert!(
+            full.deltas.iter().any(
+                |record| matches!(&record.delta, FlowDelta::WriteAdded { after } if after == &b)
+            )
+        );
+        assert!(full.deltas.iter().any(|record| matches!(
+            &record.delta,
+            FlowDelta::FlowConditionChanged {
+                relation: RelationKind::Reaches,
+                ..
+            }
+        )));
+        assert!(
+            full.deltas
+                .iter()
+                .any(|record| matches!(&record.delta, FlowDelta::ValueSourceChanged { .. }))
+        );
+        assert!(full.deltas.iter().all(|record| !matches!(
+            &record.delta,
+            FlowDelta::FlowRemoved {
+                relation: RelationKind::Reaches,
+                ..
+            }
+        )));
+        let old_branch = full.before_loops[0].condition.clone();
+        let new_branch = full.after_loops[0].condition.clone();
+        assert!(
+            full.alignment
+                .iter()
+                .any(|pair| pair.before.as_ref() == Some(&old_branch)
+                    && pair.after.as_ref() == Some(&new_branch))
+        );
+        assert!(
+            full.after_graph
+                .edges
+                .iter()
+                .any(|edge| edge.source == new_branch
+                    && edge.target == b
+                    && edge.relation == RelationKind::Controls)
+        );
+        assert!(!full.after_loops[0].may_repeat);
+        compact.validate_with_full(&full).unwrap();
+        assert!(compact.render_text(&full).contains("executes at most once"));
+        let decoded = VariableFlowReport::from_json(&full.to_canonical_json().unwrap()).unwrap();
+        assert_eq!(decoded.after_loops, full.after_loops);
     }
 }

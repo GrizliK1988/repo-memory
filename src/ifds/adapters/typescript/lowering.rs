@@ -1,7 +1,7 @@
 use super::*;
 use crate::ifds::ir::{
-    ComputeInput, ComputeInputRole, EdgeKind, IrEdge, IrNode, LiteralKind, Operation,
-    PrimitiveOperator, ProcedureIr, ProcedureParameter, UnknownEffectKind,
+    ComputeInput, ComputeInputRole, EdgeKind, IrEdge, IrNode, LiteralKind, LoopIr, LoopKind,
+    Operation, PrimitiveOperator, ProcedureIr, ProcedureParameter, UnknownEffectKind,
 };
 use crate::ifds::model::{DefinitionId, NodeId, Place, ProcedureId};
 
@@ -147,6 +147,8 @@ struct Lowerer<'a> {
     nodes: BTreeMap<NodeId, IrNode>,
     edges: BTreeSet<IrEdge>,
     diagnostics: Vec<Diagnostic>,
+    loops: Vec<LoopIr>,
+    loop_targets: Vec<(NodeId, NodeId)>,
 }
 
 type ValueArm<'tree> = (bool, Option<Node<'tree>>, Option<(Place, Node<'tree>)>);
@@ -180,6 +182,8 @@ impl<'a> Lowerer<'a> {
             nodes,
             edges: BTreeSet::new(),
             diagnostics: Vec::new(),
+            loops: Vec::new(),
+            loop_targets: Vec::new(),
         }
     }
 
@@ -224,6 +228,10 @@ impl<'a> Lowerer<'a> {
             }
             "return_statement" => self.lower_return(node),
             "if_statement" => self.lower_if(node),
+            "while_statement" => self.lower_loop(node, LoopKind::While),
+            "do_statement" => self.lower_loop(node, LoopKind::DoWhile),
+            "for_statement" => self.lower_loop(node, LoopKind::For),
+            "break_statement" | "continue_statement" => self.lower_loop_transfer(node),
             "function_declaration" | "generator_function_declaration" => {
                 if self.contains_procedure_capture(node) {
                     self.emit_unknown(node, UnknownEffectKind::Value, Vec::new(), false);
@@ -424,6 +432,175 @@ impl<'a> Lowerer<'a> {
                 self.edges.insert(normal_edge(tail, join.clone()));
             }
         }
+    }
+
+    fn detached_join(&mut self) -> NodeId {
+        let tail = self.tail.take();
+        let id = self.emit(Operation::Join, None);
+        self.tail = tail;
+        id
+    }
+
+    fn lower_loop_transfer(&mut self, node: Node<'_>) {
+        // Labels require their own target resolution (K029).
+        if node.named_child_count() != 0 || self.loop_targets.is_empty() {
+            self.emit_unknown(node, UnknownEffectKind::Control, Vec::new(), false);
+            self.tail = None;
+            return;
+        }
+        let (exit, update) = self.loop_targets.last().unwrap().clone();
+        let transfer = self.emit(Operation::Join, Some(source_span(&self.index.path, node)));
+        self.edges.insert(normal_edge(
+            transfer,
+            if node.kind() == "break_statement" {
+                exit
+            } else {
+                update
+            },
+        ));
+        self.tail = None;
+    }
+
+    fn lower_loop(&mut self, node: Node<'_>, kind: LoopKind) {
+        let Some(body) = node.child_by_field_name("body") else {
+            self.emit_unknown(node, UnknownEffectKind::Control, Vec::new(), false);
+            self.tail = None;
+            return;
+        };
+        let initializer = node.child_by_field_name("initializer");
+        if let Some(initializer) = initializer {
+            if matches!(
+                initializer.kind(),
+                "lexical_declaration" | "variable_declaration"
+            ) {
+                self.lower_statement(initializer);
+            } else if initializer.kind() != "empty_statement" {
+                self.lower_expression(initializer);
+            }
+        }
+        let before: BTreeSet<_> = self.nodes.keys().cloned().collect();
+        let incoming = self.tail.take();
+        let header = self.detached_join();
+        let body_entry = self.detached_join();
+        let exit = self.detached_join();
+        let update_node = node.child_by_field_name("increment");
+        let continue_target = if kind == LoopKind::For {
+            self.detached_join()
+        } else {
+            header.clone()
+        };
+        if let Some(incoming) = incoming {
+            self.edges.insert(normal_edge(
+                incoming,
+                if kind == LoopKind::DoWhile {
+                    body_entry.clone()
+                } else {
+                    header.clone()
+                },
+            ));
+        }
+        self.tail = Some(header.clone());
+        let condition_node = node
+            .child_by_field_name("condition")
+            .filter(|condition| condition.kind() != "empty_statement");
+        let condition = if let Some(condition) = condition_node {
+            self.lower_expression(condition)
+        } else {
+            self.emit_literal(LiteralKind::Boolean, "true", Some("true".into()), node)
+        };
+        let branch = self.emit(
+            Operation::Branch { condition },
+            Some(source_span(
+                &self.index.path,
+                condition_node.unwrap_or(node),
+            )),
+        );
+        let span = source_span(&self.index.path, node);
+        let label = condition_node
+            .map_or("true", |condition| node_text(condition, self.source))
+            .trim();
+        for (outcome, target) in [(true, body_entry.clone()), (false, exit.clone())] {
+            self.edges.insert(IrEdge {
+                source: branch.clone(),
+                target,
+                kind: EdgeKind::Branch { outcome },
+                construct: Some(span.clone()),
+                assumption: Some(if outcome {
+                    label.into()
+                } else {
+                    format!("!({label})")
+                }),
+            });
+        }
+        self.loop_targets
+            .push((exit.clone(), continue_target.clone()));
+        self.tail = Some(body_entry.clone());
+        self.lower_statement(body);
+        if let Some(tail) = self.tail.take() {
+            self.edges.insert(IrEdge {
+                source: tail,
+                target: continue_target.clone(),
+                kind: if kind == LoopKind::For {
+                    EdgeKind::Normal
+                } else {
+                    EdgeKind::LoopBack
+                },
+                construct: Some(span.clone()),
+                assumption: None,
+            });
+        }
+        self.loop_targets.pop();
+        if kind == LoopKind::For {
+            self.tail = Some(continue_target.clone());
+            if let Some(update) = update_node {
+                self.lower_expression(update);
+            }
+            if let Some(tail) = self.tail.take() {
+                self.edges.insert(IrEdge {
+                    source: tail,
+                    target: header.clone(),
+                    kind: EdgeKind::LoopBack,
+                    construct: Some(span.clone()),
+                    assumption: None,
+                });
+            }
+        }
+        // while/do continue jumps are backedges too, including a body whose
+        // only continuing transfer is `continue`.
+        if kind != LoopKind::For {
+            self.edges = std::mem::take(&mut self.edges)
+                .into_iter()
+                .map(|mut edge| {
+                    if edge.target == header
+                        && edge.source != header
+                        && !before.contains(&edge.source)
+                    {
+                        edge.kind = EdgeKind::LoopBack;
+                        edge.construct = Some(span.clone());
+                    }
+                    edge
+                })
+                .collect();
+        }
+        let members = self
+            .nodes
+            .keys()
+            .filter(|id| !before.contains(*id) && **id != exit)
+            .cloned()
+            .collect();
+        self.loops.push(LoopIr {
+            kind,
+            span,
+            condition: branch,
+            header,
+            body_entry,
+            continue_target,
+            exit: exit.clone(),
+            members,
+            initializer: initializer.map(|node| source_span(&self.index.path, node)),
+            update: update_node.map(|node| source_span(&self.index.path, node)),
+        });
+        self.tail = Some(exit);
     }
 
     fn lower_expression(&mut self, node: Node<'_>) -> Place {
@@ -1023,6 +1200,7 @@ impl<'a> Lowerer<'a> {
             exits: BTreeSet::from([exit]),
             nodes: self.nodes,
             edges: self.edges,
+            loops: self.loops,
         };
         procedure
             .validate()

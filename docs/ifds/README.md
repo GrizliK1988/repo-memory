@@ -2,7 +2,9 @@
 
 Status: design and staged roadmap. Implementation status is recorded in the task
 files; these documents do not establish benchmark results. Function-result
-analysis is implemented for the first synchronous single-function subset.
+analysis is implemented for the synchronous single-function scalar subset,
+including K016 loop structure and carried dependencies. Iteration counts,
+accumulated values and runtime completion can remain unresolved.
 
 The objective is to explain how a bugfix changes the definitions, uses, and paths
 associated with a selected variable, or the conditions and values of a selected

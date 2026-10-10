@@ -1,0 +1,11 @@
+Function result: f
+Loop change: while (remaining > 0) (before snippet.ts:4; after snippet.ts:4)
+  Write changed: x = x + step -> x = x + step + 1 (before snippet.ts:5; after snippet.ts:5)
+  Inputs: step, remaining (loop carried), x (loop carried)
+  Repetition: changed operations may run on multiple iterations; iteration count and accumulated values are unresolved
+  Continuing cycle: runtime termination is not established
+  Loop path feasibility: unresolved
+Edit attribution uncertain
+Unknown under always: normal completion or result selection is unresolved
+Coverage: result comparison Partial; source alignment Partial; data flow Partial; before analysis Partial; after analysis Partial
+Evidence: spec/kickoff/016-loop-reports/accumulation/full.json (ifds-function-4285f80d948549a3)

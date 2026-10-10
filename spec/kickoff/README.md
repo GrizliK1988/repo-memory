@@ -1,6 +1,6 @@
 # Kickoff: IFDS implementation tasks
 
-Status: stage 1 complete; later stages planned. These 41 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
+Status: stages 0–3 complete; later stages planned. These 41 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
 [staged roadmap](../../docs/ifds/README.md), and the
 [benchmark contract](../../docs/ifds/BENCHMARKS.md).
 

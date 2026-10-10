@@ -381,6 +381,7 @@ pub(super) fn control_cause_lines(
         .findings
         .iter()
         .flat_map(|finding| &finding.cause_refs)
+        .filter(|reference| reference.section == "causes")
         .map(|reference| reference.index)
         .collect();
     visible

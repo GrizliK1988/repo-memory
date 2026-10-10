@@ -403,9 +403,9 @@ fn readable_review_text_preserves_structured_evidence() {
         assert_eq!(restored_compact.render_text(&restored_full), text);
         assert_eq!(restored_full, full);
         assert_eq!(restored_compact, compact);
-        assert_eq!(full.schema_version, 4);
-        assert_eq!(full.analysis.schema_version, 4);
-        assert_eq!(compact.schema_version, 4);
+        assert_eq!(full.schema_version, 6);
+        assert_eq!(full.analysis.schema_version, 5);
+        assert_eq!(compact.schema_version, 6);
         assert_eq!(
             compact.equal_regions.len(),
             full.comparison

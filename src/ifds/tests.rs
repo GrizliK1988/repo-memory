@@ -226,6 +226,8 @@ fn report(reverse: bool) -> VariableFlowReport {
     };
 
     VariableFlowReport {
+        before_loops: Vec::new(),
+        after_loops: Vec::new(),
         schema_version: REPORT_SCHEMA_VERSION,
         analysis_version: "0.1.0".into(),
         snapshots: set([before.clone(), after.clone()]),
@@ -438,6 +440,7 @@ fn ifds_k001_ir_without_language_adapter() {
         },
     ];
     let ir = ProcedureIr {
+        loops: Vec::new(),
         id: ProcedureId::new(snap.clone(), 1),
         parameters: Vec::new(),
         entry: node(0),

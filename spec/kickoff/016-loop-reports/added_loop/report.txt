@@ -1,0 +1,17 @@
+Function result: f
+Loop (after): while (again) (snippet.ts:3)
+  Inputs: again (loop carried)
+  Body: may be skipped; executes at most once
+  Possible write: x = 1 (snippet.ts:4)
+  Possible write: again = false (snippet.ts:5)
+Control changed (guard correspondence unresolved); result remains x (0) (Equal) under !again in the common input scope; Edit attribution uncertain
+Edit attribution uncertain
+Control changed (guard correspondence unresolved)
+Return choice | Before | After
+x (0) | always | !again
+x (1) | never | again
+Effect: again: x (0) -> x (1) (Different)
+Before contributing writes: snippet.ts:2
+After contributing writes: snippet.ts:4
+Coverage: result comparison Complete; source alignment Partial; data flow Complete
+Evidence: spec/kickoff/016-loop-reports/added_loop/full.json (ifds-function-65d351b0f633a27f)

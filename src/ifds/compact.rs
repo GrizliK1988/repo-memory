@@ -11,7 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 mod text;
 
-pub const COMPACT_SCHEMA_VERSION: u32 = 2;
+pub const COMPACT_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -191,6 +191,8 @@ type ObservationFactsKey = (String, String, Option<String>, Option<String>);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct VariableSourceReport {
+    pub before_loops: Vec<super::loops::LoopSummary>,
+    pub after_loops: Vec<super::loops::LoopSummary>,
     pub schema_version: u32,
     pub analysis_version: String,
     pub full_report_id: String,
@@ -233,7 +235,11 @@ impl VariableSourceReport {
                 supported: COMPACT_SCHEMA_VERSION,
             });
         }
-        if self.full_report_id != report_id(full) || self.snapshots != full.snapshots {
+        if self.full_report_id != report_id(full)
+            || self.snapshots != full.snapshots
+            || self.before_loops != full.before_loops
+            || self.after_loops != full.after_loops
+        {
             return Err(SchemaError::Serialization(
                 "compact report does not match full evidence".into(),
             ));
@@ -1905,6 +1911,8 @@ pub fn project_variable_sources(
     let diagnostics: BTreeSet<_> = full.diagnostics.iter().map(|d| d.code.clone()).collect();
     let comparison_complete = comparison_is_complete(full);
     VariableSourceReport {
+        before_loops: full.before_loops.clone(),
+        after_loops: full.after_loops.clone(),
         schema_version: COMPACT_SCHEMA_VERSION,
         analysis_version: full.analysis_version.clone(),
         full_report_id: identity,

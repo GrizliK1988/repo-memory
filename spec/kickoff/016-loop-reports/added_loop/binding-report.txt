@@ -1,0 +1,13 @@
+Sources changed:
+  Before: x = 0 (snippet.ts:2)
+  After: x = 0 (snippet.ts:2) selected under !again; x = 1 (snippet.ts:4) selected under again
+  After precedence: x = 1 overrides x = 0 when both writes apply
+  After control #11: branch `(again)` (snippet.ts:3)
+Affected uses: return x; (value; before snippet.ts:3; after snippet.ts:7)
+Loop (after): while (again) (snippet.ts:3)
+  Inputs: again (loop carried)
+  Body: may be skipped; executes at most once
+  Possible write: x = 1 (snippet.ts:4)
+  Possible write: again = false (snippet.ts:5)
+Scope: function f; analysis complete; source comparison complete; caller continuation outside scope.
+Evidence: spec/kickoff/016-loop-reports/added_loop/binding-full.json (ifds-8afecd67a152c28d)

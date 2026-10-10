@@ -1242,6 +1242,7 @@ mod tests {
             })
             .collect();
         ProcedureIr {
+            loops: Vec::new(),
             id: ProcedureId::new(snapshot(), 1),
             parameters: Vec::new(),
             entry: node(1),
@@ -1354,6 +1355,8 @@ mod tests {
             expected_enclosing_symbol: Some("fixture".into()),
         };
         let report = VariableFlowReport {
+            before_loops: Vec::new(),
+            after_loops: Vec::new(),
             schema_version: REPORT_SCHEMA_VERSION,
             analysis_version: "test".into(),
             snapshots: BTreeSet::from([before.clone(), after.clone()]),

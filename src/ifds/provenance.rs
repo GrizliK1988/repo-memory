@@ -544,6 +544,7 @@ mod tests {
         let first = BindingId::new(snapshot(), 1);
         let second = BindingId::new(snapshot(), 2);
         let procedure = ProcedureIr {
+            loops: Vec::new(),
             id: ProcedureId::new(snapshot(), 0),
             parameters: vec![
                 ProcedureParameter {

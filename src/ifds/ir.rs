@@ -155,6 +155,31 @@ pub struct ProcedureParameter {
     pub entry_definition: DefinitionId,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopKind {
+    While,
+    DoWhile,
+    For,
+}
+
+/// Static loop structure. `header` starts condition reevaluation; do/while
+/// enters the body first. Members include nested constructs, but not the exit.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LoopIr {
+    pub kind: LoopKind,
+    pub span: SourceSpan,
+    pub condition: NodeId,
+    pub header: NodeId,
+    pub body_entry: NodeId,
+    pub continue_target: NodeId,
+    pub exit: NodeId,
+    pub members: BTreeSet<NodeId>,
+    pub initializer: Option<SourceSpan>,
+    pub update: Option<SourceSpan>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ProcedureIr {
@@ -164,6 +189,7 @@ pub struct ProcedureIr {
     pub exits: BTreeSet<NodeId>,
     pub nodes: BTreeMap<NodeId, IrNode>,
     pub edges: BTreeSet<IrEdge>,
+    pub loops: Vec<LoopIr>,
 }
 
 impl ProcedureIr {
@@ -246,6 +272,43 @@ impl ProcedureIr {
                     .map_err(|error| IrValidationError::InvalidSpan(error.to_string()))?;
             }
         }
+        let mut loop_conditions = BTreeSet::new();
+        for loop_ir in &self.loops {
+            loop_ir
+                .span
+                .validate()
+                .map_err(|error| IrValidationError::InvalidSpan(error.to_string()))?;
+            for span in loop_ir.initializer.iter().chain(&loop_ir.update) {
+                span.validate()
+                    .map_err(|error| IrValidationError::InvalidSpan(error.to_string()))?;
+            }
+            for id in loop_ir.members.iter().chain([
+                &loop_ir.header,
+                &loop_ir.condition,
+                &loop_ir.body_entry,
+                &loop_ir.continue_target,
+                &loop_ir.exit,
+            ]) {
+                if !self.nodes.contains_key(id) {
+                    return Err(IrValidationError::MissingNode(Box::new(id.clone())));
+                }
+            }
+            if !loop_conditions.insert(&loop_ir.condition)
+                || !matches!(
+                    self.nodes[&loop_ir.condition].operation,
+                    Operation::Branch { .. }
+                )
+                || !loop_ir.members.contains(&loop_ir.condition)
+                || !loop_ir.members.contains(&loop_ir.header)
+                || !loop_ir.members.contains(&loop_ir.body_entry)
+                || !loop_ir.members.contains(&loop_ir.continue_target)
+                || loop_ir.members.contains(&loop_ir.exit)
+            {
+                return Err(IrValidationError::InvalidLoop(Box::new(
+                    loop_ir.condition.clone(),
+                )));
+            }
+        }
         let mut produced = BTreeSet::new();
         for node in self.nodes.values() {
             if let Some(definition) = operation_definition(&node.operation) {
@@ -322,6 +385,7 @@ fn operation_inputs(operation: &Operation) -> Vec<&Place> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IrValidationError {
+    InvalidLoop(Box<NodeId>),
     ParameterIndex {
         expected: u32,
         actual: u32,

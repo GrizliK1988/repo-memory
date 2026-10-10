@@ -354,7 +354,7 @@ for value identity as well as expression text. Symmetric effects of a proven
 common guard inversion share one finding while retaining separate directional
 results, regions, and evidence. Dependency source positions support concise
 links from returns to contributing writes. These structures use full report
-schema 4, analysis schema 4, and compact schema 4. Regions separately preserve
+schema 6, analysis schema 5, and compact schema 6. Regions separately preserve
 input truthiness (`values`) and nullishness (`nullish`), with JS implications
 between these predicates. Captured input copies retain the original input's
 predicates after later reassignment. This distinguishes non-nullish falsy inputs
@@ -368,6 +368,18 @@ reaching assignment or direct predicate edit. See
 [control-source attribution](COMPACT_REPORT.md#human-text-modes) for its
 conservative matching requirements. Earlier report schemas remain archived and
 are rejected by the current readers.
+
+Full reports also retain `guarded_write_causes` for a single added condition and
+write inside a loop that executes at most once. The cause identifies the after
+guard and the before/after reaching writes through dependency paths from their
+return observations. It records both covered regions and the regions with a
+proven different result. Attribution requires a unique corresponding loop and
+return site, unchanged existing source operations and dependencies, a represented
+unchanged false arm, complete input correspondence and complete analysis. Unknown
+completion, multiple source edits, repeated-loop effects and overwritten writes
+do not receive this cause. Compact `cause_refs` identify the
+`guarded_write_causes` section; the reader reconstructs causes and finding links
+to reject corrupted witnesses. Text describes the guard-to-write-to-return chain.
 
 When the before and after entry domains do not intersect, show the guarded
 normal-result flow for each snapshot under its own assumptions, then state that
@@ -497,6 +509,15 @@ callee-only edits, recursive uncertainty, and scoped caller impact. They are not
 prerequisites for the first single-function delivery. A static call context is not
 a captured runtime stack; selecting an actual execution requires separately
 supplied trace information and a future query contract.
+
+K016 loop summaries are present in each function snapshot and in the compact
+report's `before_loops`/`after_loops`. They describe static source-mapped operations,
+input origins, carried bindings, exits, possible entry/skipping/repetition and
+abstract cycles. The initial guard evidence is captured separately from later
+reevaluations and value-producing expression choices. Reports expose repeated
+writes even when their counts, accumulated values or completion are unresolved;
+they preserve independently established input regions. No iterator or callback
+execution support is implied by these summaries.
 
 ## 8. Acceptance
 

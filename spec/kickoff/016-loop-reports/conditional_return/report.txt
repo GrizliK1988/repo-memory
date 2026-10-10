@@ -1,0 +1,19 @@
+Function result: f
+Loop change: while (again) (before snippet.ts:3; after snippet.ts:3)
+  Condition only after: (boost) (snippet.ts:5)
+  Write only after: x = 2 (snippet.ts:6)
+  Inputs: again (loop carried) -> again (loop carried), boost
+  Body: may be skipped; executes at most once
+Cause: added condition boost (after snippet.ts:5) selects x = 2 (after snippet.ts:6), which reaches return x (after snippet.ts:10)
+Control added: boost under again && !boost in the common input scope
+Unchanged data flow under !again || !boost (Equal)
+Context: again
+Control added: boost
+Return choice | Before | After
+x (1) | always | !boost
+x (2) | never | boost
+Effect: boost: x (1) -> x (2) (Different)
+Before contributing writes: snippet.ts:4
+After contributing writes: snippet.ts:6
+Coverage: result comparison Complete; source alignment Partial; data flow Complete
+Evidence: spec/kickoff/016-loop-reports/conditional_return/full.json (ifds-function-eb899566be2b5c5b)

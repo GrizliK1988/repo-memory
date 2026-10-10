@@ -243,6 +243,7 @@ impl<'a> SliceBuilder<'a> {
         self.add_controls()?;
         if self.branches.is_some() {
             self.add_branch_endings()?;
+            self.add_cycle_endings()?;
         } else {
             self.add_endings()?;
         }
@@ -654,9 +655,16 @@ impl<'a> SliceBuilder<'a> {
             .filter_map(|node| {
                 let value = match &node.operation {
                     Operation::Return { value } => value.clone(),
+                    Operation::Exit => None,
                     _ => return None,
                 };
-                let states = paths.at.get(&node.id)?.clone();
+                let states = paths
+                    .at
+                    .get(&node.id)?
+                    .iter()
+                    .filter(|state| !matches!(node.operation, Operation::Exit) || !state.returned)
+                    .cloned()
+                    .collect::<BTreeSet<_>>();
                 Some((node.id.clone(), value, states))
             })
             .collect();
@@ -688,6 +696,8 @@ impl<'a> SliceBuilder<'a> {
                             PathEndingKind::UnknownBoundary
                         } else if escaped {
                             PathEndingKind::ScopeBoundary
+                        } else if self.procedure.exits.contains(&id) {
+                            PathEndingKind::ExecutionExit
                         } else {
                             PathEndingKind::NoFurtherUse
                         },
@@ -699,6 +709,8 @@ impl<'a> SliceBuilder<'a> {
                                 "return path depends on an unproven guard"
                             } else if escaped {
                                 "returned beyond the declared caller scope"
+                            } else if self.procedure.exits.contains(&id) {
+                                "declared entry exits without exporting the carrier"
                             } else {
                                 "no carrier escapes this return"
                             },
@@ -776,6 +788,77 @@ impl<'a> SliceBuilder<'a> {
                     }
                 }
             }
+        }
+        Ok(())
+    }
+
+    fn add_cycle_endings(&mut self) -> Result<(), SliceError> {
+        let paths = self.branches.as_ref().unwrap();
+        let mut records = Vec::new();
+        for (backedge, witness) in &paths.cycle_witnesses {
+            for state in paths.cycles.get(&backedge.1).into_iter().flatten() {
+                for fact in &state.facts {
+                    if let Fact::Origin {
+                        place: Place::Binding(binding),
+                        source,
+                    } = fact
+                        && self.selected_origins.contains(source)
+                    {
+                        records.push((
+                            backedge.clone(),
+                            witness.clone(),
+                            state.clone(),
+                            Place::Binding(binding.clone()),
+                            source.clone(),
+                        ));
+                    }
+                }
+            }
+        }
+        for (backedge, path, state, carrier, origin) in records {
+            let condition = (!state.labels.is_empty()).then(|| {
+                state
+                    .labels
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(" && ")
+            });
+            let evidence = if state.unproven {
+                EvidenceKind::Unresolved {
+                    diagnostic: DiagnosticCode::UnprovenPathFeasibility,
+                }
+            } else {
+                EvidenceKind::Supported
+            };
+            let location = self
+                .nearest_span(&backedge.1)
+                .ok_or_else(|| SliceError::MissingSpan(backedge.1.clone()))?;
+            let witness = self.add_witness(path, evidence);
+            self.witnesses = std::mem::take(&mut self.witnesses)
+                .into_iter()
+                .map(|mut item| {
+                    if item.id == witness {
+                        item.backedges.insert(backedge.clone());
+                    }
+                    item
+                })
+                .collect();
+            self.endings.insert(PathEnding {
+                kind: PathEndingKind::Cycle,
+                origin,
+                carrier,
+                location,
+                condition,
+                context:
+                    "origin may continue through a loop; runtime termination is not established"
+                        .into(),
+                witness,
+                model: None,
+                diagnostic: state
+                    .unproven
+                    .then_some(DiagnosticCode::UnprovenPathFeasibility),
+            });
         }
         Ok(())
     }
@@ -1029,6 +1112,13 @@ impl<'a> SliceBuilder<'a> {
             .any(|ending| ending.kind == PathEndingKind::UnknownBoundary)
         {
             sink_boundaries.insert("unknown".into());
+        }
+        if self
+            .endings
+            .iter()
+            .any(|ending| ending.kind == PathEndingKind::Cycle)
+        {
+            sink_boundaries.insert("cycle".into());
         }
         SliceOutput {
             graph: FlowGraph {

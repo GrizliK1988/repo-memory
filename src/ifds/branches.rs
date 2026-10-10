@@ -2,7 +2,7 @@
 //! This is a validation layer; it does not change distributive IFDS transfers.
 
 use crate::ifds::ir::{EdgeKind, LiteralKind, Operation, PrimitiveOperator, ProcedureIr};
-use crate::ifds::model::{BindingId, Fact, NodeId, Place};
+use crate::ifds::model::{BindingId, DefinitionId, Fact, NodeId, Place};
 use crate::ifds::provenance::{ProcedureFlowFunctions, transfer_operation};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -14,6 +14,17 @@ pub struct BranchState {
     /// Branch outcomes are keyed by the operation that read the condition. A
     /// display label alone cannot distinguish shadowing or later reassignment.
     pub decisions: BTreeMap<NodeId, bool>,
+    /// Facts captured when a path constraint was first tested. Reevaluating a
+    /// loop condition must not change the input value described by that guard.
+    pub guard_facts: BTreeMap<NodeId, BTreeSet<Fact>>,
+    pub guard_reads: BTreeMap<NodeId, BTreeMap<NodeId, BTreeSet<DefinitionId>>>,
+    pub guard_choices: BTreeMap<NodeId, BTreeMap<NodeId, bool>>,
+    read_writes: BTreeMap<NodeId, BTreeSet<DefinitionId>>,
+    pub carried_loops: BTreeSet<NodeId>,
+    pub unknown_effects: bool,
+    pub returned: bool,
+    pub loop_unproven: bool,
+    pub choices: BTreeMap<NodeId, bool>,
     guards: BTreeMap<BindingId, bool>,
     known: BTreeMap<Place, KnownValue>,
 }
@@ -33,11 +44,14 @@ impl KnownValue {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct BranchPaths {
     pub at: BTreeMap<NodeId, BTreeSet<BranchState>>,
     pub truncated: bool,
     pub unproven_branches: BTreeSet<NodeId>,
+    pub cycles: BTreeMap<NodeId, BTreeSet<BranchState>>,
+    pub cycle_backedges: BTreeSet<(NodeId, NodeId)>,
+    pub cycle_witnesses: BTreeMap<(NodeId, NodeId), Vec<NodeId>>,
 }
 
 impl BranchPaths {
@@ -48,6 +62,15 @@ impl BranchPaths {
             labels: BTreeSet::new(),
             unproven: false,
             decisions: BTreeMap::new(),
+            guard_facts: BTreeMap::new(),
+            guard_reads: BTreeMap::new(),
+            guard_choices: BTreeMap::new(),
+            read_writes: BTreeMap::new(),
+            carried_loops: BTreeSet::new(),
+            unknown_effects: false,
+            returned: false,
+            loop_unproven: false,
+            choices: BTreeMap::new(),
             guards: BTreeMap::new(),
             known: BTreeMap::new(),
         };
@@ -58,10 +81,30 @@ impl BranchPaths {
             .or_default()
             .insert(initial.clone());
         let mut queue = VecDeque::from([(procedure.entry.clone(), initial)]);
+        let mut state_ids = BTreeMap::new();
+        state_ids.insert(queue[0].clone(), 0);
+        let mut transitions = vec![BTreeSet::new()];
+        let mut backedges = Vec::new();
         let mut count = 1;
         while let Some((node_id, incoming)) = queue.pop_front() {
+            let from = state_ids[&(node_id.clone(), incoming.clone())];
             let node = &procedure.nodes[&node_id];
             let mut outgoing = incoming.clone();
+            if let Operation::Read { source, .. } = &node.operation {
+                outgoing.read_writes.insert(
+                    node_id.clone(),
+                    incoming
+                        .facts
+                        .iter()
+                        .filter_map(|fact| match fact {
+                            Fact::LastWrite { place, write } if place == source => {
+                                Some(write.clone())
+                            }
+                            _ => None,
+                        })
+                        .collect(),
+                );
+            }
             outgoing.facts = if let Operation::Compute {
                 operator: PrimitiveOperator::ValueJoin { branch },
                 inputs,
@@ -70,7 +113,7 @@ impl BranchPaths {
             } = &node.operation
             {
                 let selected = incoming
-                    .decisions
+                    .choices
                     .get(branch)
                     .and_then(|outcome| inputs.get(if *outcome { 0 } else { 1 }));
                 if let Some(input) = selected {
@@ -94,11 +137,22 @@ impl BranchPaths {
                 flows.transfer_all(&node_id, &incoming.facts).into_facts()
             };
             outgoing.update_known(&node.operation);
+            outgoing.unknown_effects |= matches!(
+                node.operation,
+                Operation::UnknownEffect { .. } | Operation::Call { .. }
+            );
+            outgoing.returned |= matches!(node.operation, Operation::Return { .. });
             for edge in procedure.edges.iter().filter(|edge| edge.source == node_id) {
-                if !matches!(edge.kind, EdgeKind::Normal | EdgeKind::Branch { .. }) {
+                if !matches!(
+                    edge.kind,
+                    EdgeKind::Normal | EdgeKind::Branch { .. } | EdgeKind::LoopBack
+                ) {
                     continue;
                 }
                 let mut next = outgoing.clone();
+                if edge.kind == EdgeKind::LoopBack {
+                    next.carried_loops.insert(edge.target.clone());
+                }
                 if let EdgeKind::Branch { outcome } = edge.kind {
                     let Operation::Branch { condition } = &node.operation else {
                         continue;
@@ -108,7 +162,13 @@ impl BranchPaths {
                     {
                         continue;
                     }
-                    next.decisions.insert(node_id.clone(), outcome);
+                    next.choices.insert(node_id.clone(), outcome);
+                    let known = next.known.contains_key(condition);
+                    let repeated = next.decisions.contains_key(&node_id)
+                        && procedure.loops.iter().any(|loop_ir| {
+                            loop_ir.members.contains(&node_id)
+                                && next.carried_loops.contains(&loop_ir.header)
+                        });
                     if let Some((binding, positive)) = guard_binding(procedure, condition) {
                         let required = outcome == positive;
                         if let Some(previous) = next.guards.get(&binding)
@@ -117,13 +177,82 @@ impl BranchPaths {
                             continue;
                         }
                         next.guards.insert(binding, required);
-                    } else if !next.known.contains_key(condition) {
+                    } else if !known {
                         next.unproven = true;
                         result.unproven_branches.insert(node_id.clone());
                     }
-                    if let Some(label) = &edge.assumption {
-                        next.labels.insert(normalize_label(label));
+                    if repeated {
+                        if !known {
+                            let previous_facts = next.guard_facts.get(&node_id);
+                            let same_value =
+                                guard_binding(procedure, condition).is_some_and(|(binding, _)| {
+                                    if procedure.loops.iter().any(|loop_ir| {
+                                        loop_ir.members.contains(&node_id)
+                                            && next.carried_loops.contains(&loop_ir.header)
+                                            && loop_ir.members.iter().any(|id| matches!(
+                                                &procedure.nodes[id].operation,
+                                                Operation::Write { target: Place::Binding(candidate), .. }
+                                                    if candidate == &binding
+                                            ))
+                                    }) {
+                                        // Revisiting one static writer does not
+                                        // establish that its value is unchanged.
+                                        return false;
+                                    }
+                                    let place = Place::Binding(binding);
+                                    let writes = |facts: &BTreeSet<Fact>| {
+                                        facts
+                                            .iter()
+                                            .filter_map(|fact| match fact {
+                                                Fact::LastWrite { place: p, write }
+                                                    if p == &place =>
+                                                {
+                                                    Some(write.clone())
+                                                }
+                                                _ => None,
+                                            })
+                                            .collect::<BTreeSet<_>>()
+                                    };
+                                    previous_facts.is_some_and(|facts| {
+                                        !writes(facts).is_empty() && writes(facts) == writes(&incoming.facts)
+                                    })
+                                });
+                            if !same_value {
+                                // A changing repeated predicate is retained as a
+                                // possible path, not a new input-region constraint.
+                                next.unproven = true;
+                                next.loop_unproven = true;
+                                result.unproven_branches.insert(node_id.clone());
+                            }
+                        }
+                    } else {
+                        next.decisions.insert(node_id.clone(), outcome);
+                        next.guard_facts
+                            .insert(node_id.clone(), incoming.facts.clone());
+                        next.guard_reads
+                            .insert(node_id.clone(), outgoing.read_writes.clone());
+                        next.guard_choices
+                            .insert(node_id.clone(), next.choices.clone());
+                        if let Some(label) = &edge.assumption
+                            && !(known
+                                && procedure.loops.iter().any(|item| item.condition == node_id))
+                        {
+                            next.labels.insert(normalize_label(label));
+                        }
                     }
+                }
+                let key = (edge.target.clone(), next.clone());
+                let to = if let Some(id) = state_ids.get(&key) {
+                    *id
+                } else {
+                    let id = state_ids.len();
+                    state_ids.insert(key, id);
+                    transitions.push(BTreeSet::new());
+                    id
+                };
+                transitions[from].insert(to);
+                if edge.kind == EdgeKind::LoopBack {
+                    backedges.push((from, to, edge.source.clone(), edge.target.clone()));
                 }
                 let states = result.at.entry(edge.target.clone()).or_default();
                 if states.insert(next.clone()) {
@@ -136,6 +265,51 @@ impl BranchPaths {
                 }
             }
         }
+        let components = crate::ifds::loops::cyclic_components(&transitions);
+        let state_nodes: BTreeMap<_, _> = state_ids
+            .iter()
+            .map(|((node, _), id)| (*id, node.clone()))
+            .collect();
+        for ((node, state), id) in &state_ids {
+            if components[*id].is_some() {
+                result
+                    .cycles
+                    .entry(node.clone())
+                    .or_default()
+                    .insert(state.clone());
+            }
+        }
+        for (from, to, source, target) in backedges {
+            if components[from].is_some() && components[from] == components[to] {
+                let key = (source, target);
+                result.cycle_backedges.insert(key.clone());
+                result.cycle_witnesses.entry(key).or_insert_with(|| {
+                    let mut queue = VecDeque::from([to]);
+                    let mut previous = BTreeMap::from([(to, to)]);
+                    while let Some(node) = queue.pop_front() {
+                        if node == from {
+                            break;
+                        }
+                        for target in &transitions[node] {
+                            if components[*target] == components[from]
+                                && !previous.contains_key(target)
+                            {
+                                previous.insert(*target, node);
+                                queue.push_back(*target);
+                            }
+                        }
+                    }
+                    let mut path = vec![state_nodes[&from].clone()];
+                    let mut current = from;
+                    while current != to {
+                        current = previous[&current];
+                        path.push(state_nodes[&current].clone());
+                    }
+                    path.reverse();
+                    path
+                });
+            }
+        }
         result
     }
 
@@ -143,20 +317,47 @@ impl BranchPaths {
     where
         F: Fn(&BTreeSet<Fact>) -> bool,
     {
-        self.at
+        let mut cubes: BTreeSet<BTreeSet<String>> = self
+            .at
             .get(node)
             .into_iter()
             .flatten()
             .filter(|state| predicate(&state.facts))
-            .map(|state| {
-                (!state.labels.is_empty()).then(|| {
-                    state
-                        .labels
+            .map(|state| state.labels.clone())
+            .collect();
+        loop {
+            let mut next = cubes.clone();
+            for left in &cubes {
+                for right in &cubes {
+                    let a: Vec<_> = left.difference(right).collect();
+                    let b: Vec<_> = right.difference(left).collect();
+                    if a.len() == 1
+                        && b.len() == 1
+                        && (a[0].strip_prefix('!') == Some(b[0].as_str())
+                            || b[0].strip_prefix('!') == Some(a[0].as_str()))
+                    {
+                        next.insert(left.intersection(right).cloned().collect());
+                    }
+                }
+            }
+            let minimal: BTreeSet<_> = next
+                .iter()
+                .filter(|cube| {
+                    !next
                         .iter()
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(" && ")
+                        .any(|other| other.len() < cube.len() && other.is_subset(cube))
                 })
+                .cloned()
+                .collect();
+            if minimal == cubes {
+                break;
+            }
+            cubes = minimal;
+        }
+        cubes
+            .into_iter()
+            .map(|labels| {
+                (!labels.is_empty()).then(|| labels.into_iter().collect::<Vec<_>>().join(" && "))
             })
             .collect()
     }
@@ -164,15 +365,10 @@ impl BranchPaths {
     pub fn condition_unproven(&self, node: &NodeId, condition: &Option<String>) -> bool {
         self.at.get(node).is_some_and(|states| {
             states.iter().any(|state| {
-                let label = (!state.labels.is_empty()).then(|| {
-                    state
-                        .labels
-                        .iter()
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(" && ")
-                });
-                &label == condition && state.unproven
+                state.unproven
+                    && condition.as_ref().is_none_or(|label| {
+                        label.split(" && ").all(|term| state.labels.contains(term))
+                    })
             })
         })
     }
@@ -188,6 +384,7 @@ impl BranchState {
                 result,
                 ..
             } => {
+                self.known.remove(result);
                 let value = match literal_kind {
                     LiteralKind::Boolean => Some(KnownValue::boolean(raw == "true")),
                     LiteralKind::Null | LiteralKind::Undefined => Some(KnownValue {
@@ -227,6 +424,8 @@ impl BranchState {
                 {
                     self.known
                         .insert(result.clone(), KnownValue::boolean(!value.truthy));
+                } else {
+                    self.known.remove(result);
                 }
             }
             Operation::Compute {
@@ -242,6 +441,8 @@ impl BranchState {
                 {
                     self.known
                         .insert(result.clone(), KnownValue::boolean(value.nullish));
+                } else {
+                    self.known.remove(result);
                 }
             }
             Operation::Compute {
@@ -251,7 +452,7 @@ impl BranchState {
                 ..
             } => {
                 let index = self
-                    .decisions
+                    .choices
                     .get(branch)
                     .map(|outcome| if *outcome { 0 } else { 1 });
                 if let Some(value) = index
@@ -278,6 +479,21 @@ impl BranchState {
                 }
                 if let Place::Binding(binding) = target {
                     self.guards.remove(binding);
+                }
+            }
+            Operation::Compute { result, .. } => {
+                self.known.remove(result);
+            }
+            Operation::UnknownEffect {
+                affected_places,
+                result,
+                ..
+            } => {
+                for place in affected_places.iter().chain(result.iter()) {
+                    self.known.remove(place);
+                    if let Place::Binding(binding) = place {
+                        self.guards.remove(binding);
+                    }
                 }
             }
             _ => {}

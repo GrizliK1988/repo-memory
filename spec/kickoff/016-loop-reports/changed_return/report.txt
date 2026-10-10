@@ -1,0 +1,12 @@
+Function result: f
+Loop change: while (again) (before snippet.ts:3; after snippet.ts:3)
+  Write changed: x = 1 -> x = 2 (before snippet.ts:4; after snippet.ts:4)
+  Inputs: again (loop carried)
+  Body: may be skipped; executes at most once
+Edit: 1 -> 2 (before snippet.ts:4; after snippet.ts:4)
+Unchanged data flow under !again: 0 (Equal)
+Effect: again: x (1) -> x (2) (Different)
+Before contributing writes: snippet.ts:4
+After contributing writes: snippet.ts:4
+Coverage: result comparison Complete; source alignment Partial; data flow Complete
+Evidence: spec/kickoff/016-loop-reports/changed_return/full.json (ifds-function-fe66ca2fb297133c)

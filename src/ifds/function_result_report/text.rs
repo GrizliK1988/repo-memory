@@ -583,6 +583,11 @@ pub(super) fn control_text(
     pair: Option<&GuardPair>,
 ) -> String {
     let regions: Vec<_> = regions.collect();
+    if let Some(cause) = full.guarded_write_causes.iter().find(|cause| {
+        !regions.is_empty() && regions.iter().all(|index| cause.regions.contains(index))
+    }) {
+        return format!("Control added: {}", cause.guard.condition);
+    }
     if let Some(order) = guard_order_text(full, regions.iter().copied()) {
         return order;
     }

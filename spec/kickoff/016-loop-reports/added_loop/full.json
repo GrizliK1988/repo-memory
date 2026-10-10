@@ -1,0 +1,1990 @@
+{
+  "schema_version": 5,
+  "analysis": {
+    "schema_version": 5,
+    "query": {
+      "before": {
+        "id": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+          "content_id": "fnv1a64-b96784ec32a2363e"
+        },
+        "repository_id": "local-example"
+      },
+      "after": {
+        "id": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+          "content_id": "fnv1a64-db5fc4cf5fa69780"
+        },
+        "repository_id": "local-example"
+      },
+      "diff": {
+        "before_content_id": "fnv1a64-b96784ec32a2363e",
+        "after_content_id": "fnv1a64-db5fc4cf5fa69780",
+        "changes": [
+          {
+            "kind": "modified",
+            "before_path": "snippet.ts",
+            "after_path": "snippet.ts",
+            "before_content_id": "fnv1a64-b96784ec32a2363e",
+            "after_content_id": "fnv1a64-db5fc4cf5fa69780"
+          }
+        ]
+      },
+      "selected_function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+          "content_id": "fnv1a64-b96784ec32a2363e"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 55,
+          "start_line": 1,
+          "end_line": 4
+        },
+        "expected_name": "f",
+        "expected_enclosing_symbol": null
+      },
+      "counterpart": null,
+      "before_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "after_entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "capabilities": {
+        "stage": 3,
+        "capabilities": [
+          "branches",
+          "loops",
+          "short_circuit",
+          "straight_line"
+        ],
+        "version": "stage-3"
+      },
+      "summaries": [],
+      "limits": {
+        "time_ms": 120000,
+        "memory_bytes": 4294967296,
+        "processed_path_edges": 1000000,
+        "witnesses_per_relation": 3,
+        "output_nodes": 100000
+      }
+    },
+    "counterpart_status": "matched",
+    "input_correspondence": [
+      {
+        "position": 0,
+        "before": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b96784ec32a2363e",
+            "content_id": "fnv1a64-b96784ec32a2363e"
+          },
+          "local": 1
+        },
+        "after": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+            "content_id": "fnv1a64-db5fc4cf5fa69780"
+          },
+          "local": 1
+        }
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "before": {
+      "loops": [],
+      "function": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+          "content_id": "fnv1a64-b96784ec32a2363e"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 55,
+          "start_line": 1,
+          "end_line": 4
+        },
+        "expected_name": "f",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "before",
+          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+          "content_id": "fnv1a64-b96784ec32a2363e"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b96784ec32a2363e",
+            "content_id": "fnv1a64-b96784ec32a2363e"
+          },
+          "local": 1
+        }
+      ],
+      "parameter_names": [
+        "again"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "before",
+              "revision": "local-before-fnv1a64-b96784ec32a2363e",
+              "content_id": "fnv1a64-b96784ec32a2363e"
+            },
+            "local": 8589934597
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 44,
+            "byte_end": 53,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "effective_condition": null,
+          "guards": [],
+          "value": {
+            "kind": "expression",
+            "text": "x",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 51,
+              "byte_end": 52,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "before",
+                  "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                  "content_id": "fnv1a64-b96784ec32a2363e"
+                },
+                "local": 8589934596
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 51,
+                "byte_end": 52,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "before",
+                      "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                      "content_id": "fnv1a64-b96784ec32a2363e"
+                    },
+                    "local": 8589934596
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 51,
+                    "byte_end": 52,
+                    "start_line": 3,
+                    "end_line": 3
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                          "content_id": "fnv1a64-b96784ec32a2363e"
+                        },
+                        "local": 8589934595
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 35,
+                        "byte_end": 40,
+                        "start_line": 2,
+                        "end_line": 2
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                            "content_id": "fnv1a64-b96784ec32a2363e"
+                          },
+                          "local": 8589934595
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                              "content_id": "fnv1a64-b96784ec32a2363e"
+                            },
+                            "local": 8589934594
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 39,
+                            "byte_end": 40,
+                            "start_line": 2,
+                            "end_line": 2
+                          },
+                          "role": null,
+                          "operation": "literal",
+                          "literal": {
+                            "kind": "number",
+                            "value": "0"
+                          },
+                          "operator": null,
+                          "origin": {
+                            "kind": "write",
+                            "value": {
+                              "snapshot": {
+                                "side": "before",
+                                "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                                "content_id": "fnv1a64-b96784ec32a2363e"
+                              },
+                              "local": 8589934594
+                            }
+                          },
+                          "inputs": [],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    },
+    "after": {
+      "loops": [
+        {
+          "kind": "while",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 44,
+            "byte_end": 93,
+            "start_line": 3,
+            "end_line": 6
+          },
+          "condition": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+              "content_id": "fnv1a64-db5fc4cf5fa69780"
+            },
+            "local": 8589934600
+          },
+          "condition_text": "(again)",
+          "initializer": null,
+          "update": null,
+          "inputs": [
+            {
+              "binding": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 1
+              },
+              "name": "again",
+              "origins": [
+                {
+                  "kind": "write",
+                  "value": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934603
+                  }
+                },
+                {
+                  "kind": "write",
+                  "value": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934604
+                  }
+                },
+                {
+                  "kind": "parameter_entry",
+                  "value": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 10737418240
+                  }
+                },
+                {
+                  "kind": "function_input",
+                  "value": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 1
+                  }
+                }
+              ],
+              "carried": true
+            }
+          ],
+          "operations": [
+            {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934599
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 51,
+                "byte_end": 56,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "operation": "read",
+              "text": "again",
+              "may_repeat": true
+            },
+            {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934600
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 50,
+                "byte_end": 57,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "operation": "condition",
+              "text": "(again)",
+              "may_repeat": true
+            },
+            {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934602
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 64,
+                "byte_end": 69,
+                "start_line": 4,
+                "end_line": 4
+              },
+              "operation": "write",
+              "text": "x = 1",
+              "may_repeat": false
+            },
+            {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934604
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 75,
+                "byte_end": 88,
+                "start_line": 5,
+                "end_line": 5
+              },
+              "operation": "write",
+              "text": "again = false",
+              "may_repeat": false
+            }
+          ],
+          "exits": [
+            {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934600
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 50,
+                "byte_end": 57,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "operation": "condition_false",
+              "text": "(again)",
+              "may_repeat": true
+            }
+          ],
+          "may_enter": true,
+          "may_skip": true,
+          "may_repeat": false,
+          "continuing_cycle": false,
+          "feasibility": "complete"
+        }
+      ],
+      "function": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+          "content_id": "fnv1a64-db5fc4cf5fa69780"
+        },
+        "declaration": {
+          "path": "snippet.ts",
+          "byte_start": 0,
+          "byte_end": 107,
+          "start_line": 1,
+          "end_line": 8
+        },
+        "expected_name": "f",
+        "expected_enclosing_symbol": null
+      },
+      "procedure": {
+        "snapshot": {
+          "side": "after",
+          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+          "content_id": "fnv1a64-db5fc4cf5fa69780"
+        },
+        "local": 2
+      },
+      "parameters": [
+        {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+            "content_id": "fnv1a64-db5fc4cf5fa69780"
+          },
+          "local": 1
+        }
+      ],
+      "parameter_names": [
+        "again"
+      ],
+      "parameter_forms_supported": true,
+      "entry": {
+        "domains": {},
+        "known_values": {},
+        "assumptions": []
+      },
+      "observations": [
+        {
+          "site": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+              "content_id": "fnv1a64-db5fc4cf5fa69780"
+            },
+            "local": 8589934606
+          },
+          "path_index": 0,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 96,
+            "byte_end": 105,
+            "start_line": 7,
+            "end_line": 7
+          },
+          "effective_condition": "again",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934600
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 50,
+                "byte_end": 57,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "outcome": true,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                    "content_id": "fnv1a64-db5fc4cf5fa69780"
+                  },
+                  "local": 8589934599
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 51,
+                  "byte_end": 56,
+                  "start_line": 3,
+                  "end_line": 3
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                        "content_id": "fnv1a64-db5fc4cf5fa69780"
+                      },
+                      "local": 8589934599
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 51,
+                      "byte_end": 56,
+                      "start_line": 3,
+                      "end_line": 3
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 1
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "x",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 103,
+              "byte_end": 104,
+              "start_line": 7,
+              "end_line": 7
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 103,
+                "byte_end": 104,
+                "start_line": 7,
+                "end_line": 7
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 103,
+                    "byte_end": 104,
+                    "start_line": 7,
+                    "end_line": 7
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934602
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 64,
+                        "byte_end": 69,
+                        "start_line": 4,
+                        "end_line": 4
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934602
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 8589934601
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 68,
+                            "byte_end": 69,
+                            "start_line": 4,
+                            "end_line": 4
+                          },
+                          "role": null,
+                          "operation": "literal",
+                          "literal": {
+                            "kind": "number",
+                            "value": "1"
+                          },
+                          "operator": null,
+                          "origin": {
+                            "kind": "write",
+                            "value": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                                "content_id": "fnv1a64-db5fc4cf5fa69780"
+                              },
+                              "local": 8589934601
+                            }
+                          },
+                          "inputs": [],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        },
+        {
+          "site": {
+            "snapshot": {
+              "side": "after",
+              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+              "content_id": "fnv1a64-db5fc4cf5fa69780"
+            },
+            "local": 8589934606
+          },
+          "path_index": 1,
+          "kind": "explicit",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 96,
+            "byte_end": 105,
+            "start_line": 7,
+            "end_line": 7
+          },
+          "effective_condition": "!again",
+          "guards": [
+            {
+              "branch": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934600
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 50,
+                "byte_end": 57,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "outcome": false,
+              "condition": {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                    "content_id": "fnv1a64-db5fc4cf5fa69780"
+                  },
+                  "local": 8589934599
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 51,
+                  "byte_end": 56,
+                  "start_line": 3,
+                  "end_line": 3
+                },
+                "role": null,
+                "operation": "read",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                        "content_id": "fnv1a64-db5fc4cf5fa69780"
+                      },
+                      "local": 8589934599
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 51,
+                      "byte_end": 56,
+                      "start_line": 3,
+                      "end_line": 3
+                    },
+                    "role": null,
+                    "operation": "binding_value",
+                    "literal": null,
+                    "operator": null,
+                    "origin": null,
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934593
+                        },
+                        "span": null,
+                        "role": null,
+                        "operation": "positional_input",
+                        "literal": null,
+                        "operator": null,
+                        "origin": {
+                          "kind": "function_input",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 1
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            }
+          ],
+          "value": {
+            "kind": "expression",
+            "text": "x",
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 103,
+              "byte_end": 104,
+              "start_line": 7,
+              "end_line": 7
+            },
+            "dependency": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934605
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 103,
+                "byte_end": 104,
+                "start_line": 7,
+                "end_line": 7
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934605
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 103,
+                    "byte_end": 104,
+                    "start_line": 7,
+                    "end_line": 7
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934595
+                      },
+                      "span": {
+                        "path": "snippet.ts",
+                        "byte_start": 35,
+                        "byte_end": 40,
+                        "start_line": 2,
+                        "end_line": 2
+                      },
+                      "role": null,
+                      "operation": "write",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "write",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934595
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "node": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 8589934594
+                          },
+                          "span": {
+                            "path": "snippet.ts",
+                            "byte_start": 39,
+                            "byte_end": 40,
+                            "start_line": 2,
+                            "end_line": 2
+                          },
+                          "role": null,
+                          "operation": "literal",
+                          "literal": {
+                            "kind": "number",
+                            "value": "0"
+                          },
+                          "operator": null,
+                          "origin": {
+                            "kind": "write",
+                            "value": {
+                              "snapshot": {
+                                "side": "after",
+                                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                                "content_id": "fnv1a64-db5fc4cf5fa69780"
+                              },
+                              "local": 8589934594
+                            }
+                          },
+                          "inputs": [],
+                          "unresolved": false
+                        }
+                      ],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          },
+          "unknown_completion_before_return": false,
+          "dependency_coverage": "complete",
+          "caller_continuation_open": true
+        }
+      ],
+      "unknown_boundaries": [],
+      "diagnostics": [],
+      "unknown_frontiers": [],
+      "coverage": "complete",
+      "limits_hit": []
+    }
+  },
+  "comparison": {
+    "function_presence": "both",
+    "before_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "after_entry": {
+      "domains": {},
+      "known_values": {},
+      "assumptions": []
+    },
+    "before_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "before",
+            "revision": "local-before-fnv1a64-b96784ec32a2363e",
+            "content_id": "fnv1a64-b96784ec32a2363e"
+          },
+          "local": 8589934597
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 44,
+          "byte_end": 53,
+          "start_line": 3,
+          "end_line": 3
+        },
+        "effective_condition": null,
+        "guards": [],
+        "value": {
+          "kind": "expression",
+          "text": "x",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 51,
+            "byte_end": 52,
+            "start_line": 3,
+            "end_line": 3
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                "content_id": "fnv1a64-b96784ec32a2363e"
+              },
+              "local": 8589934596
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 51,
+              "byte_end": 52,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "before",
+                    "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                    "content_id": "fnv1a64-b96784ec32a2363e"
+                  },
+                  "local": 8589934596
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 51,
+                  "byte_end": 52,
+                  "start_line": 3,
+                  "end_line": 3
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "before",
+                        "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                        "content_id": "fnv1a64-b96784ec32a2363e"
+                      },
+                      "local": 8589934595
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 35,
+                      "byte_end": 40,
+                      "start_line": 2,
+                      "end_line": 2
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "before",
+                          "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                          "content_id": "fnv1a64-b96784ec32a2363e"
+                        },
+                        "local": 8589934595
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "before",
+                            "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                            "content_id": "fnv1a64-b96784ec32a2363e"
+                          },
+                          "local": 8589934594
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 39,
+                          "byte_end": 40,
+                          "start_line": 2,
+                          "end_line": 2
+                        },
+                        "role": null,
+                        "operation": "literal",
+                        "literal": {
+                          "kind": "number",
+                          "value": "0"
+                        },
+                        "operator": null,
+                        "origin": {
+                          "kind": "write",
+                          "value": {
+                            "snapshot": {
+                              "side": "before",
+                              "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                              "content_id": "fnv1a64-b96784ec32a2363e"
+                            },
+                            "local": 8589934594
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "after_observations": [
+      {
+        "site": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+            "content_id": "fnv1a64-db5fc4cf5fa69780"
+          },
+          "local": 8589934606
+        },
+        "path_index": 0,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 96,
+          "byte_end": 105,
+          "start_line": 7,
+          "end_line": 7
+        },
+        "effective_condition": "again",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934600
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 50,
+              "byte_end": 57,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "outcome": true,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934599
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 51,
+                "byte_end": 56,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934599
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 51,
+                    "byte_end": 56,
+                    "start_line": 3,
+                    "end_line": 3
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 1
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "x",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 103,
+            "byte_end": 104,
+            "start_line": 7,
+            "end_line": 7
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934605
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 103,
+              "byte_end": 104,
+              "start_line": 7,
+              "end_line": 7
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                    "content_id": "fnv1a64-db5fc4cf5fa69780"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 103,
+                  "byte_end": 104,
+                  "start_line": 7,
+                  "end_line": 7
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                        "content_id": "fnv1a64-db5fc4cf5fa69780"
+                      },
+                      "local": 8589934602
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 64,
+                      "byte_end": 69,
+                      "start_line": 4,
+                      "end_line": 4
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934602
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934601
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 68,
+                          "byte_end": 69,
+                          "start_line": 4,
+                          "end_line": 4
+                        },
+                        "role": null,
+                        "operation": "literal",
+                        "literal": {
+                          "kind": "number",
+                          "value": "1"
+                        },
+                        "operator": null,
+                        "origin": {
+                          "kind": "write",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 8589934601
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      },
+      {
+        "site": {
+          "snapshot": {
+            "side": "after",
+            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+            "content_id": "fnv1a64-db5fc4cf5fa69780"
+          },
+          "local": 8589934606
+        },
+        "path_index": 1,
+        "kind": "explicit",
+        "span": {
+          "path": "snippet.ts",
+          "byte_start": 96,
+          "byte_end": 105,
+          "start_line": 7,
+          "end_line": 7
+        },
+        "effective_condition": "!again",
+        "guards": [
+          {
+            "branch": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934600
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 50,
+              "byte_end": 57,
+              "start_line": 3,
+              "end_line": 3
+            },
+            "outcome": false,
+            "condition": {
+              "node": {
+                "snapshot": {
+                  "side": "after",
+                  "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                  "content_id": "fnv1a64-db5fc4cf5fa69780"
+                },
+                "local": 8589934599
+              },
+              "span": {
+                "path": "snippet.ts",
+                "byte_start": 51,
+                "byte_end": 56,
+                "start_line": 3,
+                "end_line": 3
+              },
+              "role": null,
+              "operation": "read",
+              "literal": null,
+              "operator": null,
+              "origin": null,
+              "inputs": [
+                {
+                  "node": {
+                    "snapshot": {
+                      "side": "after",
+                      "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                      "content_id": "fnv1a64-db5fc4cf5fa69780"
+                    },
+                    "local": 8589934599
+                  },
+                  "span": {
+                    "path": "snippet.ts",
+                    "byte_start": 51,
+                    "byte_end": 56,
+                    "start_line": 3,
+                    "end_line": 3
+                  },
+                  "role": null,
+                  "operation": "binding_value",
+                  "literal": null,
+                  "operator": null,
+                  "origin": null,
+                  "inputs": [
+                    {
+                      "node": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934593
+                      },
+                      "span": null,
+                      "role": null,
+                      "operation": "positional_input",
+                      "literal": null,
+                      "operator": null,
+                      "origin": {
+                        "kind": "function_input",
+                        "value": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 1
+                        }
+                      },
+                      "inputs": [],
+                      "unresolved": false
+                    }
+                  ],
+                  "unresolved": false
+                }
+              ],
+              "unresolved": false
+            }
+          }
+        ],
+        "value": {
+          "kind": "expression",
+          "text": "x",
+          "span": {
+            "path": "snippet.ts",
+            "byte_start": 103,
+            "byte_end": 104,
+            "start_line": 7,
+            "end_line": 7
+          },
+          "dependency": {
+            "node": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934605
+            },
+            "span": {
+              "path": "snippet.ts",
+              "byte_start": 103,
+              "byte_end": 104,
+              "start_line": 7,
+              "end_line": 7
+            },
+            "role": null,
+            "operation": "read",
+            "literal": null,
+            "operator": null,
+            "origin": null,
+            "inputs": [
+              {
+                "node": {
+                  "snapshot": {
+                    "side": "after",
+                    "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                    "content_id": "fnv1a64-db5fc4cf5fa69780"
+                  },
+                  "local": 8589934605
+                },
+                "span": {
+                  "path": "snippet.ts",
+                  "byte_start": 103,
+                  "byte_end": 104,
+                  "start_line": 7,
+                  "end_line": 7
+                },
+                "role": null,
+                "operation": "binding_value",
+                "literal": null,
+                "operator": null,
+                "origin": null,
+                "inputs": [
+                  {
+                    "node": {
+                      "snapshot": {
+                        "side": "after",
+                        "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                        "content_id": "fnv1a64-db5fc4cf5fa69780"
+                      },
+                      "local": 8589934595
+                    },
+                    "span": {
+                      "path": "snippet.ts",
+                      "byte_start": 35,
+                      "byte_end": 40,
+                      "start_line": 2,
+                      "end_line": 2
+                    },
+                    "role": null,
+                    "operation": "write",
+                    "literal": null,
+                    "operator": null,
+                    "origin": {
+                      "kind": "write",
+                      "value": {
+                        "snapshot": {
+                          "side": "after",
+                          "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                          "content_id": "fnv1a64-db5fc4cf5fa69780"
+                        },
+                        "local": 8589934595
+                      }
+                    },
+                    "inputs": [
+                      {
+                        "node": {
+                          "snapshot": {
+                            "side": "after",
+                            "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                            "content_id": "fnv1a64-db5fc4cf5fa69780"
+                          },
+                          "local": 8589934594
+                        },
+                        "span": {
+                          "path": "snippet.ts",
+                          "byte_start": 39,
+                          "byte_end": 40,
+                          "start_line": 2,
+                          "end_line": 2
+                        },
+                        "role": null,
+                        "operation": "literal",
+                        "literal": {
+                          "kind": "number",
+                          "value": "0"
+                        },
+                        "operator": null,
+                        "origin": {
+                          "kind": "write",
+                          "value": {
+                            "snapshot": {
+                              "side": "after",
+                              "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                              "content_id": "fnv1a64-db5fc4cf5fa69780"
+                            },
+                            "local": 8589934594
+                          }
+                        },
+                        "inputs": [],
+                        "unresolved": false
+                      }
+                    ],
+                    "unresolved": false
+                  }
+                ],
+                "unresolved": false
+              }
+            ],
+            "unresolved": false
+          }
+        },
+        "unknown_completion_before_return": false,
+        "dependency_coverage": "complete",
+        "caller_continuation_open": true
+      }
+    ],
+    "common_domain_status": "present",
+    "common_domain": [
+      {
+        "values": {},
+        "nullish": {}
+      }
+    ],
+    "before_only_domain": [],
+    "after_only_domain": [],
+    "outside_both_domain": [],
+    "unresolved_domain": [],
+    "before_flow": [
+      {
+        "region": {
+          "values": {},
+          "nullish": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                "content_id": "fnv1a64-b96784ec32a2363e"
+              },
+              "local": 8589934597
+            },
+            "path_index": 0
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "after_flow": [
+      {
+        "region": {
+          "values": {},
+          "nullish": {}
+        },
+        "result": "x",
+        "observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934606
+            },
+            "path_index": 0
+          },
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934606
+            },
+            "path_index": 1
+          }
+        ],
+        "completion": "complete",
+        "unknown_reason": null
+      }
+    ],
+    "regions": [
+      {
+        "region": {
+          "values": {
+            "0": false
+          },
+          "nullish": {}
+        },
+        "before_result": "x",
+        "after_result": "x",
+        "before_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                "content_id": "fnv1a64-b96784ec32a2363e"
+              },
+              "local": 8589934597
+            },
+            "path_index": 0
+          }
+        ],
+        "after_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934606
+            },
+            "path_index": 1
+          }
+        ],
+        "assessment": "equal",
+        "evidence": "supported",
+        "proof": "primitive_values",
+        "control_changed": true,
+        "value_dependency_changed": false,
+        "return_structure_changed": false,
+        "unknown_reason": null
+      },
+      {
+        "region": {
+          "values": {
+            "0": true
+          },
+          "nullish": {}
+        },
+        "before_result": "x",
+        "after_result": "x",
+        "before_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "before",
+                "revision": "local-before-fnv1a64-b96784ec32a2363e",
+                "content_id": "fnv1a64-b96784ec32a2363e"
+              },
+              "local": 8589934597
+            },
+            "path_index": 0
+          }
+        ],
+        "after_observations": [
+          {
+            "site": {
+              "snapshot": {
+                "side": "after",
+                "revision": "local-after-fnv1a64-db5fc4cf5fa69780",
+                "content_id": "fnv1a64-db5fc4cf5fa69780"
+              },
+              "local": 8589934606
+            },
+            "path_index": 0
+          }
+        ],
+        "assessment": "different",
+        "evidence": "supported",
+        "proof": "primitive_values",
+        "control_changed": true,
+        "value_dependency_changed": true,
+        "return_structure_changed": true,
+        "unknown_reason": null
+      }
+    ],
+    "input_mapping_coverage": "complete",
+    "source_alignment_coverage": "partial",
+    "comparison_coverage": "complete",
+    "limits_hit": []
+  },
+  "findings": [
+    {
+      "assessment": "different",
+      "before_result": "x",
+      "after_result": "x",
+      "regions": [
+        1
+      ],
+      "control_changed": true,
+      "value_dependency_changed": true,
+      "return_structure_changed": true,
+      "before_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 44,
+          "byte_end": 53,
+          "start_line": 3,
+          "end_line": 3
+        }
+      ],
+      "after_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 50,
+          "byte_end": 57,
+          "start_line": 3,
+          "end_line": 3
+        },
+        {
+          "path": "snippet.ts",
+          "byte_start": 96,
+          "byte_end": 105,
+          "start_line": 7,
+          "end_line": 7
+        }
+      ],
+      "attribution_certain": false,
+      "cause_refs": []
+    },
+    {
+      "assessment": "equal",
+      "before_result": "x",
+      "after_result": "x",
+      "regions": [
+        0
+      ],
+      "control_changed": true,
+      "value_dependency_changed": false,
+      "return_structure_changed": false,
+      "before_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 44,
+          "byte_end": 53,
+          "start_line": 3,
+          "end_line": 3
+        }
+      ],
+      "after_locations": [
+        {
+          "path": "snippet.ts",
+          "byte_start": 50,
+          "byte_end": 57,
+          "start_line": 3,
+          "end_line": 3
+        },
+        {
+          "path": "snippet.ts",
+          "byte_start": 96,
+          "byte_end": 105,
+          "start_line": 7,
+          "end_line": 7
+        }
+      ],
+      "attribution_certain": false,
+      "cause_refs": []
+    }
+  ],
+  "causes": []
+}

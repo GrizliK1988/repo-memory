@@ -13,6 +13,7 @@ pub mod function_result_comparison;
 pub mod function_result_report;
 pub mod function_results;
 pub mod ir;
+pub mod loops;
 pub mod model;
 pub mod provenance;
 pub mod slicing;

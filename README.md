@@ -4,8 +4,9 @@ Rust utilities for analyzing repository changes.
 
 The IFDS variable-flow analyzer has a separate
 [specification and staged roadmap](docs/ifds/README.md), including automated
-benchmark criteria and the Bluesky PR #5816 reference case. Stage 1 supports
-straight-line scalar variable flow; later language features remain planned.
+benchmark criteria and the Bluesky PR #5816 reference case. The supported scalar
+subset includes straight-line flow, branches, short-circuit expressions and
+`while`, `do/while`, and classic `for` loops with unlabeled `break`/`continue`.
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
 
@@ -42,6 +43,20 @@ The full JSON's existing `human_summary` remains unchanged in either mode.
 `render_verbose_text(&full)` renders detailed text. Both use the exact full
 `VariableFlowReport`, including its coverage, limits, and boundary information.
 `render_legacy_text()` preserves the summary stored in full JSON.
+
+Loop reports show conditions, input origins, carried values, static operations,
+exits and possible repeated writes. Execution counts and accumulated values may
+remain unknown; a solved cyclic graph does not prove runtime termination.
+Short text pairs uniquely corresponding loops and shows source edits once, such
+as `x = x + step -> x = x + step + 1`, with before/after locations and repetition
+limits. Nested loops are compared within their containing loop; ambiguous
+counterparts retain separate snapshot details. Use `--verbose` for both full loop
+descriptions.
+Use ordinary assignments such as `i = i + 1` in `for` updates: `i++`, compound
+assignments, labeled transfers, `for...of` and `forEach` remain unsupported.
+See [loop report examples](spec/kickoff/016-loop-reports/README.md).
+Binding full/compact schemas are 4/3; function analysis/full/compact schemas are
+5/6/6. Existing archived reports retain their historical schemas.
 
 To compare all normal results of one function without selecting a variable, use
 the explicit function target:

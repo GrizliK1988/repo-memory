@@ -12,10 +12,10 @@ use super::solver::{
     IntraproceduralSolver, Solver, SolverRequest, SolverTermination, SystemSolverControl,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 4;
+pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 5;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -200,6 +200,7 @@ pub struct ResultObservation {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FunctionSnapshotResult {
+    pub loops: Vec<super::loops::LoopSummary>,
     pub function: FunctionSelector,
     pub procedure: ProcedureId,
     pub parameters: Vec<BindingId>,
@@ -643,8 +644,28 @@ fn analyze_side<P: SnapshotProvider>(
     if paths.truncated {
         limits_hit.insert("branch_states".into());
     }
+    let mut loop_paths = if procedure.loops.is_empty() {
+        BranchPaths::default()
+    } else {
+        paths.clone()
+    };
+    for states in loop_paths
+        .at
+        .values_mut()
+        .chain(loop_paths.cycles.values_mut())
+    {
+        states.retain(|state| {
+            entry_viability(entry, &procedure, &paths, state) != EntryViability::Excluded
+        });
+    }
+    loop_paths.at.retain(|_, states| !states.is_empty());
+    loop_paths.cycles.retain(|_, states| !states.is_empty());
+    loop_paths
+        .cycle_backedges
+        .retain(|(_, target)| loop_paths.cycles.contains_key(target));
     let coverage = if !matches!(solved.termination, SolverTermination::FixedPoint)
         || paths.truncated
+        || !loop_paths.cycles.is_empty()
         || !unknown_boundaries.is_empty()
         || !parameter_forms_supported
         || observations
@@ -665,6 +686,7 @@ fn analyze_side<P: SnapshotProvider>(
         Coverage::Complete
     };
     Ok(FunctionSnapshotResult {
+        loops: super::loops::summarize_loops(&procedure, &loop_paths, &index, &source),
         function: selector,
         procedure: procedure.id.clone(),
         parameters: procedure
@@ -1035,7 +1057,10 @@ fn entry_viability(
             procedure,
             paths,
             decisions: &state.decisions,
+            choices: &state.choices,
+            guard_choices: None,
             visiting: BTreeSet::new(),
+            guard_snapshot: None,
         };
         for guard in walker.guards(state) {
             match eval_dependency(&guard.condition, procedure, &values, entry) {
@@ -1098,7 +1123,10 @@ fn observe_return(
         procedure,
         paths,
         decisions: &state.decisions,
+        choices: &state.choices,
+        guard_choices: None,
         visiting: BTreeSet::new(),
+        guard_snapshot: None,
     };
     let guards = walker.guards(state);
     let result = if let Some(value) = value {
@@ -1123,7 +1151,7 @@ fn observe_return(
     } else {
         ResultValue::Undefined
     };
-    let unknown_completion_before_return = unknown_before(procedure, &node.id, &state.decisions);
+    let unknown_completion_before_return = unknown_completion(paths, state);
     let dependency_coverage = if unknown_completion_before_return
         || value_unresolved(&result)
         || guards.iter().any(|guard| guard.condition.unresolved)
@@ -1176,10 +1204,13 @@ fn observe_fallthrough(
         procedure,
         paths,
         decisions: &state.decisions,
+        choices: &state.choices,
+        guard_choices: None,
         visiting: BTreeSet::new(),
+        guard_snapshot: None,
     };
     let guards = walker.guards(state);
-    let unknown_completion_before_return = unknown_before(procedure, site, &state.decisions);
+    let unknown_completion_before_return = unknown_completion(paths, state);
     let span = SourceSpan {
         path: function_span.path.clone(),
         byte_start: function_span.byte_end,
@@ -1212,56 +1243,29 @@ fn value_unresolved(value: &ResultValue) -> bool {
     }
 }
 
-fn unknown_before(
-    procedure: &ProcedureIr,
-    target: &NodeId,
-    decisions: &BTreeMap<NodeId, bool>,
-) -> bool {
-    let mut queue = VecDeque::from([(procedure.entry.clone(), false)]);
-    let mut seen = BTreeSet::new();
-    while let Some((id, unknown)) = queue.pop_front() {
-        if !seen.insert((id.clone(), unknown)) {
-            continue;
-        }
-        if &id == target {
-            if unknown
-                || matches!(
-                    procedure.nodes[&id].operation,
-                    Operation::UnknownEffect { .. } | Operation::Call { .. }
-                )
-            {
-                return true;
-            }
-            continue;
-        }
-        let next_unknown = unknown
-            || matches!(
-                procedure.nodes[&id].operation,
-                Operation::UnknownEffect { .. } | Operation::Call { .. }
-            );
-        for edge in procedure.edges.iter().filter(|edge| edge.source == id) {
-            if let EdgeKind::Branch { outcome } = edge.kind
-                && decisions.get(&id) != Some(&outcome)
-            {
-                continue;
-            }
-            if matches!(edge.kind, EdgeKind::Normal | EdgeKind::Branch { .. }) {
-                queue.push_back((edge.target.clone(), next_unknown));
-            }
-        }
-    }
-    false
+fn unknown_completion(paths: &BranchPaths, state: &BranchState) -> bool {
+    state.unknown_effects
+        || state.loop_unproven
+        || paths.cycles.values().flatten().any(|cycle| {
+            cycle
+                .decisions
+                .iter()
+                .all(|(branch, outcome)| state.decisions.get(branch) == Some(outcome))
+        })
 }
 
 struct DependencyWalker<'a> {
     procedure: &'a ProcedureIr,
     paths: &'a BranchPaths,
     decisions: &'a BTreeMap<NodeId, bool>,
+    choices: &'a BTreeMap<NodeId, bool>,
+    guard_choices: Option<&'a BTreeMap<NodeId, bool>>,
     visiting: BTreeSet<(Place, NodeId)>,
+    guard_snapshot: Option<&'a BTreeMap<NodeId, BTreeSet<super::model::DefinitionId>>>,
 }
 
-impl DependencyWalker<'_> {
-    fn guards(&mut self, state: &BranchState) -> Vec<ResultGuard> {
+impl<'a> DependencyWalker<'a> {
+    fn guards(&mut self, state: &'a BranchState) -> Vec<ResultGuard> {
         state
             .decisions
             .iter()
@@ -1270,7 +1274,11 @@ impl DependencyWalker<'_> {
                 else {
                     return None;
                 };
+                self.guard_snapshot = state.guard_reads.get(branch);
+                self.guard_choices = state.guard_choices.get(branch);
                 let condition = self.trace(condition, branch, None);
+                self.guard_snapshot = None;
+                self.guard_choices = None;
                 Some(ResultGuard {
                     branch: branch.clone(),
                     span: self.procedure.nodes[branch].span.clone(),
@@ -1281,7 +1289,7 @@ impl DependencyWalker<'_> {
             .collect()
     }
 
-    fn compatible_facts(&self, node: &NodeId) -> Vec<&BTreeSet<Fact>> {
+    fn compatible_facts(&self, node: &NodeId) -> Vec<&'a BTreeSet<Fact>> {
         self.paths
             .at
             .get(node)
@@ -1339,17 +1347,31 @@ impl DependencyWalker<'_> {
                 Some(Source::Write(definition.clone())),
                 false,
             ),
-            Operation::Read { source, .. } => (
-                "read".into(),
-                vec![self.trace(source, id, None)],
-                None,
-                false,
-            ),
+            Operation::Read { source, .. } => {
+                let dependency = if let (Some(snapshot), Place::Binding(binding)) =
+                    (self.guard_snapshot, source)
+                {
+                    let facts = snapshot
+                        .get(id)
+                        .into_iter()
+                        .flatten()
+                        .map(|write| Fact::LastWrite {
+                            place: source.clone(),
+                            write: write.clone(),
+                        })
+                        .collect();
+                    self.trace_binding_from(binding, id, None, source, vec![&facts])
+                } else {
+                    self.trace(source, id, None)
+                };
+                ("read".into(), vec![dependency], None, false)
+            }
             Operation::Compute {
                 inputs, operator, ..
             } => {
                 let selected: Vec<_> = if let PrimitiveOperator::ValueJoin { branch } = operator {
-                    self.decisions
+                    self.guard_choices
+                        .unwrap_or(self.choices)
                         .get(branch)
                         .and_then(|outcome| inputs.get(if *outcome { 0 } else { 1 }))
                         .into_iter()
@@ -1435,14 +1457,25 @@ impl DependencyWalker<'_> {
         role: Option<ComputeInputRole>,
     ) -> ResultDependency {
         let place = Place::Binding(binding.clone());
+        self.trace_binding_from(binding, at, role, &place, self.compatible_facts(at))
+    }
+
+    fn trace_binding_from(
+        &mut self,
+        binding: &BindingId,
+        at: &NodeId,
+        role: Option<ComputeInputRole>,
+        place: &Place,
+        facts_at: Vec<&BTreeSet<Fact>>,
+    ) -> ResultDependency {
         let mut writes = BTreeSet::new();
-        for facts in self.compatible_facts(at) {
+        for facts in facts_at {
             for fact in facts {
                 if let Fact::LastWrite {
                     place: fact_place,
                     write,
                 } = fact
-                    && fact_place == &place
+                    && fact_place == place
                 {
                     writes.insert(write.clone());
                 }

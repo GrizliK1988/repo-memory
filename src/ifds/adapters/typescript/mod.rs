@@ -447,7 +447,9 @@ impl<'a> IndexBuilder<'a> {
             return;
         }
 
-        let scope = if node.kind() == "statement_block" && !function_body {
+        let scope = if (node.kind() == "statement_block" && !function_body)
+            || node.kind() == "for_statement"
+        {
             self.new_scope(node, scope, ScopeKind::Block, self.scope_symbol(scope))
         } else {
             scope

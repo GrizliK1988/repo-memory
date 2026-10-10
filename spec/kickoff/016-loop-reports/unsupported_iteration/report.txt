@@ -1,0 +1,12 @@
+Function result: f
+Loop (before): while (again) (snippet.ts:3)
+  Inputs: again (loop carried)
+  Body: may be skipped; executes at most once
+  Possible write: x = 1 (snippet.ts:4)
+  Possible write: again = false (snippet.ts:5)
+Edit attribution uncertain
+Control changed (guard correspondence unresolved)
+Unknown under !again: an unresolved call may prevent normal completion
+Unknown under again: an unresolved call may prevent normal completion
+Coverage: result comparison Partial; source alignment Partial; data flow Partial; after analysis Partial
+Evidence: spec/kickoff/016-loop-reports/unsupported_iteration/full.json (ifds-function-44aeb225e3703cc4)

@@ -95,6 +95,11 @@ pub(super) fn render(
     } else {
         text.short()
     };
+    lines.extend(crate::ifds::loops::render_loop_comparison(
+        &report.before_loops,
+        &report.after_loops,
+        verbose,
+    ));
     text.notices(&mut lines);
     lines.join("\n")
 }

@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod attribution;
 mod causes;
 mod grouping;
+mod guarded_writes;
 mod selection;
 mod text;
 mod values;
@@ -18,13 +19,15 @@ use attribution::*;
 use causes::*;
 pub use causes::{ControlCauseSide, FunctionResultCause, FunctionResultCauseKind};
 use grouping::*;
+pub use guarded_writes::GuardedWriteCause;
+use guarded_writes::*;
 use selection::*;
 use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
 
-pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 4;
-pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 4;
+pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 6;
+pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 6;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -40,6 +43,7 @@ pub struct FunctionResultFinding {
     pub after_locations: Vec<SourceSpan>,
     pub attribution_certain: bool,
     pub cause_refs: Vec<usize>,
+    pub guarded_write_cause_refs: Vec<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -50,6 +54,7 @@ pub struct FunctionResultReport {
     pub comparison: FunctionResultComparison,
     pub findings: Vec<FunctionResultFinding>,
     pub causes: Vec<FunctionResultCause>,
+    pub guarded_write_causes: Vec<GuardedWriteCause>,
 }
 
 impl FunctionResultReport {
@@ -72,8 +77,13 @@ impl FunctionResultReport {
         if self.causes != expected {
             return Err("function control causes do not match dependency evidence".into());
         }
+        let guarded = guarded_write_causes(&self.analysis, &self.comparison);
+        if self.guarded_write_causes != guarded {
+            return Err("guarded write causes do not match dependency evidence".into());
+        }
         let mut expected_findings = findings(&self.analysis, &self.comparison);
         link_control_causes(&mut expected_findings, &expected);
+        link_guarded_write_causes(&mut expected_findings, &guarded);
         if self.findings != expected_findings {
             return Err("function findings do not match attribution evidence".into());
         }
@@ -145,6 +155,8 @@ pub struct FunctionReportCoverage {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FunctionResultCompactReport {
+    pub before_loops: Vec<super::loops::LoopSummary>,
+    pub after_loops: Vec<super::loops::LoopSummary>,
     pub schema_version: u32,
     pub full_report_id: String,
     pub evidence_file: String,
@@ -283,6 +295,7 @@ fn findings(
             after_locations: Vec::new(),
             attribution_certain: false,
             cause_refs: Vec::new(),
+            guarded_write_cause_refs: Vec::new(),
         });
         finding.regions.push(index);
         finding.before_locations.extend(locations(
@@ -388,12 +401,15 @@ pub fn assemble_function_result_report(analysis: FunctionResultAnalysis) -> Func
     let mut findings = findings(&analysis, &comparison);
     let causes = control_change_causes(&analysis, &comparison);
     link_control_causes(&mut findings, &causes);
+    let guarded_write_causes = guarded_write_causes(&analysis, &comparison);
+    link_guarded_write_causes(&mut findings, &guarded_write_causes);
     FunctionResultReport {
         schema_version: FUNCTION_RESULT_REPORT_SCHEMA_VERSION,
         analysis,
         comparison,
         findings,
         causes,
+        guarded_write_causes,
     }
 }
 
@@ -406,12 +422,15 @@ pub fn assemble_function_result_report_with_comparison_limit(
     let mut findings = findings(&analysis, &comparison);
     let causes = control_change_causes(&analysis, &comparison);
     link_control_causes(&mut findings, &causes);
+    let guarded_write_causes = guarded_write_causes(&analysis, &comparison);
+    link_guarded_write_causes(&mut findings, &guarded_write_causes);
     FunctionResultReport {
         schema_version: FUNCTION_RESULT_REPORT_SCHEMA_VERSION,
         analysis,
         comparison,
         findings,
         causes,
+        guarded_write_causes,
     }
 }
 
@@ -760,6 +779,12 @@ pub fn compact_function_result_report(
                 .cause_refs
                 .iter()
                 .map(|index| reference(&id, "causes", *index))
+                .chain(
+                    finding
+                        .guarded_write_cause_refs
+                        .iter()
+                        .map(|index| reference(&id, "guarded_write_causes", *index)),
+                )
                 .collect(),
         });
     }
@@ -808,6 +833,16 @@ pub fn compact_function_result_report(
         .flat_map(|side| &side.observations)
         .any(|observation| observation.caller_continuation_open);
     FunctionResultCompactReport {
+        before_loops: full
+            .analysis
+            .before
+            .as_ref()
+            .map_or_else(Vec::new, |side| side.loops.clone()),
+        after_loops: full
+            .analysis
+            .after
+            .as_ref()
+            .map_or_else(Vec::new, |side| side.loops.clone()),
         schema_version: FUNCTION_RESULT_COMPACT_SCHEMA_VERSION,
         full_report_id: id.clone(),
         evidence_file: format!("{id}.json"),
@@ -1081,8 +1116,11 @@ impl FunctionResultCompactReport {
         }
         for evidence in self.findings.iter().flat_map(|finding| &finding.cause_refs) {
             if evidence.report_id != self.full_report_id
-                || evidence.section != "causes"
-                || evidence.index >= full.causes.len()
+                || match evidence.section.as_str() {
+                    "causes" => evidence.index >= full.causes.len(),
+                    "guarded_write_causes" => evidence.index >= full.guarded_write_causes.len(),
+                    _ => true,
+                }
             {
                 return Err(format!("invalid function cause reference: {evidence:?}"));
             }
@@ -1148,6 +1186,11 @@ impl FunctionResultCompactReport {
                 .as_deref()
                 .unwrap_or("<anonymous>")
         )];
+        lines.extend(super::loops::render_loop_comparison(
+            &self.before_loops,
+            &self.after_loops,
+            verbose,
+        ));
         if self.before_entry != self.after_entry {
             lines.push("Entry assumptions changed (query scope).".into());
             lines.push(format!(
@@ -1234,6 +1277,7 @@ impl FunctionResultCompactReport {
             }
             lines.extend(dependency_edit_lines(self, full));
             lines.extend(control_cause_lines(self, full));
+            lines.extend(guarded_write_cause_lines(self, full));
             let mut shown_controls = BTreeSet::new();
             if let Some(rule) = &selection_rule {
                 shown_controls.insert(rule.lines[0].clone());
@@ -1593,6 +1637,314 @@ mod tests {
     }
 
     #[test]
+    fn ifds_k016_function_insert_remove_and_return() {
+        let plain = "function f(again: boolean) { let x = 0; return x; }";
+        let looped = "function f(again: boolean) { let x = 0; while (again) { x = 1; again = false; } return x; }";
+        for (before, after) in [(plain, looped), (looped, plain)] {
+            let entry = FunctionEntry {
+                domains: BTreeMap::from([(0, PrimitiveDomain::Boolean)]),
+                ..FunctionEntry::default()
+            };
+            let full =
+                assemble_function_result_report(analyze(before, after, entry.clone(), entry));
+            assert_eq!(
+                full.comparison.comparison_coverage,
+                Coverage::Complete,
+                "{:#?}",
+                full.comparison
+            );
+            assert_eq!(full.comparison.regions.len(), 2);
+            assert!(
+                full.comparison
+                    .regions
+                    .iter()
+                    .any(|region| region.region.values.get(&0) == Some(&true)
+                        && region.assessment == ResultAssessment::Different)
+            );
+            assert!(
+                full.comparison
+                    .regions
+                    .iter()
+                    .any(|region| region.region.values.get(&0) == Some(&false)
+                        && region.assessment == ResultAssessment::Equal)
+            );
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            compact.validate_with_full(&full).unwrap();
+            let text = compact.render_text(&full);
+            assert!(
+                text.contains("Loop (") && text.contains("Inputs: again"),
+                "{text}"
+            );
+            assert!(text.contains("executes at most once"), "{text}");
+            assert!(
+                text.contains("Different") && text.contains("Equal"),
+                "{text}"
+            );
+            assert!(!text.contains("again && !again"));
+            let decoded =
+                FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap()).unwrap();
+            assert_eq!(decoded.analysis, full.analysis);
+        }
+        let early =
+            "function f(again: boolean) { let x = 0; while (again) { return 1; } return x; }";
+        let full = assemble_function_result_report(analyze(
+            plain,
+            early,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.assessment == ResultAssessment::Different)
+        );
+        assert!(
+            full.analysis.after.as_ref().unwrap().loops[0]
+                .exits
+                .iter()
+                .any(|exit| exit.operation == "return")
+        );
+    }
+
+    #[test]
+    fn ifds_k016_function_changed_exit_and_unknown_region() {
+        let plain = "function f(again: boolean) { let x = 0; return x; }";
+        let nonreturning =
+            "function f(again: boolean) { let x = 0; while (again) { x = 1; } return x; }";
+        let full = assemble_function_result_report(analyze(
+            plain,
+            nonreturning,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.region.values.get(&0) == Some(&false)
+                    && region.assessment == ResultAssessment::Equal)
+        );
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.region.values.get(&0) == Some(&true)
+                    && region.assessment == ResultAssessment::Unknown)
+        );
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(text.contains("Possible repeated write: x = 1"), "{text}");
+        assert!(
+            text.contains("execution count is not established")
+                && text.contains("runtime termination is not established"),
+            "{text}"
+        );
+        let before = "function f(a: boolean, b: boolean) { let x = 0; while (a) { x = 1; break; } return x; }";
+        let after = "function f(a: boolean, b: boolean) { let x = 0; while (b) { x = 1; break; } return x; }";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(full.comparison.comparison_coverage, Coverage::Complete);
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.assessment == ResultAssessment::Different
+                    && region.control_changed)
+        );
+    }
+
+    #[test]
+    fn ifds_k016_function_loop_forms_and_unsupported_iteration() {
+        let before = "function f(again: boolean) { let x = 0; while (again) { x = 1; again = false; } return x; }";
+        let after = "function f(again: boolean) { let x = 0; for (; again; again = false) { x = 1; } return x; }";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .all(|region| region.assessment == ResultAssessment::Equal)
+        );
+        assert_eq!(full.comparison.comparison_coverage, Coverage::Complete);
+        for after in [
+            "function f(again: boolean) { let x = 0; for (let i = 0; i < 3; i++) { x = 1; } return x; }",
+            "function f(again: boolean) { let x = 0; items.forEach(item => { x = 1; }); return x; }",
+            "function f(again: boolean) { let x = 0; for (const item of items) { x = 1; } return x; }",
+            "function f(again: boolean) { let x = 0; outer: while (again) { x = 1; break outer; } return x; }",
+        ] {
+            let full = assemble_function_result_report(analyze(
+                before,
+                after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            assert_eq!(full.comparison.comparison_coverage, Coverage::Partial);
+            assert!(
+                full.comparison
+                    .regions
+                    .iter()
+                    .any(|region| region.assessment == ResultAssessment::Unknown)
+            );
+            assert!(
+                full.analysis
+                    .after
+                    .as_ref()
+                    .unwrap()
+                    .diagnostics
+                    .iter()
+                    .any(|diagnostic| diagnostic.code
+                        == crate::ifds::model::DiagnosticCode::UnsupportedSyntax)
+            );
+        }
+    }
+
+    #[test]
+    fn ifds_k016_function_accumulation_reports_structure() {
+        let before = "function f(count: number, step: number) { let remaining = count; let x = 0; while (remaining > 0) { x = x + step; remaining = remaining - 1; } return x; }";
+        let after = before.replace("x + step", "x + step + 1");
+        let full = assemble_function_result_report(analyze(
+            before,
+            &after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        let text = compact.render_text(&full);
+        assert!(
+            text.contains("x (loop carried)") && text.contains("step"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Loop change: while (remaining > 0)"),
+            "{text}"
+        );
+        assert!(
+            text.contains("Write changed: x = x + step -> x = x + step + 1"),
+            "{text}"
+        );
+        assert!(
+            text.contains("iteration count and accumulated values are unresolved"),
+            "{text}"
+        );
+        assert!(
+            !text.contains("Loop (before)") && !text.contains("Loop (after)"),
+            "{text}"
+        );
+        assert!(!text.contains("Write changed: remaining"), "{text}");
+        let verbose = compact.render_verbose_text(&full);
+        assert!(
+            verbose.contains("Loop (before)") && verbose.contains("Loop (after)"),
+            "{verbose}"
+        );
+        assert!(
+            verbose.contains("Possible repeated write: x = x + step + 1"),
+            "{verbose}"
+        );
+        assert!(text.contains("Loop path feasibility: unresolved"), "{text}");
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .all(|region| region.assessment == ResultAssessment::Unknown)
+        );
+        assert!(
+            full.analysis.after.as_ref().unwrap().loops[0]
+                .inputs
+                .iter()
+                .any(|input| input.name == "step" && !input.origins.is_empty())
+        );
+        let mut tampered = compact.clone();
+        tampered.after_loops[0].may_repeat = false;
+        assert!(tampered.validate_with_full(&full).is_err());
+    }
+
+    #[test]
+    fn ifds_k016_repeated_value_join_uses_latest_arm() {
+        let before = "function f() { return 2; }";
+        let after = "function f() { let x = 0; let flag = true; do { x = flag ? 1 : 2; flag = !flag; } while (!flag); return x; }";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(
+            full.comparison.comparison_coverage,
+            Coverage::Complete,
+            "{:#?}",
+            full.comparison
+        );
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .all(|region| region.assessment == ResultAssessment::Equal),
+            "{:#?}",
+            full.comparison.regions
+        );
+        assert!(full.analysis.after.as_ref().unwrap().loops[0].may_repeat);
+        assert!(!full.analysis.after.as_ref().unwrap().loops[0].continuing_cycle);
+    }
+
+    #[test]
+    fn ifds_k016_loop_entry_scope_and_call_boundary() {
+        let before = "function f(flag: boolean) { let x = 0; return x; }";
+        let after = "function f(flag: boolean) { let x = 0; while (flag) { x = 1; } return x; }";
+        let entry = FunctionEntry {
+            known_values: BTreeMap::from([(0, FunctionKnownValue::Boolean { value: false })]),
+            ..FunctionEntry::default()
+        };
+        let full = assemble_function_result_report(analyze(before, after, entry.clone(), entry));
+        let side = full.analysis.after.as_ref().unwrap();
+        assert_eq!(side.coverage, Coverage::Complete);
+        assert!(!side.loops[0].may_enter && !side.loops[0].continuing_cycle);
+        assert!(
+            side.loops[0]
+                .operations
+                .iter()
+                .all(|operation| operation.operation != "write")
+        );
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .all(|region| region.assessment == ResultAssessment::Equal)
+        );
+
+        let after = "function f(flag: boolean) { let x = 0; while (flag) { unknown(); flag = false; } return x; }";
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.region.values.get(&0) == Some(&false)
+                    && region.assessment == ResultAssessment::Equal)
+        );
+        assert!(
+            full.comparison
+                .regions
+                .iter()
+                .any(|region| region.region.values.get(&0) == Some(&true)
+                    && region.assessment == ResultAssessment::Unknown)
+        );
+    }
+
+    #[test]
     fn changed_guard_input_shows_return_source_selection_before_pairwise_effects() {
         let before = include_str!(
             "../../spec/function-result-review/complex-batch-2026-10-03/03-guard-version/before.ts"
@@ -1872,6 +2224,236 @@ mod tests {
         assert!(text.contains("Return source: b - a\n  Before: under enabled && !first\n  After: under enabled && second"), "{text}");
         assert!(!text.contains("  After: under second\n"), "{text}");
         compact.validate_with_full(&full).unwrap();
+    }
+
+    #[test]
+    fn guarded_write_cause_links_the_new_guard_to_the_return() {
+        let before =
+            include_str!("../../spec/kickoff/016-loop-reports/conditional_return/before.ts");
+        let after = include_str!("../../spec/kickoff/016-loop-reports/conditional_return/after.ts");
+        let full = assemble_function_result_report(analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(full.guarded_write_causes.len(), 1, "{full:#?}");
+        let cause = &full.guarded_write_causes[0];
+        assert_eq!(cause.guard.condition, "boost");
+        assert_eq!(cause.write_text, "x = 2");
+        assert_eq!(cause.regions, vec![1, 2]);
+        assert_eq!(cause.affected_regions, vec![2]);
+        assert!(
+            full.findings
+                .iter()
+                .all(|finding| finding.attribution_certain
+                    && finding.guarded_write_cause_refs == vec![0])
+        );
+        let right = full.analysis.after.as_ref().unwrap();
+        let guard =
+            &right.observations[cause.guard.observation_index].guards[cause.guard.guard_index];
+        assert!(guard.outcome);
+        assert_eq!(guard.branch, cause.guard.branch);
+        for (side, index, write) in [
+            (
+                full.analysis.before.as_ref().unwrap(),
+                cause.before_observation_index,
+                &cause.before_write,
+            ),
+            (right, cause.guard.observation_index, &cause.after_write),
+        ] {
+            let ResultValue::Expression { dependency, .. } = &side.observations[index].value else {
+                panic!()
+            };
+            let mut dependency = dependency.as_ref();
+            for &index in &write.path {
+                dependency = &dependency.inputs[index];
+            }
+            assert_eq!(dependency.node, write.node);
+            assert_eq!(dependency.operation, "write");
+            assert_eq!(dependency.span, write.span);
+        }
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        compact.validate_with_full(&full).unwrap();
+        for verbose in [false, true] {
+            let text = compact.render_text_with_detail(&full, verbose);
+            assert_eq!(
+                text.matches("Cause: added condition boost").count(),
+                1,
+                "{text}"
+            );
+            assert!(text.contains("selects x = 2 (after src/fixture.ts:6), which reaches return x (after src/fixture.ts:10)"), "{text}");
+            assert!(
+                text.contains("Different") && text.contains("Equal"),
+                "{text}"
+            );
+            assert!(!text.contains("Edit attribution uncertain"), "{text}");
+            assert!(!text.contains("guard correspondence unresolved"), "{text}");
+        }
+        let restored =
+            FunctionResultReport::from_json(&serde_json::to_vec(&full).unwrap()).unwrap();
+        assert_eq!(restored, full);
+        FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap())
+            .unwrap()
+            .validate_with_full(&restored)
+            .unwrap();
+        let hidden =
+            compact_function_result_report(&full, FunctionPresentationOptions { max_groups: 0 });
+        assert!(!hidden.render_text(&full).contains("Cause:"));
+    }
+
+    #[test]
+    fn guarded_write_cause_retains_sources_through_copies_and_source_movement() {
+        let before =
+            include_str!("../../spec/kickoff/016-loop-reports/conditional_return/before.ts");
+        let after = include_str!("../../spec/kickoff/016-loop-reports/conditional_return/after.ts");
+        for (before, after) in [
+            (before.replace('\n', " "), after.replace('\n', " ")),
+            (
+                before.replace("return x;", "const copied = x;\n  return copied;"),
+                after.replace("return x;", "const copied = x;\n  return copied;"),
+            ),
+            (
+                before.to_string(),
+                after.replace("if (boost)", "if (!boost)"),
+            ),
+            (format!("\n\n{before}"), format!("\n\n\n{after}")),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                &before,
+                &after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            assert_eq!(
+                full.guarded_write_causes.len(),
+                1,
+                "{before}\n{after}\n{full:#?}"
+            );
+            let compact =
+                compact_function_result_report(&full, FunctionPresentationOptions::default());
+            assert!(
+                !compact
+                    .render_text(&full)
+                    .contains("Edit attribution uncertain")
+            );
+            compact.validate_with_full(&full).unwrap();
+        }
+    }
+
+    #[test]
+    fn guarded_write_cause_rejects_unrelated_edits_killed_writes_and_unknowns() {
+        let before =
+            include_str!("../../spec/kickoff/016-loop-reports/conditional_return/before.ts");
+        let after = include_str!("../../spec/kickoff/016-loop-reports/conditional_return/after.ts");
+        for (before, after) in [
+            (before.to_string(), after.replace("x = 1;", "x = 3;")),
+            (
+                before.to_string(),
+                after.replace("x = 2;", "x = 2; mystery();"),
+            ),
+            (
+                before.to_string(),
+                after.replace("again = false;", "x = 1; again = false;"),
+            ),
+            (
+                before.to_string(),
+                after.replace("again = false;", "again = true;"),
+            ),
+            (before.to_string(), after.replace("return x;", "return 99;")),
+            (
+                before.replace("boost: boolean", "boost: boolean, ready: boolean"),
+                after
+                    .replace("boost: boolean", "boost: boolean, ready: boolean")
+                    .replace("x = 2;", "if (ready) x = 2;"),
+            ),
+            (
+                before.replace("return x;", "x = 99; return x;"),
+                after.replace("return x;", "x = 99; return x;"),
+            ),
+        ] {
+            let full = assemble_function_result_report(analyze(
+                &before,
+                &after,
+                FunctionEntry::default(),
+                FunctionEntry::default(),
+            ));
+            assert!(
+                full.guarded_write_causes.is_empty(),
+                "{before}\n{after}\n{full:#?}"
+            );
+        }
+        let analysis = analyze(
+            before,
+            after,
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        );
+        assert!(
+            assemble_function_result_report_with_comparison_limit(analysis.clone(), 1)
+                .guarded_write_causes
+                .is_empty()
+        );
+        for mutation in 0..4 {
+            let mut incomplete = analysis.clone();
+            match mutation {
+                0 => incomplete.input_mapping_coverage = Coverage::Partial,
+                1 => incomplete.input_correspondence.clear(),
+                2 => incomplete.after.as_mut().unwrap().coverage = Coverage::Partial,
+                _ => {
+                    incomplete
+                        .after
+                        .as_mut()
+                        .unwrap()
+                        .limits_hit
+                        .insert("time".into());
+                }
+            }
+            assert!(
+                assemble_function_result_report(incomplete)
+                    .guarded_write_causes
+                    .is_empty()
+            );
+        }
+    }
+
+    #[test]
+    fn guarded_write_cause_validation_rejects_corrupted_witnesses() {
+        let full = assemble_function_result_report(analyze(
+            include_str!("../../spec/kickoff/016-loop-reports/conditional_return/before.ts"),
+            include_str!("../../spec/kickoff/016-loop-reports/conditional_return/after.ts"),
+            FunctionEntry::default(),
+            FunctionEntry::default(),
+        ));
+        assert_eq!(full.guarded_write_causes.len(), 1);
+        let compact = compact_function_result_report(&full, FunctionPresentationOptions::default());
+        for mutation in 0..7 {
+            let mut corrupted = full.clone();
+            let cause = &mut corrupted.guarded_write_causes[0];
+            match mutation {
+                0 => cause.guard.guard_index = usize::MAX,
+                1 => cause.after_write.path.push(usize::MAX),
+                2 => cause.before_write.node.local += 1,
+                3 => cause.affected_regions.clear(),
+                4 => cause.regions.push(0),
+                5 => cause.write_text = "x = 99".into(),
+                _ => corrupted.findings[0].guarded_write_cause_refs.clear(),
+            }
+            assert!(
+                FunctionResultReport::from_json(&serde_json::to_vec(&corrupted).unwrap()).is_err()
+            );
+            assert!(compact.validate_with_full(&corrupted).is_err());
+        }
+        for mutation in 0..2 {
+            let mut corrupted = compact.clone();
+            let reference = &mut corrupted.findings[0].cause_refs[0];
+            if mutation == 0 {
+                reference.index = usize::MAX;
+            } else {
+                reference.section = "causes".into();
+            }
+            assert!(corrupted.validate_with_full(&full).is_err());
+        }
     }
 
     #[test]
@@ -3288,9 +3870,9 @@ mod tests {
     #[test]
     fn ifds_fr003_typed_value_validation() {
         let (full, compact) = review("copy");
-        assert_eq!(full.schema_version, 4);
-        assert_eq!(full.analysis.schema_version, 4);
-        assert_eq!(compact.schema_version, 4);
+        assert_eq!(full.schema_version, 6);
+        assert_eq!(full.analysis.schema_version, 5);
+        assert_eq!(compact.schema_version, 6);
         assert_eq!(
             FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap(),
             compact
