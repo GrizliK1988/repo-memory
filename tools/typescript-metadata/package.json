@@ -1,0 +1,7 @@
+{
+  "name": "repo-memory-typescript-metadata",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "dependencies": { "typescript": "5.9.3" }
+}

@@ -240,6 +240,14 @@ impl<'a> SliceBuilder<'a> {
         self.relevant_origins = self.selected_origins.clone();
         self.add_selected_writes_and_upstream()?;
         self.add_downstream()?;
+        if self
+            .procedure
+            .nodes
+            .values()
+            .any(|n| matches!(n.operation, Operation::CallBind { .. }))
+        {
+            self.add_call_upstream()?;
+        }
         self.add_controls()?;
         if self.branches.is_some() {
             self.add_branch_endings()?;
@@ -315,7 +323,7 @@ impl<'a> SliceBuilder<'a> {
                 continue;
             }
             match &node.operation {
-                Operation::Write { sources, .. } => {
+                Operation::Write { sources, .. } | Operation::CallBind { sources, .. } => {
                     for origin in &origins {
                         for source in sources {
                             if !self.place_has_origin(&node.id, source, origin) {
@@ -362,7 +370,20 @@ impl<'a> SliceBuilder<'a> {
                         }
                     }
                 }
-                Operation::UnknownEffect { inputs, .. } => {
+                Operation::UnknownEffect {
+                    inputs,
+                    affected_places,
+                    ..
+                } => {
+                    if affected_places.iter().any(|place| {
+                        origins
+                            .iter()
+                            .any(|origin| self.place_has_origin(&node.id, place, origin))
+                    }) {
+                        self.add_node(&node, None)?;
+                        self.mark_frontier_relevant(&node.id);
+                        self.downstream_partial = true;
+                    }
                     for origin in &origins {
                         for input in inputs {
                             if !self.place_has_origin(&node.id, &input.place, origin) {
@@ -455,6 +476,47 @@ impl<'a> SliceBuilder<'a> {
         Ok(())
     }
 
+    fn add_call_upstream(&mut self) -> Result<(), SliceError> {
+        let mut queue: VecDeque<_> = self.graph_nodes.iter().map(|n| n.id.clone()).collect();
+        let mut seen = BTreeSet::new();
+        while let Some(id) = queue.pop_front() {
+            if !seen.insert(id.clone()) {
+                continue;
+            }
+            let node = self.procedure.nodes[&id].clone();
+            let sources = match &node.operation {
+                Operation::Write { sources, .. } | Operation::CallBind { sources, .. } => {
+                    sources.clone()
+                }
+                _ => continue,
+            };
+            for source in sources {
+                for item in self.resolve_sources(&source, &id, None, "value", false) {
+                    self.add_resolved_node(&item.node)?;
+                    let evidence = if self.is_unknown_node(&item.node) {
+                        self.upstream_partial = true;
+                        EvidenceKind::Unresolved {
+                            diagnostic: diagnostic_for_operation(
+                                &self.procedure.nodes[&item.node].operation,
+                            ),
+                        }
+                    } else {
+                        EvidenceKind::Supported
+                    };
+                    self.add_edge(
+                        item.node.clone(),
+                        id.clone(),
+                        crate::ifds::model::RelationKind::ValueDependency,
+                        Some(item.projection),
+                        evidence,
+                    );
+                    queue.push_back(item.node);
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn add_controls(&mut self) -> Result<(), SliceError> {
         if self.branches.is_none() {
             return Ok(());
@@ -488,6 +550,10 @@ impl<'a> SliceBuilder<'a> {
                         && matches!(
                             self.procedure.nodes[*id].operation,
                             Operation::Return { .. }
+                                | Operation::CallBind {
+                                    boundary: crate::ifds::ir::CallBindKind::Return,
+                                    ..
+                                }
                         )
                 })
                 .cloned()
@@ -554,7 +620,10 @@ impl<'a> SliceBuilder<'a> {
                 if !self.reachable(&id) {
                     continue;
                 }
-                if !matches!(node.operation, Operation::Write { .. }) {
+                if !matches!(
+                    node.operation,
+                    Operation::Write { .. } | Operation::CallBind { .. }
+                ) {
                     continue;
                 }
                 if !guard_is_selected && !selected_writes.contains(&id) {
@@ -729,10 +798,15 @@ impl<'a> SliceBuilder<'a> {
             .values()
             .filter_map(|node| {
                 let (inputs, diagnostic) = match &node.operation {
-                    Operation::UnknownEffect { inputs, .. } => (
+                    Operation::UnknownEffect {
+                        inputs,
+                        affected_places,
+                        ..
+                    } => (
                         inputs
                             .iter()
                             .map(|input| input.place.clone())
+                            .chain(affected_places.iter().cloned())
                             .collect::<Vec<_>>(),
                         diagnostic_for_operation(&node.operation),
                     ),
@@ -987,14 +1061,22 @@ impl<'a> SliceBuilder<'a> {
                         }
                     }
                 }
-                Operation::UnknownEffect { inputs, .. } => {
+                Operation::UnknownEffect {
+                    inputs,
+                    affected_places,
+                    ..
+                } => {
                     for origin in &origins {
-                        for input in inputs {
-                            if self.place_has_origin(&node.id, &input.place, origin) {
+                        for place in inputs
+                            .iter()
+                            .map(|input| &input.place)
+                            .chain(affected_places)
+                        {
+                            if self.place_has_origin(&node.id, place, origin) {
                                 self.add_ending(
                                     PathEndingKind::UnknownBoundary,
                                     origin.clone(),
-                                    input.place.clone(),
+                                    place.clone(),
                                     &node.id,
                                     "unsupported value continuation",
                                     Some(diagnostic_for_operation(&node.operation)),
@@ -1030,6 +1112,12 @@ impl<'a> SliceBuilder<'a> {
             .find(|node| matches!(node.operation, Operation::Return { value: None }))
             .map(|node| node.id.clone());
         for (key, life) in carriers {
+            let carrier = Place::Binding(key.binding.clone());
+            if self.procedure.nodes.values().any(|node| matches!(&node.operation,
+                Operation::UnknownEffect { affected_places, .. } if affected_places.contains(&carrier)
+                    && self.place_has_origin(&node.id, &carrier, &key.origin))) {
+                continue;
+            }
             let (kind, location, context) = if let Some(killed) = life.killed_at {
                 (
                     PathEndingKind::NoFurtherUse,
@@ -1354,6 +1442,8 @@ impl<'a> SliceBuilder<'a> {
             }),
             Operation::Write { target: place, definition, .. } if *relation == crate::ifds::model::RelationKind::Reaches =>
                 paths.conditions_for(target, |facts| facts.contains(&Fact::LastWrite { place: place.clone(), write: definition.clone() })),
+            Operation::CallBind { target: place, definition, .. } =>
+                paths.conditions_for(target, |facts| facts.contains(&Fact::LastWrite { place: place.clone(), write: definition.clone() })),
             Operation::Write { definition, .. } | Operation::Literal { definition, .. } | Operation::Compute { definition, .. } =>
                 paths.conditions_for(target, |facts| facts.iter().any(|fact| matches!(fact, Fact::Origin { source: Source::Write(candidate), .. } if candidate == definition))),
             _ => paths.conditions_for(target, |_| true),
@@ -1424,6 +1514,7 @@ impl<'a> SliceBuilder<'a> {
         let id = WitnessId(self.next_witness);
         self.next_witness += 1;
         self.witnesses.insert(Witness {
+            call_contexts: BTreeSet::new(),
             id,
             nodes,
             backedges: BTreeSet::new(),
@@ -1562,6 +1653,7 @@ impl<'a> SliceBuilder<'a> {
 fn operation_definition(operation: &Operation) -> Option<&crate::ifds::model::DefinitionId> {
     match operation {
         Operation::Write { definition, .. }
+        | Operation::CallBind { definition, .. }
         | Operation::Literal { definition, .. }
         | Operation::Compute { definition, .. } => Some(definition),
         Operation::UnknownEffect { definition, .. } => definition.as_ref(),
@@ -1573,7 +1665,9 @@ fn expression_owners(procedure: &ProcedureIr) -> BTreeMap<NodeId, NodeId> {
     let mut owners = BTreeMap::new();
     for node in procedure.nodes.values() {
         let roots: Vec<_> = match &node.operation {
-            Operation::Write { sources, .. } => sources.iter().cloned().collect(),
+            Operation::Write { sources, .. } | Operation::CallBind { sources, .. } => {
+                sources.iter().cloned().collect()
+            }
             Operation::Return { value } => value.iter().cloned().collect(),
             _ => Vec::new(),
         };
@@ -1637,6 +1731,7 @@ fn operation_name(operation: &Operation) -> String {
         Operation::Entry => "entry",
         Operation::Read { .. } => "read",
         Operation::Write { .. } => "write",
+        Operation::CallBind { .. } => "call_bind",
         Operation::Literal { .. } => "literal",
         Operation::Compute { .. } => "compute",
         Operation::Branch { .. } => "branch",

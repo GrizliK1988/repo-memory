@@ -8,14 +8,12 @@ use super::ir::{ComputeInputRole, EdgeKind, Operation, PrimitiveOperator, Proced
 use super::model::*;
 use super::provenance::seed_entry_facts;
 use super::snapshots::{AnalysisEnvironment, SnapshotProvider, validate_query};
-use super::solver::{
-    IntraproceduralSolver, Solver, SolverRequest, SolverTermination, SystemSolverControl,
-};
+use super::solver::{SolverTermination, SystemSolverControl};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
-pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 5;
+pub const FUNCTION_RESULT_SCHEMA_VERSION: u32 = 6;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -142,6 +140,7 @@ pub struct InputCorrespondence {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ResultDependency {
+    pub call_context: Vec<CallSiteId>,
     pub node: NodeId,
     pub span: Option<SourceSpan>,
     pub role: Option<ComputeInputRole>,
@@ -332,6 +331,24 @@ pub fn analyze_function_result<P: SnapshotProvider>(
     before_environment: &AnalysisEnvironment,
     after_environment: &AnalysisEnvironment,
 ) -> Result<FunctionResultAnalysis, FunctionResultError> {
+    analyze_function_result_with_projects(
+        query,
+        provider,
+        before_environment,
+        after_environment,
+        None,
+        None,
+    )
+}
+
+pub(crate) fn analyze_function_result_with_projects<P: SnapshotProvider>(
+    query: FunctionResultQuery,
+    provider: &P,
+    before_environment: &AnalysisEnvironment,
+    after_environment: &AnalysisEnvironment,
+    before_project: Option<&super::interprocedural::ProjectProgram>,
+    after_project: Option<&super::interprocedural::ProjectProgram>,
+) -> Result<FunctionResultAnalysis, FunctionResultError> {
     validate_query(
         &validation_query(&query),
         provider,
@@ -413,6 +430,11 @@ pub fn analyze_function_result<P: SnapshotProvider>(
         } else {
             &query.after_entry
         },
+        if selected_handle.id.side == SnapshotSide::Before {
+            before_project
+        } else {
+            after_project
+        },
     )?;
     let other_result = if let Some(other) = &other {
         Some(analyze_side(
@@ -424,6 +446,11 @@ pub fn analyze_function_result<P: SnapshotProvider>(
                 &query.before_entry
             } else {
                 &query.after_entry
+            },
+            if other_handle.id.side == SnapshotSide::Before {
+                before_project
+            } else {
+                after_project
             },
         )?)
     } else {
@@ -478,6 +505,7 @@ fn analyze_side<P: SnapshotProvider>(
     function: &IndexedFunction,
     query: &FunctionResultQuery,
     entry: &FunctionEntry,
+    project: Option<&super::interprocedural::ProjectProgram>,
 ) -> Result<FunctionSnapshotResult, FunctionResultError> {
     let source = read_source(provider, handle, &function.span.path)?;
     let index = index_bindings(handle.id.clone(), &function.span.path, &source)
@@ -510,6 +538,12 @@ fn analyze_side<P: SnapshotProvider>(
             .as_ref()
             .is_some_and(|id| inert.contains(id))
     });
+    let control = SystemSolverControl::new();
+    let prepared =
+        super::interprocedural::prepare(procedure, diagnostics, project, &query.limits, &control)
+            .map_err(FunctionResultError::Adapter)?;
+    let procedure = &prepared.procedure;
+    let diagnostics = &prepared.diagnostics;
     validate_entry(entry)?;
     let parameter_forms_supported = !index.diagnostics.iter().any(|diagnostic| {
         diagnostic.message.contains("parameter")
@@ -518,20 +552,12 @@ fn analyze_side<P: SnapshotProvider>(
                     && span.byte_end <= function.span.byte_end
             })
     });
-    let solver = IntraproceduralSolver::new();
-    let solved = solver
-        .solve(
-            SolverRequest {
-                procedure: &procedure,
-                entry_facts: seed_entry_facts(&procedure),
-                limits: query.limits.clone(),
-            },
-            &SystemSolverControl::new(),
-        )
+    let solved = prepared
+        .solve(&query.limits, &control)
         .map_err(|error| FunctionResultError::Solver(error.to_string()))?;
     let paths = BranchPaths::build(
-        &procedure,
-        seed_entry_facts(&procedure),
+        procedure,
+        seed_entry_facts(procedure),
         usize::try_from(query.limits.processed_path_edges.min(4096))
             .unwrap_or(4096)
             .max(1),
@@ -543,7 +569,7 @@ fn analyze_side<P: SnapshotProvider>(
         expected_enclosing_symbol: function.owner.clone(),
     };
     let context = ObservationContext {
-        procedure: &procedure,
+        procedure,
         paths: &paths,
         source: &source,
         function_span: &function.span,
@@ -557,7 +583,7 @@ fn analyze_side<P: SnapshotProvider>(
             continue;
         };
         for (path_index, state) in states.iter().enumerate() {
-            match entry_viability(entry, &procedure, &paths, state) {
+            match entry_viability(entry, procedure, &paths, state) {
                 EntryViability::Excluded => {}
                 viability => {
                     let mut observation =
@@ -584,7 +610,7 @@ fn analyze_side<P: SnapshotProvider>(
             }
             if let Some(states) = paths.at.get(&edge.source) {
                 for (path_index, state) in states.iter().enumerate() {
-                    match entry_viability(entry, &procedure, &paths, state) {
+                    match entry_viability(entry, procedure, &paths, state) {
                         EntryViability::Excluded => {}
                         viability => {
                             let mut observation = observe_fallthrough(
@@ -603,6 +629,14 @@ fn analyze_side<P: SnapshotProvider>(
             }
         }
     }
+    for observation in &mut observations {
+        if let ResultValue::Expression { dependency, .. } = &mut observation.value {
+            prepared.annotate_dependency(dependency);
+        }
+        for guard in &mut observation.guards {
+            prepared.annotate_dependency(&mut guard.condition);
+        }
+    }
     observations.sort_by(|a, b| (&a.site, a.path_index).cmp(&(&b.site, b.path_index)));
     let unknown_boundaries: BTreeSet<NodeId> = procedure
         .nodes
@@ -613,7 +647,7 @@ fn analyze_side<P: SnapshotProvider>(
                 Operation::UnknownEffect { .. } | Operation::Call { .. }
             ) && paths.at.get(&node.id).is_some_and(|states| {
                 states.iter().any(|state| {
-                    entry_viability(entry, &procedure, &paths, state) != EntryViability::Excluded
+                    entry_viability(entry, procedure, &paths, state) != EntryViability::Excluded
                 })
             })
         })
@@ -655,7 +689,7 @@ fn analyze_side<P: SnapshotProvider>(
         .chain(loop_paths.cycles.values_mut())
     {
         states.retain(|state| {
-            entry_viability(entry, &procedure, &paths, state) != EntryViability::Excluded
+            entry_viability(entry, procedure, &paths, state) != EntryViability::Excluded
         });
     }
     loop_paths.at.retain(|_, states| !states.is_empty());
@@ -675,8 +709,7 @@ fn analyze_side<P: SnapshotProvider>(
             diagnostic.frontier.as_ref().is_some_and(|id| {
                 paths.at.get(id).is_some_and(|states| {
                     states.iter().any(|state| {
-                        entry_viability(entry, &procedure, &paths, state)
-                            != EntryViability::Excluded
+                        entry_viability(entry, procedure, &paths, state) != EntryViability::Excluded
                     })
                 })
             })
@@ -686,7 +719,7 @@ fn analyze_side<P: SnapshotProvider>(
         Coverage::Complete
     };
     Ok(FunctionSnapshotResult {
-        loops: super::loops::summarize_loops(&procedure, &loop_paths, &index, &source),
+        loops: super::loops::summarize_loops(procedure, &loop_paths, &index, &source),
         function: selector,
         procedure: procedure.id.clone(),
         parameters: procedure
@@ -1314,6 +1347,7 @@ impl<'a> DependencyWalker<'a> {
         let key = (place.clone(), at.clone());
         if !self.visiting.insert(key.clone()) {
             return ResultDependency {
+                call_context: Vec::new(),
                 node: at.clone(),
                 span: self
                     .procedure
@@ -1410,6 +1444,7 @@ impl<'a> DependencyWalker<'a> {
             _ => ("missing_temporary_producer".into(), Vec::new(), None, true),
         };
         ResultDependency {
+            call_context: Vec::new(),
             node: id.clone(),
             span: node.span.clone(),
             role,
@@ -1484,20 +1519,20 @@ impl<'a> DependencyWalker<'a> {
         let mut inputs = Vec::new();
         for write in writes {
             if let Some(node) = self.procedure.nodes.values().find(|node|
-                matches!(&node.operation, Operation::Write { definition, .. } if definition == &write)) {
-                if let Operation::Write { sources, .. } = &node.operation {
+                matches!(&node.operation, Operation::Write { definition, .. } | Operation::CallBind { definition, .. } if definition == &write)) {
+                if let Operation::Write { sources, .. } | Operation::CallBind { sources, .. } = &node.operation {
                     let writer_inputs = sources.iter()
                         .map(|source| self.trace(source, &node.id, None)).collect();
-                    inputs.push(ResultDependency {
+                    inputs.push(ResultDependency { call_context: Vec::new(),
                         node: node.id.clone(), span: node.span.clone(), role: None, operation: "write".into(),
                         literal: None, operator: None,
-                        origin: Some(Source::Write(write.clone())), inputs: writer_inputs,
+                        origin: if matches!(node.operation, Operation::CallBind { .. }) { None } else { Some(Source::Write(write.clone())) }, inputs: writer_inputs,
                         unresolved: false,
                     });
                 }
             } else if self.procedure.parameters.iter().any(|parameter|
                 parameter.binding == *binding && parameter.entry_definition == write) {
-                inputs.push(ResultDependency { node: self.procedure.entry.clone(), span: self.procedure.nodes[&self.procedure.entry].span.clone(), role: None,
+                inputs.push(ResultDependency { call_context: Vec::new(), node: self.procedure.entry.clone(), span: self.procedure.nodes[&self.procedure.entry].span.clone(), role: None,
                     operation: "positional_input".into(), origin: Some(Source::FunctionInput(binding.clone())),
                     literal: None, operator: None,
                     inputs: Vec::new(), unresolved: false });
@@ -1513,6 +1548,7 @@ impl<'a> DependencyWalker<'a> {
             // An unsupported effect can erase the last-write fact. Preserve the
             // syntactic parameter dependency without claiming its value survived.
             inputs.push(ResultDependency {
+                call_context: Vec::new(),
                 node: self.procedure.entry.clone(),
                 span: self.procedure.nodes[&self.procedure.entry].span.clone(),
                 role: None,
@@ -1526,6 +1562,7 @@ impl<'a> DependencyWalker<'a> {
         }
         let unresolved = inputs.is_empty();
         ResultDependency {
+            call_context: Vec::new(),
             node: at.clone(),
             span: self
                 .procedure

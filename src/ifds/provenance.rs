@@ -128,6 +128,19 @@ pub fn transfer_operation(operation: &Operation, fact: &Fact) -> TransferOutcome
             definition,
             fact,
         )),
+        Operation::CallBind {
+            target,
+            sources,
+            definition,
+            ..
+        } => {
+            let mut outgoing = transfer_definition(target, sources.iter(), definition, fact);
+            outgoing.remove(&Fact::Origin {
+                place: target.clone(),
+                source: Source::Write(definition.clone()),
+            });
+            TransferOutcome::Supported(outgoing)
+        }
         Operation::Literal {
             definition, result, ..
         } => TransferOutcome::Supported(transfer_definition(
@@ -279,6 +292,9 @@ fn transfer_evidence(
         }
         (
             Operation::Write {
+                target, sources, ..
+            }
+            | Operation::CallBind {
                 target, sources, ..
             },
             Fact::Origin {

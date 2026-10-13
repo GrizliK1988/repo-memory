@@ -26,7 +26,7 @@ use text::*;
 use values::*;
 pub use values::{DependencyEvidence, PresentedResult, ReturnEvidence};
 
-pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 6;
+pub const FUNCTION_RESULT_REPORT_SCHEMA_VERSION: u32 = 7;
 pub const FUNCTION_RESULT_COMPACT_SCHEMA_VERSION: u32 = 6;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -3870,8 +3870,8 @@ mod tests {
     #[test]
     fn ifds_fr003_typed_value_validation() {
         let (full, compact) = review("copy");
-        assert_eq!(full.schema_version, 6);
-        assert_eq!(full.analysis.schema_version, 5);
+        assert_eq!(full.schema_version, 7);
+        assert_eq!(full.analysis.schema_version, 6);
         assert_eq!(compact.schema_version, 6);
         assert_eq!(
             FunctionResultCompactReport::from_json(&serde_json::to_vec(&compact).unwrap()).unwrap(),

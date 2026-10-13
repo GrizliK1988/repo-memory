@@ -982,6 +982,12 @@ fn reference_transfer(
             target,
             sources,
             definition,
+        }
+        | Operation::CallBind {
+            target,
+            sources,
+            definition,
+            ..
         } => {
             let origins: BTreeSet<_> = sources
                 .iter()
@@ -993,10 +999,12 @@ fn reference_transfer(
                     place: target.clone(),
                     write: definition.clone(),
                 });
-                outgoing.insert(Fact::Origin {
-                    place: target.clone(),
-                    source: Source::Write(definition.clone()),
-                });
+                if !matches!(operation, Operation::CallBind { .. }) {
+                    outgoing.insert(Fact::Origin {
+                        place: target.clone(),
+                        source: Source::Write(definition.clone()),
+                    });
+                }
             }
             outgoing.extend(origins.into_iter().map(|source| Fact::Origin {
                 place: target.clone(),

@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// The only report schema currently accepted by this crate.
-pub const REPORT_SCHEMA_VERSION: u32 = 4;
+pub const REPORT_SCHEMA_VERSION: u32 = 5;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -404,6 +404,7 @@ pub struct Witness {
     pub nodes: Vec<NodeId>,
     pub backedges: BTreeSet<(NodeId, NodeId)>,
     pub summary_expansions: BTreeSet<String>,
+    pub call_contexts: BTreeSet<Vec<CallSiteId>>,
     pub evidence: EvidenceKind,
 }
 

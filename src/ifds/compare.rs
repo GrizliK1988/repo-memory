@@ -646,8 +646,49 @@ fn align_nested_sources(
             else {
                 continue;
             };
+            if let (
+                Operation::Read {
+                    source: old_source, ..
+                },
+                Operation::Read {
+                    source: new_source, ..
+                },
+            ) = (&old_node.operation, &new_node.operation)
+            {
+                // A paired result producer identifies its call-private return
+                // carrier. Repeated callee source spans must be paired inside
+                // that carrier, rather than across unrelated invocations.
+                let old_returns: Vec<_> = before.nodes.values().filter(|node| matches!(&node.operation,
+                    Operation::CallBind { boundary: crate::ifds::ir::CallBindKind::Return, target, .. } if target == old_source)).collect();
+                let new_returns: Vec<_> = after.nodes.values().filter(|node| matches!(&node.operation,
+                    Operation::CallBind { boundary: crate::ifds::ir::CallBindKind::Return, target, .. } if target == new_source)).collect();
+                for old_return in &old_returns {
+                    let candidates: Vec<_> = new_returns
+                        .iter()
+                        .filter(|node| {
+                            (old_returns.len() == 1 && new_returns.len() == 1)
+                                || node.span == old_return.span
+                        })
+                        .collect();
+                    if candidates.len() == 1
+                        && !occupied_before.contains(&old_return.id)
+                        && !occupied_after.contains(&candidates[0].id)
+                    {
+                        additions.insert((
+                            old_return.id.clone(),
+                            candidates[0].id.clone(),
+                            "matched return of aligned call result".into(),
+                        ));
+                    }
+                }
+            }
             let (old_inputs, new_inputs) = match (&old_node.operation, &new_node.operation) {
-                (Operation::Write { sources: old, .. }, Operation::Write { sources: new, .. }) => (
+                (
+                    Operation::Write { sources: old, .. }
+                    | Operation::CallBind { sources: old, .. },
+                    Operation::Write { sources: new, .. }
+                    | Operation::CallBind { sources: new, .. },
+                ) => (
                     old.iter().collect::<Vec<_>>(),
                     new.iter().collect::<Vec<_>>(),
                 ),
@@ -771,6 +812,9 @@ fn fingerprint_node(
         }
         Operation::Write {
             target, sources, ..
+        }
+        | Operation::CallBind {
+            target, sources, ..
         } => format!(
             "write(target={},sources=[{}])",
             place(target, cache, visiting),
@@ -891,6 +935,7 @@ fn operation_kind(operation: &Operation) -> &'static str {
         Operation::Entry => "entry",
         Operation::Read { .. } => "read",
         Operation::Write { .. } => "write",
+        Operation::CallBind { .. } => "call_bind",
         Operation::Literal { .. } => "literal",
         Operation::Compute { .. } => "compute",
         Operation::Branch { .. } => "branch",

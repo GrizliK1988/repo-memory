@@ -1,0 +1,46 @@
+{
+  "revision": "7bb3a0a14b947c77676824ba5faf99ff93d6c976",
+  "files": {
+    "tsconfig.json": {
+      "git_blob": "49035babc6b5849cafea70fcecc547e253614331",
+      "sha256": "ff107b1661a70d6acfedd626083c56a6aff18764c3b0accb7b3e9cdc8a3fe538",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/tsconfig.json"
+    },
+    "tsconfig.check.web.json": {
+      "git_blob": "4b2ae580f2ecf325c14467ba7116d38a3042eb21",
+      "sha256": "ca869f5b378e5dbe18f5ffba2c9e928d5d18b9488b17895f0af19015f5890f19",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/tsconfig.check.web.json"
+    },
+    "package.json": {
+      "git_blob": "042c1b3d91ad6d22c6d7a3f9153bcf7aba7e6cde",
+      "sha256": "6f7872476e6041b47a0bb4441d7b9796168f9e2f9b57c35e79eab2a410c03cf8",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/package.json"
+    },
+    "src/lib/api/feed/custom.ts": {
+      "git_blob": "86b1c12c64143598e31ecec624610528d346b8c3",
+      "sha256": "fee0cf31936271100664d42a7bd7245c2d8343ca560e9e75cfb38b53b57b9261",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/src/lib/api/feed/custom.ts"
+    },
+    "src/state/preferences/languages.tsx": {
+      "git_blob": "713c817aacf7c8ea0222a4a1c9bcd11d58b4943a",
+      "sha256": "805b431869f1326e06952756013b6b8974a4a62b5aa9bfe5630f49cb8f60e2e6",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/src/state/preferences/languages.tsx"
+    },
+    "src/lib/strings/errors.ts": {
+      "git_blob": "dc3f667efa43dc2f5b2838c509453abca8af2730",
+      "sha256": "c9ae40d4fef85cbcec4c4e9ce92c0ae2c4dc2944ef2a8391e70a956d38991ee4",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/src/lib/strings/errors.ts"
+    },
+    "src/lib/xrpc-error.ts": {
+      "git_blob": "ec4fd7e87288506882640c679ad3fdf31ba6ce9e",
+      "sha256": "2c85820403461f7e4cedbcd80b50397339759f92369b5a79168a7a5f2c6f48fb",
+      "url": "https://raw.githubusercontent.com/bluesky-social/social-app/7bb3a0a14b947c77676824ba5faf99ff93d6c976/src/lib/xrpc-error.ts"
+    }
+  },
+  "base_config": {
+    "version": "0.81.6",
+    "sha256": "11c714f7c31023c80d2eee8dd6fb9a643391315209074fa6740ad821da87246b",
+    "url": "https://registry.npmjs.org/@react-native/typescript-config/-/typescript-config-0.81.6.tgz",
+    "lockfile_evidence": "@react-native/typescript-config: specifier ^0.81.5, version 0.81.6"
+  }
+}

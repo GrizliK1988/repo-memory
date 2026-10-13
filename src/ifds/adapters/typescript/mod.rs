@@ -258,6 +258,9 @@ fn collect_operation_bindings(operation: &Operation, bindings: &mut BTreeSet<Bin
         Operation::Read { source, .. } => collect_place(source),
         Operation::Write {
             target, sources, ..
+        }
+        | Operation::CallBind {
+            target, sources, ..
         } => {
             collect_place(target);
             for source in sources {

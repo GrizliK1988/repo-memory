@@ -3,9 +3,12 @@
 use repo_memory::ifds::adapters::typescript::{index_bindings, index_functions};
 use repo_memory::ifds::{
     AnalysisEnvironment, AnalysisLimits, BindingSelector, CapabilitySet, EntryPoint, FileChange,
-    FileChangeKind, FunctionEntry, FunctionResultQuery, FunctionSelector, InMemorySnapshot,
-    InMemorySnapshotProvider, RepositoryDiff, SnapshotHandle, SnapshotId, SnapshotSide,
-    VariableFlowQuery, analyze_function_result_reports, analyze_variable_flow_reports,
+    FileChangeKind, FunctionEntry, FunctionPresentationOptions, FunctionResultQuery,
+    FunctionSelector, InMemorySnapshot, InMemorySnapshotProvider, MetadataFile,
+    NodeMetadataProvider, ProjectOptions, ProjectPairOptions, RepositoryDiff, SnapshotHandle,
+    SnapshotId, SnapshotSide, VariableFlowQuery, analyze_function_result_reports,
+    analyze_function_result_with_metadata, analyze_variable_flow_reports,
+    compact_function_result_report,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -20,7 +23,7 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]";
+    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--metadata] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]";
     if arguments.len() < 3 {
         return Err(usage.into());
     }
@@ -31,9 +34,14 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut format = "text";
     let mut evidence_out = None;
     let mut verbose = false;
+    let mut metadata = false;
     let mut index = if binding_name.is_some() { 3 } else { 2 };
     while index < arguments.len() {
         match arguments[index].as_str() {
+            "--metadata" => {
+                metadata = true;
+                index += 1;
+            }
             "--verbose" => {
                 verbose = true;
                 index += 1;
@@ -62,6 +70,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
     if binding_name.is_some() == function_name.is_some()
         || (after_function_name.is_some() && function_name.is_none())
+        || (metadata && function_name.is_none())
     {
         return Err(usage.into());
     }
@@ -124,14 +133,14 @@ fn run() -> Result<(), Box<dyn Error>> {
         },
     ]);
     let capabilities = CapabilitySet {
-        stage: 3,
+        stage: if metadata { 4 } else { 3 },
         capabilities: BTreeSet::from([
             "straight_line".into(),
             "branches".into(),
             "short_circuit".into(),
             "loops".into(),
         ]),
-        version: "stage-3".into(),
+        version: if metadata { "stage-4" } else { "stage-3" }.into(),
     };
     let environment = AnalysisEnvironment {
         capabilities: capabilities.clone(),
@@ -166,8 +175,46 @@ fn run() -> Result<(), Box<dyn Error>> {
             summaries: BTreeSet::new(),
             limits,
         };
-        let (report, mut compact) =
-            analyze_function_result_reports(query, &provider, &environment, &environment)?;
+        let (report, mut compact) = if metadata {
+            let config = r#"{"compilerOptions":{"target":"es2022","module":"esnext","moduleResolution":"bundler"},"include":["snippet.ts","snippet.tsx"]}"#;
+            let options = ProjectOptions {
+                tsconfig: Some("tsconfig.json".into()),
+                supplied_files: BTreeMap::from([(
+                    "tsconfig.json".into(),
+                    MetadataFile {
+                        content_id: digest(config.as_bytes()),
+                        text: config.into(),
+                    },
+                )]),
+                platform: "web".into(),
+                ..ProjectOptions::default()
+            };
+            let project = analyze_function_result_with_metadata(
+                query,
+                &provider,
+                (&environment, &environment),
+                ProjectPairOptions {
+                    before: options.clone(),
+                    after: options,
+                },
+                &NodeMetadataProvider::default(),
+            )?;
+            if project.before.metadata.is_none() || project.after.metadata.is_none() {
+                return Err(format!(
+                    "metadata unavailable: {}\n{}",
+                    project.before.render_text(false),
+                    project.after.render_text(false)
+                )
+                .into());
+            }
+            let compact = compact_function_result_report(
+                &project.analysis,
+                FunctionPresentationOptions::default(),
+            );
+            (project.analysis, compact)
+        } else {
+            analyze_function_result_reports(query, &provider, &environment, &environment)?
+        };
         if format == "full-json" {
             println!("{}", serde_json::to_string_pretty(&report)?);
             return Ok(());

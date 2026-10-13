@@ -1,47 +1,47 @@
-# Сравнение возвратного data flow: 10 сложных примеров
+# Comparing return data flow: 10 complex examples
 
-Текущее состояние после исправления примера 3 и повторного запуска всех 10 команд:
-[дополнение об атрибуции и оставшихся задачах](FOLLOW_UP.md). Ниже сохранён исходный
-отчёт предыдущего прогона.
+Current status after fixing example 3 and rerunning all 10 commands:
+[follow-up on attribution and remaining work](FOLLOW_UP.md). The original report
+from the previous run is preserved below.
 
-Дата отчёта: 2026-10-03. Проверено текущее рабочее дерево с предыдущими изменениями анализатора и текстового отчёта. В рамках этого прогона код анализатора не исправлялся.
+Report date: 2026-10-03. The current working tree was checked with the preceding analyzer and text-report changes. No analyzer code was fixed during this run.
 
-В каждом разделе приведены полный исходный код до и после, фактически запущенная команда, её stdout без изменений, независимое ожидаемое поведение и возможные проблемы. `report.txt` хранит оригинальный stdout, `stderr.log` — полный stderr Cargo, `run.json` — аргументы, рабочий каталог и exit code, `full.json` — исходный evidence. Строка `Evidence: full.json` относится к каталогу соответствующего примера.
+Each section includes the complete before/after source, the actual command, its unchanged stdout, independently expected behavior, and possible issues. `report.txt` stores the original stdout, `stderr.log` the full Cargo stderr, `run.json` the arguments, working directory, and exit code, and `full.json` the original evidence. The `Evidence: full.json` line refers to the directory of the corresponding example.
 
-По умолчанию CLI получает unrestricted positional inputs: аннотации TypeScript не превращаются в runtime-ограничения. `Changed` означает изменение разрешённого вычисления/источников; он не требует доказательства неравенства значений. `Unknown` из-за runtime-типа может сосуществовать с установленной неизменностью data flow. Сравниваются нормальные возвраты, а не полная эквивалентность всех эффектов программы.
+By default, the CLI receives unrestricted positional inputs: TypeScript annotations do not become runtime constraints. `Changed` means a change in the resolved computation/sources; it does not require proof of unequal values. `Unknown` due to runtime types can coexist with established unchanged data flow. The comparison covers normal returns, not full equivalence of all program effects.
 
-Все **10 команд завершились с exit code 0**. Дополнительно выполнено **45 конкретных сценариев JavaScript**; их результаты совпали с независимо заданными ожидаемыми значениями. Это конечные контрольные примеры, не доказательство для всех возможных входов. Для примера 5 контрольный runtime отдельно задаёт `mystery(x)=x*3`; CLI эту модель не получал. Для примера 7 `null` намеренно передан вопреки аннотации `number`: это допустимый unrestricted-вход анализа. `-0` сохранён отдельно от `0`.
+All **10 commands finished with exit code 0**. In addition, **45 concrete JavaScript scenarios** were executed; their results matched independently specified expected values. These are finite checks, not a proof for all possible inputs. For example 5, the check runtime separately defines `mystery(x)=x*3`; the CLI did not receive this model. For example 7, `null` was deliberately passed despite the `number` annotation: it is a valid unrestricted analysis input. `-0` is preserved separately from `0`.
 
-## Наблюдения, требующие внимания
+## Findings requiring attention
 
-1. **Известная единственная неизменная ветка пропадает из короткого текста** — примеры 6, 7 и 8. В полном JSON соответствующие `Equal`-регионы есть. Это подтверждённая проблема отображения.
-2. **Атрибуция и группировка одного редактирования остаются недостаточно точными** — примеры 3, 4, 6 и 8. Особенно заметны четыре или восемь повторов `Edit attribution uncertain`. Это возможность улучшения; неопределённую атрибуцию нельзя просто объявить доказанной.
-3. **Причина Unknown теряет конкретное препятствие** — неизвестный вызов в примере 5 и неподдерживаемый цикл в примере 9. В полном JSON эта информация сохранена.
-4. **`??` теряет точность на falsy-входах** — пример 7. Нельзя подменять nullish проверкой truthiness; отдельно стоит изучить одинаковый независимый возврат 100 после перезаписи.
-5. **Одна строка Coverage смешивает впечатление о полноте data flow с runtime-доказательствами** — например, 1 и 10. Partial там не опровергает установленную область изменения/неизменности data flow.
+1. **A single known unchanged branch disappears from the short text** — examples 6, 7, and 8. The corresponding `Equal` regions exist in the full JSON. This is a confirmed presentation issue.
+2. **Attribution and grouping of a single edit remain insufficiently precise** — examples 3, 4, 6, and 8. Four or eight repetitions of `Edit attribution uncertain` are especially noticeable. This is an opportunity for improvement; uncertain attribution cannot simply be declared proven.
+3. **The Unknown reason loses the specific obstacle** — the unknown call in example 5 and unsupported loop in example 9. The full JSON retains this information.
+4. **`??` loses precision for falsy inputs** — example 7. Nullish selection must not be replaced by truthiness; the identical independent return of 100 after an overwrite also deserves separate investigation.
+5. **One Coverage line mixes data-flow completeness with runtime proofs** — examples 1 and 10, among others. Partial does not refute the established region of changed/unchanged data flow there.
 
-## Сводка
+## Summary
 
-| № | Проверка | Результат проверки | Что стоит улучшить |
+| No. | Check | Check result | Suggested improvement |
 |---|---|---|---|
-| [1](#1-01-captured-ternary) | Сохранённая копия и перезаписи | Область изменения правильная | Пояснение Coverage |
-| [2](#2-02-killed-edit) | Уничтоженная запись | Изменение правильно исключено | Раскрытие правила выбора 10/20 |
-| [3](#3-03-guard-version) | Версия guard | Области правильные | Причина control и атрибуция |
-| [4](#4-04-repeated-swapped-operands) | Повторное чтение и перестановка | Все четыре изменения найдены | 4 повтора и атрибуция |
-| [5](#5-05-skipped-call) | Пропущенный/выполненный вызов | Консервативный Unknown обоснован | Указать неизвестный вызов |
-| [6](#6-06-nested-selectors) | Вложенные селекторы | 8 изменений найдены | Пропущен !enabled; 8 повторов |
-| [7](#7-07-nullish-and-overwrite) | Nullish и перезапись | Изменение видно на truthy a | Пропуск Equal; точность на falsy a |
-| [8](#8-08-reassociation) | Перегруппировка арифметики | Изменения правильно найдены | Пропущен skip; атрибуция |
-| [9](#9-09-loop-boundary) | Цикл | Ожидаемый Unknown | Указать неподдерживаемый while |
-| [10](#10-10-unused-nested-function) | Невызванная вложенная функция | Изменение правильно исключено | Объяснить исключение diff |
+| [1](#1-01-captured-ternary) | Saved copy and overwrites | Correct change region | Explain Coverage |
+| [2](#2-02-killed-edit) | Killed write | Change correctly excluded | Explain the 10/20 selection rule |
+| [3](#3-03-guard-version) | Guard version | Correct regions | Control cause and attribution |
+| [4](#4-04-repeated-swapped-operands) | Repeated reads and operand swap | All four changes found | 4 repetitions and attribution |
+| [5](#5-05-skipped-call) | Skipped/executed call | Conservative Unknown is justified | Identify the unknown call |
+| [6](#6-06-nested-selectors) | Nested selectors | 8 changes found | !enabled omitted; 8 repetitions |
+| [7](#7-07-nullish-and-overwrite) | Nullish selection and overwrite | Change visible for truthy a | Equal omitted; precision for falsy a |
+| [8](#8-08-reassociation) | Arithmetic reassociation | Changes correctly found | skip omitted; attribution |
+| [9](#9-09-loop-boundary) | Loop | Expected Unknown | Identify the unsupported while |
+| [10](#10-10-unused-nested-function) | Uncalled nested function | Change correctly excluded | Explain exclusion of the diff |
 
 <a id="1-01-captured-ternary"></a>
 
-## 1. Сохранённое вычисление, перезаписи и ранний выход
+## 1. Saved computation, overwrites, and early exit
 
-Артефакты: [before.ts](01-captured-ternary/before.ts), [after.ts](01-captured-ternary/after.ts), [report.txt](01-captured-ternary/report.txt), [full.json](01-captured-ternary/full.json), [stderr.log](01-captured-ternary/stderr.log), [run.json](01-captured-ternary/run.json).
+Artifacts: [before.ts](01-captured-ternary/before.ts), [after.ts](01-captured-ternary/after.ts), [report.txt](01-captured-ternary/report.txt), [full.json](01-captured-ternary/full.json), [stderr.log](01-captured-ternary/stderr.log), [run.json](01-captured-ternary/run.json).
 
-### До
+### Before
 
 ```typescript
 function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {
@@ -57,7 +57,7 @@ function archive(a: number, b: number, enabled: boolean, useSaved: boolean, over
 }
 ```
 
-### После
+### After
 
 ```typescript
 function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {
@@ -73,19 +73,19 @@ function archive(a: number, b: number, enabled: boolean, useSaved: boolean, over
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Data flow меняется только при enabled && useSaved. Сохранённая копия переживает перезаписи current; override влияет на окружающее вычисление, но не на область изменения.
+Data flow changes only under enabled && useSaved. The saved copy survives overwrites of current; override affects the surrounding computation but not the region of change.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/01-captured-ternary`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/01-captured-ternary`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function archive --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: archive
@@ -104,16 +104,16 @@ Coverage: result comparison Partial; source alignment Partial
 Evidence: full.json (ifds-function-cf15c3064f8f3fba)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Ожидаемая область изменения и сохранение старой версии current показаны правильно. Общая изменённая цепочка saved выведена один раз; условия override сохранены отдельно.
+The expected region of change and preservation of the old current version are shown correctly. The shared changed saved chain appears once; override conditions remain separate.
 
-- Явной ошибки data flow в проверенных регионах не найдено.
-- Partial относится к сравнению runtime-значений в неизменном вычислении a - b. Оно не означает, что область изменённого data flow осталась неизвестной. Для пользователя это всё ещё не очень очевидно из общей строки Coverage.
+- No clear data-flow error was found in the checked regions.
+- Partial refers to comparison of runtime values in the unchanged computation a - b. It does not mean that the region of changed data flow remains unknown. The combined Coverage line still does not make this clear to the user.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, true, true]` | `0` | `0` |
 | `[5, 2, true, false, false]` | `3` | `3` |
@@ -123,11 +123,11 @@ Evidence: full.json (ifds-function-cf15c3064f8f3fba)
 
 <a id="2-02-killed-edit"></a>
 
-## 2. Изменённая запись уничтожена двумя уровнями присваиваний
+## 2. Changed write killed by two layers of assignments
 
-Артефакты: [before.ts](02-killed-edit/before.ts), [after.ts](02-killed-edit/after.ts), [report.txt](02-killed-edit/report.txt), [full.json](02-killed-edit/full.json), [stderr.log](02-killed-edit/stderr.log), [run.json](02-killed-edit/run.json).
+Artifacts: [before.ts](02-killed-edit/before.ts), [after.ts](02-killed-edit/after.ts), [report.txt](02-killed-edit/report.txt), [full.json](02-killed-edit/full.json), [stderr.log](02-killed-edit/stderr.log), [run.json](02-killed-edit/run.json).
 
-### До
+### Before
 
 ```typescript
 function killed(a: number, b: number, first: boolean, second: boolean) {
@@ -145,7 +145,7 @@ function killed(a: number, b: number, first: boolean, second: boolean) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function killed(a: number, b: number, first: boolean, second: boolean) {
@@ -163,19 +163,19 @@ function killed(a: number, b: number, first: boolean, second: boolean) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Изменение не достигает возврата ни в одной ветке: second выбирает 10 или 20. Сравниваются нормальные возвраты, а не все возможные эффекты выполнения арифметики.
+The change reaches no return branch: second selects 10 or 20. The comparison covers normal returns, not every possible effect of arithmetic evaluation.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/02-killed-edit`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/02-killed-edit`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function killed --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: killed
@@ -184,16 +184,16 @@ Coverage: result comparison Complete; source alignment Partial
 Evidence: full.json (ifds-function-cdd967feba9cf6b7)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Изменённое вычисление и unused не достигают возврата. Команда правильно сообщает неизменность нормальных результатов и Complete для сравнения.
+The changed computation and unused do not reach the return. The command correctly reports unchanged normal results and Complete comparison coverage.
 
-- Явной ошибки в проверенных регионах не найдено. Это полезный отрицательный контроль: отличие исходного текста само по себе не является изменением возвращаемого data flow.
-- Короткий отчёт не раскрывает правило second ? 10 : 20. Это возможное улучшение полноты объяснения, а не неправильное сравнение.
+- No clear error was found in the checked regions. This is a useful negative control: a source-text difference alone does not constitute a change in returned data flow.
+- The short report does not explain the second ? 10 : 20 selection rule. This could improve explanation completeness; the comparison itself is correct.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, false]` | `20` | `20` |
 | `[5, 2, false, true]` | `10` | `10` |
@@ -202,11 +202,11 @@ Evidence: full.json (ifds-function-cdd967feba9cf6b7)
 
 <a id="3-03-guard-version"></a>
 
-## 3. Снимок условия и новая версия изменяемого guard
+## 3. Condition snapshot and a new version of a mutable guard
 
-Артефакты: [before.ts](03-guard-version/before.ts), [after.ts](03-guard-version/after.ts), [report.txt](03-guard-version/report.txt), [full.json](03-guard-version/full.json), [stderr.log](03-guard-version/stderr.log), [run.json](03-guard-version/run.json).
+Artifacts: [before.ts](03-guard-version/before.ts), [after.ts](03-guard-version/after.ts), [report.txt](03-guard-version/report.txt), [full.json](03-guard-version/full.json), [stderr.log](03-guard-version/stderr.log), [run.json](03-guard-version/run.json).
 
-### До
+### Before
 
 ```typescript
 function versioned(a: number, b: number, first: boolean, second: boolean) {
@@ -222,7 +222,7 @@ function versioned(a: number, b: number, first: boolean, second: boolean) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function versioned(a: number, b: number, first: boolean, second: boolean) {
@@ -238,19 +238,19 @@ function versioned(a: number, b: number, first: boolean, second: boolean) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-До изменения decision равен !first, после — second. Data flow меняется при (!first && !second) || (first && second); original остаётся снимком first.
+Before the change, decision equals !first; afterward, it equals second. Data flow changes under (!first && !second) || (first && second); original remains a snapshot of first.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/03-guard-version`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/03-guard-version`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function versioned --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: versioned
@@ -272,16 +272,16 @@ Coverage: result comparison Partial; source alignment Partial
 Evidence: full.json (ifds-function-b3094789d161c137)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Изменённые регионы first && second и !first && !second определены правильно. Неизменные регионы собраны в точную общую область (!first && second) || (first && !second). Сохранённый original не смешан с новой версией decision.
+The changed regions first && second and !first && !second are identified correctly. Unchanged regions form the exact combined domain (!first && second) || (first && !second). The saved original is not mixed with the new decision version.
 
-- Недостаточно конкретное объяснение изменения управления: Control changed (guard correspondence unresolved) не показывает установленную зависимость decision: !first -> second. Оба источника можно проследить в full.json, но текущая текстовая политика умеет конкретно объяснять более узкий класс изменений guard.
-- Edit attribution uncertain повторяется дважды. Для человека причина одна — запись decision на строке 4; для анализатора сопоставление редактирования источника пока не доказано. Это возможное улучшение атрибуции и группировки, а не основание объявлять её доказанной без проверки.
+- The control-change explanation is not specific enough: Control changed (guard correspondence unresolved) does not show the established decision dependency: !first -> second. Both sources can be traced in full.json, but the current text policy specifically explains a narrower class of guard changes.
+- Edit attribution uncertain appears twice. A reader sees one cause — the decision write on line 4; the analyzer has not yet proven correspondence of the source edit. This could improve attribution and grouping, but does not justify declaring attribution proven without verification.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, false]` | `-3` | `5` |
 | `[5, 2, false, true]` | `-3` | `-3` |
@@ -290,11 +290,11 @@ Evidence: full.json (ifds-function-b3094789d161c137)
 
 <a id="4-04-repeated-swapped-operands"></a>
 
-## 4. Перестановка операндов через копии и повторное чтение
+## 4. Swapped operands through copies and repeated reads
 
-Артефакты: [before.ts](04-repeated-swapped-operands/before.ts), [after.ts](04-repeated-swapped-operands/after.ts), [report.txt](04-repeated-swapped-operands/report.txt), [full.json](04-repeated-swapped-operands/full.json), [stderr.log](04-repeated-swapped-operands/stderr.log), [run.json](04-repeated-swapped-operands/run.json).
+Artifacts: [before.ts](04-repeated-swapped-operands/before.ts), [after.ts](04-repeated-swapped-operands/after.ts), [report.txt](04-repeated-swapped-operands/report.txt), [full.json](04-repeated-swapped-operands/full.json), [stderr.log](04-repeated-swapped-operands/stderr.log), [run.json](04-repeated-swapped-operands/run.json).
 
-### До
+### Before
 
 ```typescript
 function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
@@ -311,7 +311,7 @@ function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
@@ -328,19 +328,19 @@ function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Data flow меняется во всех четырёх сочетаниях reverse/negate: важны роли операндов, а не набор источников {a,b}. Повторное чтение delta не должно смешивать разные версии записи. Изменение не доказывает неравенство значений при любых входах.
+Data flow changes in all four reverse/negate combinations: operand roles matter, not just the set of sources {a,b}. Repeated reads of delta must not mix write versions. The change does not prove unequal values for every input.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/04-repeated-swapped-operands`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/04-repeated-swapped-operands`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function repeated --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: repeated
@@ -372,17 +372,17 @@ Coverage: result comparison Complete; source alignment Partial
 Evidence: full.json (ifds-function-3f1a4f08e3513034)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Все четыре региона правильно помечены Changed. В деревьях сохранены порядок операндов, повторное использование delta и смена знака. Контроль a=b=2 даёт 0 -> 0: Changed здесь означает изменение вычисления, а не обязательное неравенство значений.
+All four regions are correctly marked Changed. The trees preserve operand order, repeated use of delta, and sign reversal. The a=b=2 check gives 0 -> 0: Changed here means a changed computation, not necessarily unequal values.
 
-- Повторное раскрытие delta создаёт четыре длинных блока и четыре Edit attribution uncertain, хотя пользователь изменил одну запись на строке 9.
-- Атрибуция перестановки операндов остаётся неясной: текущая проверка уникального изменения не объединяет несколько изменённых чтений внутри одного переставленного выражения. Полезно распознавать такую перестановку с сохранением версий и ролей операндов.
-- Можно добавить общую область Changed: always и одно объяснение delta, оставив конкретные вычисления каждой ветки в подробном режиме. Это предложение по отображению, не уже установленная общая формула возвращаемого значения.
+- Repeated expansion of delta creates four long blocks and four Edit attribution uncertain messages, although the user changed one write on line 9.
+- Attribution of the operand swap remains unresolved: the current unique-change check does not combine multiple changed reads inside one swapped expression. Recognizing such swaps while preserving operand versions and roles would help.
+- A combined Changed: always region and one delta explanation could be added, keeping specific computations for each branch in verbose mode. This is a presentation suggestion, not an already established common formula for the returned value.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, false]` | `6` | `-6` |
 | `[5, 2, true, false]` | `-6` | `6` |
@@ -392,11 +392,11 @@ Evidence: full.json (ifds-function-3f1a4f08e3513034)
 
 <a id="5-05-skipped-call"></a>
 
-## 5. Короткое замыкание и выполненный неизвестный вызов
+## 5. Short-circuiting and an executed unknown call
 
-Артефакты: [before.ts](05-skipped-call/before.ts), [after.ts](05-skipped-call/after.ts), [report.txt](05-skipped-call/report.txt), [full.json](05-skipped-call/full.json), [stderr.log](05-skipped-call/stderr.log), [run.json](05-skipped-call/run.json).
+Artifacts: [before.ts](05-skipped-call/before.ts), [after.ts](05-skipped-call/after.ts), [report.txt](05-skipped-call/report.txt), [full.json](05-skipped-call/full.json), [stderr.log](05-skipped-call/stderr.log), [run.json](05-skipped-call/run.json).
 
-### До
+### Before
 
 ```typescript
 function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {
@@ -408,7 +408,7 @@ function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean
 }
 ```
 
-### После
+### After
 
 ```typescript
 function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {
@@ -420,19 +420,19 @@ function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-При !enabled вызов пропущен и data flow возврата не меняется. При enabled результат/завершение неизвестны даже при !chooseCaptured: вызов уже был выполнен. Для числовых контрольных сценариев отдельно задана модель mystery(x)=x*3; CLI этой модели не получает.
+Under !enabled, the call is skipped and return data flow is unchanged. Under enabled, the result/completion remains unknown even under !chooseCaptured: the call has already executed. The numerical checks separately define mystery(x)=x*3; the CLI receives no such model.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/05-skipped-call`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/05-skipped-call`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function skipped --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: skipped
@@ -443,16 +443,16 @@ Coverage: result comparison Partial; source alignment Partial; before analysis P
 Evidence: full.json (ifds-function-2ed9604500d4d8b6)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-При !enabled вызов действительно пропускается; неизменный data flow a + b показан. При enabled команда сохраняет Unknown и не приписывает вызову доказанное изменение возвращённого значения. Даже при !chooseCaptured неизвестный вызов уже выполнялся.
+Under !enabled, the call is indeed skipped and unchanged data flow a + b is shown. Under enabled, the command retains Unknown without claiming a proven change in the returned value. Even under !chooseCaptured, the unknown call has already executed.
 
-- Причина Unknown слишком общая: normal completion or result selection is unresolved. В полном evidence есть unsupported call_expression на строке 2 и по два наблюдения с unknown_completion_before_return=true на каждой стороне. Пользовательский текст теряет указание на неизвестный вызов.
-- Это корректная консервативность результата при недостаточном объяснении причины. Числовая модель mystery(x)=x*3 в контрольных сценариях не передавалась CLI и не даёт права заменить Unknown на Changed/Equal.
+- The Unknown reason is too general: normal completion or result selection is unresolved. The full evidence contains unsupported call_expression on line 2 and two observations with unknown_completion_before_return=true on each side. The user-facing text loses the reference to the unknown call.
+- The result is correctly conservative, but the reason is insufficiently explained. The numerical model mystery(x)=x*3 in the concrete checks was not supplied to the CLI and does not justify replacing Unknown with Changed/Equal.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, false]` | `7` | `7` |
 | `[5, 2, false, true]` | `7` | `7` |
@@ -461,11 +461,11 @@ Evidence: full.json (ifds-function-2ed9604500d4d8b6)
 
 <a id="6-06-nested-selectors"></a>
 
-## 6. Два условных источника, ранний выход и смена знака
+## 6. Two conditional sources, early exit, and sign reversal
 
-Артефакты: [before.ts](06-nested-selectors/before.ts), [after.ts](06-nested-selectors/after.ts), [report.txt](06-nested-selectors/report.txt), [full.json](06-nested-selectors/full.json), [stderr.log](06-nested-selectors/stderr.log), [run.json](06-nested-selectors/run.json).
+Artifacts: [before.ts](06-nested-selectors/before.ts), [after.ts](06-nested-selectors/after.ts), [report.txt](06-nested-selectors/report.txt), [full.json](06-nested-selectors/full.json), [stderr.log](06-nested-selectors/stderr.log), [run.json](06-nested-selectors/run.json).
 
-### До
+### Before
 
 ```typescript
 function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {
@@ -479,7 +479,7 @@ function selectors(a: number, b: number, enabled: boolean, first: boolean, secon
 }
 ```
 
-### После
+### After
 
 ```typescript
 function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {
@@ -493,19 +493,19 @@ function selectors(a: number, b: number, enabled: boolean, first: boolean, secon
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-При enabled выбранный правый операнд меняется во всех сочетаниях first/second/negate. При !enabled возврат 0 не меняется. Источники после изменения могут совпасть внутри одного вычисления — это не повод потерять роли операндов.
+Under enabled, the selected right operand changes in every first/second/negate combination. Under !enabled, the return value 0 is unchanged. Sources may coincide within a computation after the change; their operand roles must still be preserved.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/06-nested-selectors`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/06-nested-selectors`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function selectors --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: selectors
@@ -561,18 +561,18 @@ Coverage: result comparison Complete; source alignment Partial
 Evidence: full.json (ifds-function-9989c5f4a604d3d5)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Восемь изменённых регионов enabled с разными first/second/negate раскрыты правильно. Полный JSON также устанавливает Equal для !enabled с возвратом 0.
+The eight changed enabled regions with different first/second/negate values are expanded correctly. The full JSON also establishes Equal for !enabled with return value 0.
 
-- Подтверждённый пропуск в коротком тексте: ветка !enabled вообще не показана. В comparison.regions[0] есть Equal, value_dependency_changed=false и условие {2:false}; это известная неизменная ветка, а не Unknown.
-- Порог группировки неизменных регионов требует минимум два региона. Единственный Equal без control_changed затем не попадает ни в summary, ни в обычный цикл эффектов. Поэтому успешное сравнение само по себе не гарантирует полноту короткого отчёта.
-- Одна замена источников в const right на строке 5 порождает восемь сообщений Edit attribution uncertain и восемь одинаковых списков строк записей. Нужны более точная атрибуция условного выбора и общая область изменения enabled.
-- Не следует автоматически упрощать a - a до 0 на unrestricted-входах. Даже на обычных числовых примерах -(a - a) даёт -0; отрицательный ноль отдельно сохранён в runtime-checks.json.
+- Confirmed omission in the short text: the !enabled branch is not shown at all. comparison.regions[0] contains Equal, value_dependency_changed=false, and condition {2:false}; this is a known unchanged branch, not Unknown.
+- The unchanged-region grouping threshold requires at least two regions. A single Equal without control_changed then appears neither in the summary nor in the regular effect loop. Successful comparison alone therefore does not guarantee a complete short report.
+- One source replacement in const right on line 5 produces eight Edit attribution uncertain messages and eight identical write-location lists. More precise conditional-selection attribution and a combined enabled change region are needed.
+- Do not automatically simplify a - a to 0 for unrestricted inputs. Even ordinary numerical examples produce -0 for -(a - a); negative zero is preserved separately in runtime-checks.json.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false, true, true, false]` | `0` | `0` |
 | `[5, 2, true, true, false, false]` | `0` | `3` |
@@ -583,11 +583,11 @@ Evidence: full.json (ifds-function-9989c5f4a604d3d5)
 
 <a id="7-07-nullish-and-overwrite"></a>
 
-## 7. Nullish-выбор, сохранённая копия и независимый возврат
+## 7. Nullish selection, a saved copy, and an independent return
 
-Артефакты: [before.ts](07-nullish-and-overwrite/before.ts), [after.ts](07-nullish-and-overwrite/after.ts), [report.txt](07-nullish-and-overwrite/report.txt), [full.json](07-nullish-and-overwrite/full.json), [stderr.log](07-nullish-and-overwrite/stderr.log), [run.json](07-nullish-and-overwrite/run.json).
+Artifacts: [before.ts](07-nullish-and-overwrite/before.ts), [after.ts](07-nullish-and-overwrite/after.ts), [report.txt](07-nullish-and-overwrite/report.txt), [full.json](07-nullish-and-overwrite/full.json), [stderr.log](07-nullish-and-overwrite/stderr.log), [run.json](07-nullish-and-overwrite/run.json).
 
-### До
+### Before
 
 ```typescript
 function nullish(a: number, b: number, useSaved: boolean) {
@@ -600,7 +600,7 @@ function nullish(a: number, b: number, useSaved: boolean) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function nullish(a: number, b: number, useSaved: boolean) {
@@ -613,19 +613,19 @@ function nullish(a: number, b: number, useSaved: boolean) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Логически вычисление saved меняется при useSaved, а при !useSaved возвращается 100. На unrestricted-входе falsy не означает nullish: 0 должен остаться выбранным a, null должен выбрать b. Консервативный Unknown при неясном выборе — ограничение точности, а не доказательство отсутствия изменения.
+The saved computation changes under useSaved, while !useSaved returns 100. For unrestricted inputs, falsy does not mean nullish: 0 must keep a selected, while null must select b. A conservative Unknown for unresolved selection is a precision limit, not evidence of no change.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/07-nullish-and-overwrite`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/07-nullish-and-overwrite`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function nullish --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: nullish
@@ -641,18 +641,18 @@ Coverage: result comparison Partial; source alignment Partial
 Evidence: full.json (ifds-function-29c914b997a7bb2c)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-На truthy a команда правильно показывает изменение saved при useSaved. На falsy a сохраняется Unknown: одной truthiness недостаточно, чтобы отличить 0 от null. Контрольные сценарии подтверждают, что 0 выбирает a, а null выбирает b.
+For truthy a, the command correctly shows the saved change under useSaved. For falsy a, it retains Unknown: truthiness alone cannot distinguish 0 from null. Concrete checks confirm that 0 selects a while null selects b.
 
-- Подтверждённый пропуск в коротком тексте: установленный Equal для a && !useSaved отсутствует. Он есть в comparison.regions[1], и обе стороны возвращают 100.
-- Потеря точности при !a: Unknown охватывает и !useSaved, хотя выбранная копия уже перезаписана числом 100. Для этого случая можно отдельно исследовать объединение одинаковых нормальных результатов из нескольких вариантов nullish-выбора; нельзя просто считать falsy равным nullish.
-- Изменение data flow при a=0 и useSaved видно при непосредственном выполнении (1 -> 2), но CLI не устанавливает соответствующую ветку. Это консервативная неполнота модели входных условий, а не ложное утверждение о равенстве.
-- Запись условия !a в отчёте означает falsy a, а не a == null. Пояснение Unknown не раскрывает эту границу, поэтому возможна неверная интерпретация пользователем.
+- Confirmed omission in the short text: the established Equal for a && !useSaved is missing. It exists in comparison.regions[1], and both sides return 100.
+- Precision is lost under !a: Unknown also covers !useSaved, although the selected copy has already been overwritten with 100. Combining identical normal results from several nullish-selection alternatives deserves separate investigation; falsy must not simply be treated as nullish.
+- The data-flow change for a=0 and useSaved is visible in direct execution (1 -> 2), but the CLI does not establish that branch. This is conservative incompleteness in the input-condition model, not a false equality claim.
+- The !a condition in the report means falsy a, not a == null. The Unknown explanation does not describe this boundary, so users may misinterpret it.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, true]` | `6` | `7` |
 | `[0, 2, true]` | `1` | `2` |
@@ -662,11 +662,11 @@ Evidence: full.json (ifds-function-29c914b997a7bb2c)
 
 <a id="8-08-reassociation"></a>
 
-## 8. Перегруппировка арифметики с округлением и ранним возвратом
+## 8. Arithmetic reassociation with rounding and early return
 
-Артефакты: [before.ts](08-reassociation/before.ts), [after.ts](08-reassociation/after.ts), [report.txt](08-reassociation/report.txt), [full.json](08-reassociation/full.json), [stderr.log](08-reassociation/stderr.log), [run.json](08-reassociation/run.json).
+Artifacts: [before.ts](08-reassociation/before.ts), [after.ts](08-reassociation/after.ts), [report.txt](08-reassociation/report.txt), [full.json](08-reassociation/full.json), [stderr.log](08-reassociation/stderr.log), [run.json](08-reassociation/run.json).
 
-### До
+### Before
 
 ```typescript
 function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {
@@ -678,7 +678,7 @@ function association(a: number, b: number, c: number, skip: boolean, negate: boo
 }
 ```
 
-### После
+### After
 
 ```typescript
 function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {
@@ -690,19 +690,19 @@ function association(a: number, b: number, c: number, skip: boolean, negate: boo
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Структура вычисления меняется при !skip, при skip возврат 0 прежний. Алгебраическая ассоциативность не доказывает равенство JS number: при [1e16,-1e16,1,false,false] результат 2 -> 0. При [1,2,3,false,false] значения совпадают, хотя data flow изменился.
+The computation structure changes under !skip; under skip, the return value remains 0. Algebraic associativity does not prove equality for JS numbers: [1e16,-1e16,1,false,false] produces 2 -> 0. For [1,2,3,false,false], the values coincide even though data flow changed.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/08-reassociation`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/08-reassociation`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function association --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: association
@@ -722,17 +722,17 @@ Coverage: result comparison Complete; source alignment Partial
 Evidence: full.json (ifds-function-6558469aee1be67a)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Обе ветки !skip правильно помечены Changed, несмотря на одинаковый набор входов. Сценарий [1e16,-1e16,1,false,false] действительно даёт 2 -> 0. На [1,2,3,false,false] значения совпадают; это согласуется со структурным смыслом Changed.
+Both !skip branches are correctly marked Changed despite using the same input set. The [1e16,-1e16,1,false,false] scenario indeed gives 2 -> 0. For [1,2,3,false,false], the values coincide, consistent with the structural meaning of Changed.
 
-- Подтверждённый пропуск в коротком тексте: skip с возвратом 0 отсутствует, хотя comparison.regions[2] устанавливает Equal и value_dependency_changed=false.
-- Два повторных сообщения о неясной атрибуции относятся к одному редактированию скобок на строке 2. Можно улучшить сопоставление перегруппировки дерева и показать общую область изменения !skip.
-- Числовой свидетель не является доказательством неравенства для всех входов. Отчёт правильно сохраняет Changed, а не универсальное Different.
+- Confirmed omission in the short text: skip with return value 0 is missing, although comparison.regions[2] establishes Equal and value_dependency_changed=false.
+- Two repeated uncertain-attribution messages refer to one parenthesis edit on line 2. Tree-reassociation correspondence could be improved, with a combined !skip change region.
+- A numerical witness does not prove inequality for all inputs. The report correctly retains Changed rather than a universal Different.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[10000000000000000, -10000000000000000, 1, false, false]` | `2` | `0` |
 | `[1, 2, 3, false, false]` | `12` | `12` |
@@ -741,11 +741,11 @@ Evidence: full.json (ifds-function-6558469aee1be67a)
 
 <a id="9-09-loop-boundary"></a>
 
-## 9. Накопление в цикле и ветка нулевых итераций
+## 9. Loop accumulation and the zero-iteration branch
 
-Артефакты: [before.ts](09-loop-boundary/before.ts), [after.ts](09-loop-boundary/after.ts), [report.txt](09-loop-boundary/report.txt), [full.json](09-loop-boundary/full.json), [stderr.log](09-loop-boundary/stderr.log), [run.json](09-loop-boundary/run.json).
+Artifacts: [before.ts](09-loop-boundary/before.ts), [after.ts](09-loop-boundary/after.ts), [report.txt](09-loop-boundary/report.txt), [full.json](09-loop-boundary/full.json), [stderr.log](09-loop-boundary/stderr.log), [run.json](09-loop-boundary/run.json).
 
-### До
+### Before
 
 ```typescript
 function accumulate(count: number, step: number) {
@@ -762,7 +762,7 @@ function accumulate(count: number, step: number) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function accumulate(count: number, step: number) {
@@ -779,19 +779,19 @@ function accumulate(count: number, step: number) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-Для положительного конечного целого count нормальный числовой результат меняется; при count=0 результат 0. Циклы исключены из первого function-result subset: нужен явный Unknown/Unsupported, а не заявление об общей неизменности или завершении цикла для всех unrestricted-входов.
+For positive finite integer count, the normal numerical result changes; count=0 returns 0. Loops are excluded from the initial function-result subset: the report must explicitly say Unknown/Unsupported rather than claim unchanged results or loop termination for all unrestricted inputs.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/09-loop-boundary`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/09-loop-boundary`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function accumulate --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: accumulate
@@ -801,16 +801,16 @@ Coverage: result comparison Partial; source alignment Partial; before analysis P
 Evidence: full.json (ifds-function-3a2566e347420eeb)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Команда честно возвращает Unknown и Partial для обеих сторон. Нормальных наблюдений нет; полный JSON содержит unsupported while_statement на строках 6–9. Циклы исключены из текущего function-result subset.
+The command reports Unknown and Partial for both sides. There are no normal observations; the full JSON contains unsupported while_statement on lines 6–9. Loops are excluded from the current function-result subset.
 
-- Это ожидаемое ограничение поддержки, а не подтверждённая ошибка сравнения. Контрольные конечные выполнения показывают различие при положительном count, но не доказывают завершение для произвольного unrestricted-входа.
-- Текстовая причина Unknown опять слишком общая: не говорится, что препятствие — неподдерживаемый while. Полный evidence содержит точную причину, которую стоит включить в короткий отчёт.
+- This is an expected support limitation, not a confirmed comparison error. Concrete finite executions show a difference for positive count but do not prove termination for arbitrary unrestricted inputs.
+- The textual Unknown reason is again too general: it does not identify the unsupported while as the obstacle. The full evidence contains the precise reason, which should be included in the short report.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[0, 3]` | `0` | `0` |
 | `[1, 3]` | `4` | `5` |
@@ -819,11 +819,11 @@ Evidence: full.json (ifds-function-3a2566e347420eeb)
 
 <a id="10-10-unused-nested-function"></a>
 
-## 10. Изменение невызванной вложенной функции с захватом входов
+## 10. Change to an uncalled nested function that captures inputs
 
-Артефакты: [before.ts](10-unused-nested-function/before.ts), [after.ts](10-unused-nested-function/after.ts), [report.txt](10-unused-nested-function/report.txt), [full.json](10-unused-nested-function/full.json), [stderr.log](10-unused-nested-function/stderr.log), [run.json](10-unused-nested-function/run.json).
+Artifacts: [before.ts](10-unused-nested-function/before.ts), [after.ts](10-unused-nested-function/after.ts), [report.txt](10-unused-nested-function/report.txt), [full.json](10-unused-nested-function/full.json), [stderr.log](10-unused-nested-function/stderr.log), [run.json](10-unused-nested-function/run.json).
 
-### До
+### Before
 
 ```typescript
 function outer(a: number, b: number, flag: boolean) {
@@ -841,7 +841,7 @@ function outer(a: number, b: number, flag: boolean) {
 }
 ```
 
-### После
+### After
 
 ```typescript
 function outer(a: number, b: number, flag: boolean) {
@@ -859,19 +859,19 @@ function outer(a: number, b: number, flag: boolean) {
 }
 ```
 
-### Ожидаемое поведение
+### Expected behavior
 
-helper не вызывается; его возвраты и изменённое вычисление не должны попадать в результат outer. Data flow outer не меняется на всех входах с установленным нормальным возвратом; глобальная source alignment может остаться Partial из-за изменения файла.
+helper is never called; its returns and changed computation must not enter the result of outer. Data flow of outer is unchanged for every input with an established normal return; global source alignment may remain Partial because the file changed.
 
-### Команда
+### Command
 
-Рабочий каталог: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/10-unused-nested-function`. Exit code: **0**.
+Working directory: `/home/dima/Develop/repo-memory/spec/function-result-review/complex-batch-2026-10-03/10-unused-nested-function`. Exit code: **0**.
 
 ```sh
 cargo run --locked --offline --manifest-path /home/dima/Develop/repo-memory/Cargo.toml --example ifds_compare -- before.ts after.ts --function outer --format text --evidence-out full.json
 ```
 
-### Вывод команды — stdout без изменений
+### Command output — unchanged stdout
 
 ```text
 Function result: outer
@@ -880,39 +880,39 @@ Coverage: result comparison Partial; source alignment Partial
 Evidence: full.json (ifds-function-116ab92915820665)
 ```
 
-### Проверка и возможные проблемы
+### Verification and possible issues
 
-Изменённое тело helper не повлияло на наблюдения outer: helper не вызывается. Команда правильно сообщает неизменный data flow на всей общей области, отдельно сохраняя неизвестность runtime-равенства арифметики.
+The changed helper body does not affect outer observations: helper is never called. The command correctly reports unchanged data flow over the entire common domain while retaining uncertainty about runtime equality of arithmetic.
 
-- Явной ошибки в проверенных регионах не найдено. Partial source alignment допустим: файл изменился, хотя изменение не достигает возврата outer.
-- При желании можно пояснять, что diff находится в невызванной вложенной функции. Сейчас общая строка неизменности не объясняет, почему конкретное изменение исключено из результата outer.
+- No clear error was found in the checked regions. Partial source alignment is acceptable: the file changed, but the change does not reach the return of outer.
+- The report could explain that the diff is in an uncalled nested function. The current general unchanged-flow line does not explain why this particular edit is excluded from the result of outer.
 
-### Конкретные контрольные сценарии
+### Concrete checks
 
-| Аргументы по порядку параметров | До | После |
+| Arguments in parameter order | Before | After |
 |---|---|---|
 | `[5, 2, false]` | `-3` | `-3` |
 | `[5, 2, true]` | `3` | `3` |
 | `[2, 5, false]` | `3` | `3` |
 | `[2, 5, true]` | `-3` | `-3` |
 
-## Проверка артефактов и повторный запуск
+## Artifact verification and rerun
 
-Проверено 47 сочетаний truthiness по полным структурированным регионам. Это проверка покрытия и ожидаемых признаков изменения на поддерживаемой булевой разбивке; она не устраняет неизвестность nullish, вызовов, циклов или runtime-равенства.
+Checked 47 truthiness combinations against the full structured regions. This checks coverage and expected change indicators over the supported Boolean partition; it does not eliminate uncertainty about nullish selection, calls, loops, or runtime equality.
 
-Приоритет исправлений: сначала восстановить единственные Equal-ветки в коротком тексте; затем раскрывать конкретные причины Unknown; после этого улучшать атрибуцию перестановок и условных источников, сохраняя роли операндов и версии записей. Поддержка циклов и более точная модель nullish — отдельные изменения анализа.
+Fix priorities: first restore single Equal branches in the short text; then explain specific Unknown reasons; afterward improve attribution of swaps and conditional sources while preserving operand roles and write versions. Loop support and a more precise nullish model are separate analysis changes.
 
-Команды записаны в [runs.json](runs.json); исходники и ожидания — в [cases.json](cases.json); результаты конкретных выполнений — в [runtime-checks.json](runtime-checks.json); сводка проверки — в [verification.json](verification.json); состояние и хеши исходников анализатора — в [engine-state.json](engine-state.json).
+Commands are recorded in [runs.json](runs.json); sources and expectations in [cases.json](cases.json); concrete execution results in [runtime-checks.json](runtime-checks.json); verification summary in [verification.json](verification.json); analyzer state and source hashes in [engine-state.json](engine-state.json).
 
 ```sh
 python3 spec/function-result-review/complex-batch-2026-10-03/run.py
 python3 spec/function-result-review/complex-batch-2026-10-03/build_report.py
 ```
 
-Для проверки только конкретных JS-сценариев без повторного сравнения:
+To check only the concrete JS scenarios without repeating the comparison:
 
 ```sh
 python3 spec/function-result-review/complex-batch-2026-10-03/run.py --verify-only
 ```
 
-CLI защищает существующий evidence: если будущий анализатор создаст другой full.json, повторный запуск сравнения завершится ошибкой. Для нового ревью используйте свежий каталог, сохранив этот снимок результатов. Скрипт run.py сохраняет stdout/stderr каждого нового запуска; архив перед повторным запуском следует скопировать целиком.
+The CLI protects existing evidence: if a future analyzer produces a different full.json, rerunning the comparison will fail. For a new review, use a fresh directory and preserve this result snapshot. run.py saves stdout/stderr from each new run; copy the entire archive before rerunning it.

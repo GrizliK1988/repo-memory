@@ -3,7 +3,7 @@
   "references": 73,
   "literal_observations": 68,
   "gaps": [
-    "short_circuit !flag: ожидается equal, фактически unknown"
+    "short_circuit !flag: expected equal, actual unknown"
   ],
   "cases": [
     {

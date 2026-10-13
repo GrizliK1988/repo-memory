@@ -387,6 +387,7 @@ impl BranchState {
                 self.known.remove(result);
                 let value = match literal_kind {
                     LiteralKind::Boolean => Some(KnownValue::boolean(raw == "true")),
+                    LiteralKind::FunctionReference => Some(KnownValue::boolean(true)),
                     LiteralKind::Null | LiteralKind::Undefined => Some(KnownValue {
                         truthy: false,
                         nullish: true,
@@ -466,6 +467,9 @@ impl BranchState {
                 }
             }
             Operation::Write {
+                target, sources, ..
+            }
+            | Operation::CallBind {
                 target, sources, ..
             } => {
                 let value = (sources.len() == 1)

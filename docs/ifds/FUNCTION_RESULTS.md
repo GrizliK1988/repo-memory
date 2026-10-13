@@ -354,7 +354,8 @@ for value identity as well as expression text. Symmetric effects of a proven
 common guard inversion share one finding while retaining separate directional
 results, regions, and evidence. Dependency source positions support concise
 links from returns to contributing writes. These structures use full report
-schema 6, analysis schema 5, and compact schema 6. Regions separately preserve
+schema 7, analysis schema 6, and compact schema 6. K018 adds ordered call context
+to result dependencies in metadata-backed analysis; see [matched calls](INTERPROCEDURAL_CALLS.md). Regions separately preserve
 input truthiness (`values`) and nullishness (`nullish`), with JS implications
 between these predicates. Captured input copies retain the original input's
 predicates after later reassignment. This distinguishes non-nullish falsy inputs

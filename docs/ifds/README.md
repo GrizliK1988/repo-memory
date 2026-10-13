@@ -6,6 +6,12 @@ analysis is implemented for the synchronous single-function scalar subset,
 including K016 loop structure and carried dependencies. Iteration counts,
 accumulated values and runtime completion can remain unresolved.
 
+[K017 project metadata](PROJECT_METADATA.md) is implemented: snapshot-backed
+TypeScript resolution maps imports and direct call declarations to scalar IR.
+[K018 matched calls](INTERPROCEDURAL_CALLS.md) add argument/return transfers,
+reusable summaries and call-specific witnesses in both metadata-backed query modes.
+Recursion evidence and included caller entries remain pending; stage 4 is not yet complete.
+
 The objective is to explain how a bugfix changes the definitions, uses, and paths
 associated with a selected variable, or the conditions and values of a selected
 function's normal results. The full repository is available in both revisions.
@@ -35,6 +41,8 @@ Documents:
   return dependencies, same-input condition/result comparisons, and extensions.
 - [Function result tasks](../../spec/function-results/README.md): separate delivery
   and acceptance gates for the new target mode.
+- [TypeScript project metadata](PROJECT_METADATA.md): pinned compiler bridge,
+  explicit configuration, CLI/API usage and IR mapping boundaries.
 - [Benchmark specification](BENCHMARKS.md): exact fixture rules plus the late-stage
   reviewed-suite precision, coverage, and release gates.
 - [PR #5816 case study](PR-5816.md): the selected `contentLangs` variable and the

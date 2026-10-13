@@ -1,2 +1,3 @@
 /target/
+/tools/typescript-metadata/node_modules/
 docs/.review-comments.json

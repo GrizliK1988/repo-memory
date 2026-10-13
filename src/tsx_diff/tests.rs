@@ -402,7 +402,7 @@ fn handles_empty_diff_and_metadata_only_diff() {
 
 #[test]
 fn handles_new_and_deleted_files_without_final_newlines() {
-    let source = "const Greeting = () => <p>Привіт 🌍</p>;";
+    let source = "const Greeting = () => <p>Hello 🌍</p>;";
     let added = analyze("", source);
     let removed = analyze(source, "");
     assert_eq!(

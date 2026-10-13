@@ -292,6 +292,7 @@ fn report(reverse: bool) -> VariableFlowReport {
         human_summary: "Selected binding flow changed; unresolved call boundary.".into(),
         witnesses: set([
             Witness {
+                call_contexts: BTreeSet::new(),
                 id: WitnessId(0),
                 nodes: vec![bn(1), bn(2)],
                 backedges: BTreeSet::new(),
@@ -299,6 +300,7 @@ fn report(reverse: bool) -> VariableFlowReport {
                 evidence: supported,
             },
             Witness {
+                call_contexts: BTreeSet::new(),
                 id: WitnessId(1),
                 nodes: vec![bn(2), bn(3)],
                 backedges: BTreeSet::new(),
@@ -306,6 +308,7 @@ fn report(reverse: bool) -> VariableFlowReport {
                 evidence: modeled,
             },
             Witness {
+                call_contexts: BTreeSet::new(),
                 id: WitnessId(2),
                 nodes: vec![bn(3), bn(4)],
                 backedges: set([(bn(4), bn(3))]),

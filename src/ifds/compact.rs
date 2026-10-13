@@ -920,6 +920,7 @@ fn aligned_ir_site(
         .trim();
     let kind = match operation.operation {
         Operation::Write { .. } => "write",
+        Operation::CallBind { .. } => "call_bind",
         Operation::Return { .. } => "return",
         Operation::Compute { .. } => "compute",
         Operation::Literal { .. } => "literal",
@@ -1266,6 +1267,26 @@ pub fn project_variable_sources(
     before_source: &str,
     after_source: &str,
 ) -> VariableSourceReport {
+    project_variable_sources_with_files(
+        full,
+        before_ir,
+        after_ir,
+        before_source,
+        after_source,
+        &BTreeMap::new(),
+        &BTreeMap::new(),
+    )
+}
+
+pub(crate) fn project_variable_sources_with_files(
+    full: &VariableFlowReport,
+    before_ir: &ProcedureIr,
+    after_ir: &ProcedureIr,
+    before_source: &str,
+    after_source: &str,
+    before_files: &BTreeMap<String, String>,
+    after_files: &BTreeMap<String, String>,
+) -> VariableSourceReport {
     let identity = report_id(full);
     let evidence_file = format!("ifds-evidence-{identity}.json");
     let before_ids: BTreeMap<_, _> = full
@@ -1327,7 +1348,13 @@ pub fn project_variable_sources(
                 changed_operations
                     .contains(&alignment.logical)
                     .then(|| {
-                        aligned_ir_site(id, before_ir, before_source, alignment_index, &identity)
+                        let source = before_ir
+                            .nodes
+                            .get(id)
+                            .and_then(|n| n.span.as_ref())
+                            .and_then(|s| before_files.get(&s.path))
+                            .map_or(before_source, String::as_str);
+                        aligned_ir_site(id, before_ir, source, alignment_index, &identity)
                     })
                     .flatten()
             })
@@ -1337,7 +1364,13 @@ pub fn project_variable_sources(
                 changed_operations
                     .contains(&alignment.logical)
                     .then(|| {
-                        aligned_ir_site(id, after_ir, after_source, alignment_index, &identity)
+                        let source = after_ir
+                            .nodes
+                            .get(id)
+                            .and_then(|n| n.span.as_ref())
+                            .and_then(|s| after_files.get(&s.path))
+                            .map_or(after_source, String::as_str);
+                        aligned_ir_site(id, after_ir, source, alignment_index, &identity)
                     })
                     .flatten()
             })

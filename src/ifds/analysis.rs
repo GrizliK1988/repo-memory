@@ -3,16 +3,14 @@
 use super::adapters::typescript::{
     TypeScriptBindingIndex, alignable_bindings, index_bindings, lower_containing_procedure,
 };
-use super::compact::{VariableSourceReport, project_variable_sources};
+use super::compact::{VariableSourceReport, project_variable_sources_with_files};
 use super::compare::{AlignmentError, AlignmentResult, align_procedures};
 use super::comparison::{ComparisonError, ComparisonInput, compare_flow_slices};
 use super::model::*;
 use super::provenance::seed_entry_facts;
 use super::slicing::{SliceError, SliceOutput, SliceRequest, build_flow_slice};
 use super::snapshots::{AnalysisEnvironment, SnapshotProvider, validate_query};
-use super::solver::{
-    IntraproceduralSolver, Solver, SolverError, SolverRequest, SystemSolverControl,
-};
+use super::solver::{SolverError, SystemSolverControl};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
@@ -152,6 +150,24 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
     before_environment: &AnalysisEnvironment,
     after_environment: &AnalysisEnvironment,
 ) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
+    analyze_variable_flow_reports_with_projects(
+        query,
+        provider,
+        before_environment,
+        after_environment,
+        None,
+        None,
+    )
+}
+
+pub(crate) fn analyze_variable_flow_reports_with_projects<P: SnapshotProvider>(
+    query: VariableFlowQuery,
+    provider: &P,
+    before_environment: &AnalysisEnvironment,
+    after_environment: &AnalysisEnvironment,
+    before_project: Option<&super::interprocedural::ProjectProgram>,
+    after_project: Option<&super::interprocedural::ProjectProgram>,
+) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
     validate_query(&query, provider, before_environment, after_environment)?;
     if !matches!(query.entry, EntryPoint::ContainingFunction) {
         return Err(InputError::CapabilityMismatch(
@@ -194,6 +210,23 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         .map_err(|error| AnalysisError::Adapter(error.to_string()))?;
     let after = lower_containing_procedure(&after_source, &after_index, &after_binding)
         .map_err(|error| AnalysisError::Adapter(error.to_string()))?;
+    let control = SystemSolverControl::new();
+    let before = super::interprocedural::prepare(
+        before.procedure,
+        before.diagnostics,
+        before_project,
+        &query.limits,
+        &control,
+    )
+    .map_err(AnalysisError::Adapter)?;
+    let after = super::interprocedural::prepare(
+        after.procedure,
+        after.diagnostics,
+        after_project,
+        &query.limits,
+        &control,
+    )
+    .map_err(AnalysisError::Adapter)?;
     let before_alignable = alignable_bindings(&before_index, &before.procedure);
     let after_alignable = alignable_bindings(&after_index, &after.procedure);
     let selected_id = if selected_side == SnapshotSide::Before {
@@ -208,7 +241,7 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
             &before_binding
         }
     });
-    let alignment = align_procedures(
+    let mut alignment = align_procedures(
         &before.procedure,
         &after.procedure,
         &before_alignable,
@@ -217,24 +250,9 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         selected_id,
         explicit,
     )?;
-    let solver = IntraproceduralSolver::new();
-    let control = SystemSolverControl::new();
-    let before_solved = solver.solve(
-        SolverRequest {
-            procedure: &before.procedure,
-            entry_facts: seed_entry_facts(&before.procedure),
-            limits: query.limits.clone(),
-        },
-        &control,
-    )?;
-    let after_solved = solver.solve(
-        SolverRequest {
-            procedure: &after.procedure,
-            entry_facts: seed_entry_facts(&after.procedure),
-            limits: query.limits.clone(),
-        },
-        &control,
-    )?;
+    super::interprocedural::constrain_alignment(&before, &after, &mut alignment);
+    let before_solved = before.solve(&query.limits, &control)?;
+    let after_solved = after.solve(&query.limits, &control)?;
     let mut before_slice = build_flow_slice(SliceRequest {
         procedure: &before.procedure,
         solved: &before_solved,
@@ -247,8 +265,16 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         selected_binding: &after_binding,
         declared_scope: &scope_name(&after_index, &after_binding),
     })?;
-    annotate_operations(&mut before_slice.graph, &before_source);
-    annotate_operations(&mut after_slice.graph, &after_source);
+    if before_project.is_some() {
+        before.annotate_slice(&mut before_slice);
+    } else {
+        annotate_operations(&mut before_slice.graph, &before_source);
+    }
+    if after_project.is_some() {
+        after.annotate_slice(&mut after_slice);
+    } else {
+        annotate_operations(&mut after_slice.graph, &after_source);
+    }
     let query_key = serde_json::to_string(&query.selected_binding)
         .map_err(|error| AnalysisError::Adapter(error.to_string()))?;
     let comparison = compare_flow_slices(ComparisonInput {
@@ -280,6 +306,8 @@ pub fn analyze_variable_flow_reports<P: SnapshotProvider>(
         &after.procedure,
         &before_source,
         &after_source,
+        &before.sources,
+        &after.sources,
         super::loops::summarize_loops(
             &before.procedure,
             &super::branches::BranchPaths::build(
@@ -350,6 +378,8 @@ fn assemble_report(
     after_ir: &super::ir::ProcedureIr,
     before_source: &str,
     after_source: &str,
+    before_files: &BTreeMap<String, String>,
+    after_files: &BTreeMap<String, String>,
     before_loops: Vec<super::loops::LoopSummary>,
     after_loops: Vec<super::loops::LoopSummary>,
 ) -> Result<(VariableFlowReport, VariableSourceReport), AnalysisError> {
@@ -494,8 +524,15 @@ fn assemble_report(
         stats,
     };
     report.validate()?;
-    let compact =
-        project_variable_sources(&report, before_ir, after_ir, before_source, after_source);
+    let compact = project_variable_sources_with_files(
+        &report,
+        before_ir,
+        after_ir,
+        before_source,
+        after_source,
+        before_files,
+        after_files,
+    );
     report.human_summary = compact.render_legacy_text();
     report.validate()?;
     compact.validate_with_full(&report)?;

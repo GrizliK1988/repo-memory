@@ -135,6 +135,40 @@ pub fn lower_function_procedure(
     lowerer.finish_procedure()
 }
 
+/// Lower the existing single-file program scope for metadata/operation mapping.
+/// This does not model imported module initialization or add inter-file edges.
+pub fn lower_program_procedure(
+    source: &str,
+    index: &TypeScriptBindingIndex,
+) -> Result<(ProcedureIr, Vec<Diagnostic>), TypeScriptLoweringError> {
+    let mut parser = Parser::new();
+    let language = match index.grammar {
+        TypeScriptGrammar::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
+        TypeScriptGrammar::Tsx => tree_sitter_typescript::LANGUAGE_TSX,
+    };
+    parser
+        .set_language(&language.into())
+        .map_err(|error| TypeScriptLoweringError::Parse(error.to_string()))?;
+    let tree = parser
+        .parse(source, None)
+        .ok_or_else(|| TypeScriptLoweringError::Parse("parser returned no tree".into()))?;
+    let root = tree.root_node();
+    if root.has_error() {
+        return Err(TypeScriptLoweringError::Parse(
+            "source contains a syntax error".into(),
+        ));
+    }
+    let scope = index
+        .scopes
+        .iter()
+        .find(|scope| scope.kind == ScopeKind::Program)
+        .ok_or_else(|| TypeScriptLoweringError::Parse("program scope is missing".into()))?
+        .id;
+    let mut lowerer = Lowerer::new(source, index, procedure_ordinal(root, root), scope);
+    lowerer.lower(root);
+    lowerer.finish_procedure()
+}
+
 struct Lowerer<'a> {
     source: &'a str,
     index: &'a TypeScriptBindingIndex,

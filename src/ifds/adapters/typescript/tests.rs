@@ -447,7 +447,7 @@ fn ifds_k005_stale_selector_assertions() {
 
 #[test]
 fn ifds_k005_unicode_identifier() {
-    let source = "function пример(вход: number) {\n  const café = вход;\n  return café;\n}\n";
+    let source = "function example(input: number) {\n  const café = input;\n  return café;\n}\n";
     let index = index_bindings(snapshot(), "unicode.ts", source).unwrap();
     assert!(index.diagnostics.is_empty(), "{:?}", index.diagnostics);
 
@@ -472,12 +472,12 @@ fn ifds_k005_unicode_identifier() {
     let parameter = index
         .bindings
         .iter()
-        .find(|candidate| candidate.name == "вход")
+        .find(|candidate| candidate.name == "input")
         .unwrap();
     let parameter_read = index
         .references
         .iter()
-        .find(|candidate| candidate.name == "вход")
+        .find(|candidate| candidate.name == "input")
         .unwrap();
     assert_eq!(parameter_read.binding.as_ref(), Some(&parameter.id));
 }

@@ -10,6 +10,16 @@ subset includes straight-line flow, branches, short-circuit expressions and
 The [kickoff task set](spec/kickoff/README.md) breaks that design into ordered,
 unit-test-verifiable implementation tasks.
 
+[TypeScript project metadata](docs/ifds/PROJECT_METADATA.md) resolves imports,
+aliases, re-exports and direct call declarations from immutable snapshots, with
+source-positioned IR mappings. It uses a provisioned Node.js 18+ bridge and pinned
+TypeScript 5.9.3. Root/base configs are explicit inputs; application scripts and
+compiler plugins do not execute. `cargo run -- metadata --request request.json`
+returns JSON, with `--format text` and `--verbose` for readable resolution evidence.
+[Matched calls](docs/ifds/INTERPROCEDURAL_CALLS.md) carry argument and return origins
+through supported bodies in both metadata-backed analysis APIs. Local APIs retain
+their existing unknown-call behavior.
+
 The [function result analysis](docs/ifds/FUNCTION_RESULTS.md) selects a
 function and explains how its return values and controlling conditions change
 under the same inputs. Its [implementation tasks](spec/function-results/README.md)
@@ -74,6 +84,11 @@ names. The function target supports the same `--format text|compact-json|full-js
 and `--evidence-out <path>` options. Text and compact JSON save a separately
 versioned full function-result report. Simple guards use symbolic JavaScript
 truthiness, so the command does not require a Boolean input declaration.
+
+Add `--metadata` to follow supported direct calls in these single-file function
+snapshots using the Node/TypeScript provider. The
+[interprocedural example](examples/interprocedural_result/README.md) changes one
+helper and compares the resulting value of an unchanged outer function.
 
 Function text is concise by default: simple replacements appear once, with key
 contributing-write positions. Conditional choice tables remain where they explain

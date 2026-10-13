@@ -1,39 +1,39 @@
-# Состояние после исправления атрибуции условий
+# Status after fixing condition attribution
 
-Дата: 2026-10-03. Это дополнение к [исходному отчёту по 10 примерам](README.md).
-Архивные stdout, stderr и evidence описывают предыдущий движок и сохранены без
-изменений. Проверен код, публикуемый вместе с этим дополнением.
+Date: 2026-10-03. This supplements the [original ten-example report](README.md).
+Archived stdout, stderr, and evidence describe the previous engine and remain
+unchanged. The code published with this follow-up was checked.
 
-Повторно запущены все 10 пар исходников из `cases.json` через
-`target/debug/examples/ifds_compare`, с исходным именем функции, `--format text`
-и отдельным свежим `--evidence-out` для каждого примера. Все команды завершились
-с exit code 0. Свежие артефакты сохранены отдельно в
-`/tmp/repo-memory-attribution-batch-wbus6ua4`; архив не перезаписывался.
+All ten source pairs from `cases.json` were rerun through
+`target/debug/examples/ifds_compare`, using the original function name,
+`--format text`, and a separate fresh `--evidence-out` for each example. All
+commands finished with exit code 0. Fresh artifacts were saved separately in
+`/tmp/repo-memory-attribution-batch-wbus6ua4`; the archive was not overwritten.
 
-Для каждой пары проверено точное равенство полей `analysis` и `comparison`
-нового full JSON соответствующему архивному evidence. Таким образом, регионы,
-оценки результата и ранее проверенные признаки изменения не изменились. Новая
-атрибуция добавляет причины и ссылки на них; полный и компактный отчёты теперь
-используют схему 3, анализ по-прежнему использует схему 4. Читатели текущего
-движка не принимают отчёты схемы 2. Для нового прогона нужен отдельный каталог
-evidence.
+For each pair, the `analysis` and `comparison` fields of the new full JSON were
+checked for exact equality with the corresponding archived evidence. Regions,
+result assessments, and previously verified change indicators therefore remained
+unchanged. The new attribution adds causes and references to them; full and
+compact reports now use schema 3, while the analysis still uses schema 4. Readers
+in the current engine reject schema 2 reports. A new run requires a separate
+evidence directory.
 
-Все 267 тестов Rust, `cargo fmt --check` и
-`cargo clippy --locked --offline --all-targets -- -D warnings` прошли. Конкретные
-45 JS-сценариев в этом повторном прогоне не запускались; их предыдущие результаты
-сохранены в исходном отчёте. Совпадение структурированного сравнения не является
-новым доказательством равенства или неравенства runtime-значений.
+All 267 Rust tests, `cargo fmt --check`, and
+`cargo clippy --locked --offline --all-targets -- -D warnings` passed. The 45
+concrete JS scenarios were not executed again during this rerun; their previous
+results remain in the original report. Matching structured comparisons do not
+provide new proof of equal or unequal runtime values.
 
-## Исправлено
+## Fixed
 
-В [примере 3](03-guard-version/before.ts) объяснение выбора возврата показывает
-`!first -> second`. Обратный проход по зависимостям условия находит изменённое
-присваивание на строке 4. Одна подтверждённая причина связана со всеми четырьмя
-регионами изменения управления: в двух из них вычисление возврата изменилось,
-в двух сохранилось. Условия последствий `first && second` и
-`!first && !second` сохранены.
+In [example 3](03-guard-version/before.ts), the explanation of return selection
+shows `!first -> second`. Backward traversal of condition dependencies finds the
+changed assignment on line 4. One confirmed cause is linked to all four
+control-change regions: the return computation changes in two and remains
+unchanged in two. The effect conditions `first && second` and
+`!first && !second` are preserved.
 
-Начало фактического stdout нового запуска:
+Beginning of the actual stdout from the new run:
 
 ```text
 Function result: versioned
@@ -44,30 +44,31 @@ Return source: b - a
   After: under second
 ```
 
-Здесь `Edit` раскрывает зависимости присваивания через входные параметры,
-а не цитирует исходную строку `decision = !decision`. В evidence сохранены
-узлы, расположения и пути от условия к исходному присваиванию.
-Сообщений `Edit attribution uncertain` в примере 3 больше нет. Для остальных
-девяти примеров stdout совпадает с архивным после исключения строки `Evidence:`.
+Here, `Edit` expands assignment dependencies through input parameters rather
+than quoting the source line `decision = !decision`. The evidence preserves
+nodes, locations, and paths from the condition to the original assignment.
+Example 3 no longer contains `Edit attribution uncertain` messages. For the
+other nine examples, stdout matches the archive after excluding the `Evidence:`
+line.
 
-## Осталось сделать
+## Remaining work
 
-| Приоритет | Примеры | Работа и критерий результата |
+| Priority | Examples | Work and acceptance criteria |
 |---|---|---|
-| 1 | 6, 7, 8 | Показывать единственный установленный неизменный регион в коротком отчёте: соответственно `!enabled`, `a && !useSaved`, `skip`. Сейчас он есть в JSON, но исчезает из текста. |
-| 2 | 5, 9 | Раскрывать конкретную причину `Unknown`: неизвестный вызов и неподдерживаемый `while`, с расположением в исходнике. Диагностика уже есть в evidence. |
-| 3 | 4, 6, 8 | Расширить атрибуцию и группировку для перестановки операндов, замены условных источников и перегруппировки арифметического дерева. Сейчас остаются соответственно 4, 8 и 2 сообщения о неопределённой атрибуции. Общую подтверждённую причину следует показывать один раз, сохраняя роли операндов, версии записей и отдельные последствия. |
-| 4 | 7 | Различать nullish и falsy при `??`: `0` сохраняет `a`, `null` выбирает `b`. Отдельно исследовать установление общего возврата `100` при `!useSaved`, независимо от прежнего выбора `selected`. Сейчас `Unknown under !a` охватывает оба варианта `useSaved`. |
-| 5 | 1, 10 | Яснее объяснять `Coverage: Partial`: неизвестное runtime-равенство и частичное сопоставление исходников не отменяют установленную неизменность или изменение data flow. |
+| 1 | 6, 7, 8 | Show a single established unchanged region in the short report: `!enabled`, `a && !useSaved`, and `skip`, respectively. It currently exists in JSON but disappears from the text. |
+| 2 | 5, 9 | Explain the specific `Unknown` reason: an unknown call or unsupported `while`, with its source location. The diagnostics already exist in the evidence. |
+| 3 | 4, 6, 8 | Extend attribution and grouping for operand swaps, replacement of conditional sources, and arithmetic-tree reassociation. There are currently 4, 8, and 2 uncertain-attribution messages, respectively. Show a shared confirmed cause once while preserving operand roles, write versions, and separate effects. |
+| 4 | 7 | Distinguish nullish from falsy for `??`: `0` preserves `a`, while `null` selects `b`. Separately investigate establishing the common return of `100` under `!useSaved`, independently of the previous selection of `selected`. Currently, `Unknown under !a` covers both values of `useSaved`. |
+| 5 | 1, 10 | Explain `Coverage: Partial` more clearly: unknown runtime equality and partial source alignment do not negate established unchanged or changed data flow. |
 
-Поддержка циклов в примере 9 — отдельное расширение анализатора. Пока достаточно
-точно объяснять это ограничение, сохраняя `Unknown`.
+Loop support in example 9 is a separate analyzer extension. For now, explaining
+this limitation precisely while retaining `Unknown` is sufficient.
 
-Дополнительные улучшения отображения: раскрыть выбор `10/20` в примере 2 и
-объяснить исключение правки невызванного `helper` в примере 10. Ошибки определения
-изменённого data flow в этих двух проверках не найдены.
+Additional presentation improvements: explain the `10/20` selection in example 2
+and exclusion of the uncalled `helper` edit in example 10. No errors in identifying
+changed data flow were found in these two checks.
 
-Новая атрибуция подтверждает один однозначно сопоставленный источник изменения
-условия. Несколько независимых правок, неоднозначные источники, неизвестные
-вызовы и неполные пути остаются неопределёнными; одной новой записи `causes`
-недостаточно, чтобы считать остальные случаи атрибуции решёнными.
+The new attribution confirms one unambiguously matched source of a condition
+change. Multiple independent edits, ambiguous sources, unknown calls, and
+incomplete paths remain uncertain; one new `causes` record does not establish
+that the other attribution cases are solved.

@@ -20,6 +20,15 @@ pub enum Operation {
         sources: BTreeSet<Place>,
         definition: DefinitionId,
     },
+    /// Evidence expansion of an actual/formal or matched return transfer.
+    /// Unlike an assignment, this introduces no new value origin.
+    CallBind {
+        call_site: CallSiteId,
+        boundary: CallBindKind,
+        target: Place,
+        sources: BTreeSet<Place>,
+        definition: DefinitionId,
+    },
     Literal {
         definition: DefinitionId,
         literal_kind: LiteralKind,
@@ -59,9 +68,18 @@ pub enum Operation {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CallBindKind {
+    Argument,
+    Return,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LiteralKind {
+    /// An immutable direct function initializer whose body is resolved as code.
+    FunctionReference,
     Number,
     String,
     Boolean,
@@ -352,6 +370,7 @@ impl ProcedureIr {
 fn operation_definition(operation: &Operation) -> Option<&DefinitionId> {
     match operation {
         Operation::Write { definition, .. }
+        | Operation::CallBind { definition, .. }
         | Operation::Literal { definition, .. }
         | Operation::Compute { definition, .. } => Some(definition),
         Operation::UnknownEffect { definition, .. } => definition.as_ref(),
@@ -372,7 +391,9 @@ fn operation_result(operation: &Operation) -> Option<&Place> {
 fn operation_inputs(operation: &Operation) -> Vec<&Place> {
     match operation {
         Operation::Read { source, .. } => vec![source],
-        Operation::Write { sources, .. } => sources.iter().collect(),
+        Operation::Write { sources, .. } | Operation::CallBind { sources, .. } => {
+            sources.iter().collect()
+        }
         Operation::Compute { inputs, .. } | Operation::UnknownEffect { inputs, .. } => {
             inputs.iter().map(|input| &input.place).collect()
         }

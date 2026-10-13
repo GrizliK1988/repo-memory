@@ -126,6 +126,12 @@ call edges. Compiler symbols and signatures assist resolution but do not prove
 runtime dispatch or external function effects. The official API exposes programs,
 symbols and type information. [TypeScript compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API)
 
+K017's agreed configuration contract requires explicit root/base configs when
+they cannot be resolved from the snapshot or caller-supplied config data. Missing
+configs are structured input errors, distinct from unavailable source bodies or
+provider failures. Type-check success is not an analysis prerequisite. See
+[project metadata](PROJECT_METADATA.md) for the implemented protocol and boundaries.
+
 Respect the snapshot's `tsconfig`, path aliases, imports/re-exports, file extensions,
 and declared module-resolution mode. A call target must be consistent with the
 runtime/module configuration; declarations from `.d.ts` provide type information,

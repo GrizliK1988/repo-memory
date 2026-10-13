@@ -18,7 +18,7 @@ def case(slug, title, name, source, old, new, expectation, samples):
 
 
 CASES = [
-    case("01-captured-ternary", "Сохранённое вычисление, перезаписи и ранний выход", "archive", """function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {
+    case("01-captured-ternary", "Saved computation, overwrites, and early exit", "archive", """function archive(a: number, b: number, enabled: boolean, useSaved: boolean, override: boolean) {
   if (!enabled) return 0;
 
   let current = a + b;
@@ -30,11 +30,11 @@ CASES = [
   return useSaved ? saved + current : current;
 }
 """, "let current = a + b;", "let current = a - b;",
-         "Data flow меняется только при enabled && useSaved. Сохранённая копия переживает перезаписи current; override влияет на окружающее вычисление, но не на область изменения.",
+         "Data flow changes only under enabled && useSaved. The saved copy survives overwrites of current; override affects the surrounding computation but not the region of change.",
          [([5, 2, False, True, True], 0, 0), ([5, 2, True, False, False], 3, 3),
           ([5, 2, True, False, True], 100, 100), ([5, 2, True, True, False], 24, 12),
           ([5, 2, True, True, True], 121, 109)]),
-    case("02-killed-edit", "Изменённая запись уничтожена двумя уровнями присваиваний", "killed", """function killed(a: number, b: number, first: boolean, second: boolean) {
+    case("02-killed-edit", "Changed write killed by two layers of assignments", "killed", """function killed(a: number, b: number, first: boolean, second: boolean) {
   let value = a + b;
   const unused = value * 2;
 
@@ -48,10 +48,10 @@ CASES = [
   return copy;
 }
 """, "let value = a + b;", "let value = a - b;",
-         "Изменение не достигает возврата ни в одной ветке: second выбирает 10 или 20. Сравниваются нормальные возвраты, а не все возможные эффекты выполнения арифметики.",
+         "The change reaches no return branch: second selects 10 or 20. The comparison covers normal returns, not every possible effect of arithmetic evaluation.",
          [([5, 2, False, False], 20, 20), ([5, 2, False, True], 10, 10),
           ([5, 2, True, False], 20, 20), ([5, 2, True, True], 10, 10)]),
-    case("03-guard-version", "Снимок условия и новая версия изменяемого guard", "versioned", """function versioned(a: number, b: number, first: boolean, second: boolean) {
+    case("03-guard-version", "Condition snapshot and a new version of a mutable guard", "versioned", """function versioned(a: number, b: number, first: boolean, second: boolean) {
   let decision = first;
   const original = decision;
   decision = !decision;
@@ -63,10 +63,10 @@ CASES = [
   return value;
 }
 """, "decision = !decision;", "decision = second;",
-         "До изменения decision равен !first, после — second. Data flow меняется при (!first && !second) || (first && second); original остаётся снимком first.",
+         "Before the change, decision equals !first; afterward, it equals second. Data flow changes under (!first && !second) || (first && second); original remains a snapshot of first.",
          [([5, 2, False, False], -3, 5), ([5, 2, False, True], -3, -3),
           ([5, 2, True, False], 7, 7), ([5, 2, True, True], 7, -3)]),
-    case("04-repeated-swapped-operands", "Перестановка операндов через копии и повторное чтение", "repeated", """function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
+    case("04-repeated-swapped-operands", "Swapped operands through copies and repeated reads", "repeated", """function repeated(a: number, b: number, reverse: boolean, negate: boolean) {
   let left = a;
   let right = b;
   if (reverse) {
@@ -79,11 +79,11 @@ CASES = [
   return negate ? -doubled : doubled;
 }
 """, "const delta = left - right;", "const delta = right - left;",
-         "Data flow меняется во всех четырёх сочетаниях reverse/negate: важны роли операндов, а не набор источников {a,b}. Повторное чтение delta не должно смешивать разные версии записи. Изменение не доказывает неравенство значений при любых входах.",
+         "Data flow changes in all four reverse/negate combinations: operand roles matter, not just the set of sources {a,b}. Repeated reads of delta must not mix write versions. The change does not prove unequal values for every input.",
          [([5, 2, False, False], 6, -6), ([5, 2, True, False], -6, 6),
           ([5, 2, False, True], -6, 6), ([5, 2, True, True], 6, -6),
           ([2, 2, False, False], 0, 0)]),
-    case("05-skipped-call", "Короткое замыкание и выполненный неизвестный вызов", "skipped", """function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {
+    case("05-skipped-call", "Short-circuiting and an executed unknown call", "skipped", """function skipped(a: number, b: number, enabled: boolean, chooseCaptured: boolean) {
   const captured = enabled && mystery(a);
   if (!enabled) return a + b;
 
@@ -91,10 +91,10 @@ CASES = [
   return chooseCaptured ? captured : fallback;
 }
 """, "mystery(a)", "mystery(b)",
-         "При !enabled вызов пропущен и data flow возврата не меняется. При enabled результат/завершение неизвестны даже при !chooseCaptured: вызов уже был выполнен. Для числовых контрольных сценариев отдельно задана модель mystery(x)=x*3; CLI этой модели не получает.",
+         "Under !enabled, the call is skipped and return data flow is unchanged. Under enabled, the result/completion remains unknown even under !chooseCaptured: the call has already executed. The numerical checks separately define mystery(x)=x*3; the CLI receives no such model.",
          [([5, 2, False, False], 7, 7), ([5, 2, False, True], 7, 7),
           ([5, 2, True, False], -3, -3), ([5, 2, True, True], 15, 6)]),
-    case("06-nested-selectors", "Два условных источника, ранний выход и смена знака", "selectors", """function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {
+    case("06-nested-selectors", "Two conditional sources, early exit, and sign reversal", "selectors", """function selectors(a: number, b: number, enabled: boolean, first: boolean, second: boolean, negate: boolean) {
   if (!enabled) return 0;
 
   const left = first ? a : b;
@@ -104,12 +104,12 @@ CASES = [
   return negate ? -frozen : frozen;
 }
 """, "const right = second ? b : a;", "const right = second ? a : b;",
-         "При enabled выбранный правый операнд меняется во всех сочетаниях first/second/negate. При !enabled возврат 0 не меняется. Источники после изменения могут совпасть внутри одного вычисления — это не повод потерять роли операндов.",
+         "Under enabled, the selected right operand changes in every first/second/negate combination. Under !enabled, the return value 0 is unchanged. Sources may coincide within a computation after the change; their operand roles must still be preserved.",
          [([5, 2, False, True, True, False], 0, 0),
           ([5, 2, True, True, False, False], 0, 3), ([5, 2, True, True, True, False], 3, 0),
           ([5, 2, True, False, False, False], -3, 0), ([5, 2, True, False, True, False], 0, -3),
           ([5, 2, True, True, True, True], -3, {"special": "-0"})]),
-    case("07-nullish-and-overwrite", "Nullish-выбор, сохранённая копия и независимый возврат", "nullish", """function nullish(a: number, b: number, useSaved: boolean) {
+    case("07-nullish-and-overwrite", "Nullish selection, a saved copy, and an independent return", "nullish", """function nullish(a: number, b: number, useSaved: boolean) {
   let selected = a ?? b;
   const saved = selected + 1;
 
@@ -118,10 +118,10 @@ CASES = [
   return selected;
 }
 """, "const saved = selected + 1;", "const saved = selected + 2;",
-         "Логически вычисление saved меняется при useSaved, а при !useSaved возвращается 100. На unrestricted-входе falsy не означает nullish: 0 должен остаться выбранным a, null должен выбрать b. Консервативный Unknown при неясном выборе — ограничение точности, а не доказательство отсутствия изменения.",
+         "The saved computation changes under useSaved, while !useSaved returns 100. For unrestricted inputs, falsy does not mean nullish: 0 must keep a selected, while null must select b. A conservative Unknown for unresolved selection is a precision limit, not evidence of no change.",
          [([5, 2, True], 6, 7), ([0, 2, True], 1, 2), ([None, 2, True], 3, 4),
           ([None, 2, False], 100, 100), ([0, 2, False], 100, 100)]),
-    case("08-reassociation", "Перегруппировка арифметики с округлением и ранним возвратом", "association", """function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {
+    case("08-reassociation", "Arithmetic reassociation with rounding and early return", "association", """function association(a: number, b: number, c: number, skip: boolean, negate: boolean) {
   const total = (a + b) + c;
   const doubled = total * 2;
 
@@ -129,11 +129,11 @@ CASES = [
   return negate ? -doubled : doubled;
 }
 """, "const total = (a + b) + c;", "const total = a + (b + c);",
-         "Структура вычисления меняется при !skip, при skip возврат 0 прежний. Алгебраическая ассоциативность не доказывает равенство JS number: при [1e16,-1e16,1,false,false] результат 2 -> 0. При [1,2,3,false,false] значения совпадают, хотя data flow изменился.",
+         "The computation structure changes under !skip; under skip, the return value remains 0. Algebraic associativity does not prove equality for JS numbers: [1e16,-1e16,1,false,false] produces 2 -> 0. For [1,2,3,false,false], the values coincide even though data flow changed.",
          [([10000000000000000, -10000000000000000, 1, False, False], 2, 0),
           ([1, 2, 3, False, False], 12, 12), ([1, 2, 3, False, True], -12, -12),
           ([1, 2, 3, True, False], 0, 0)]),
-    case("09-loop-boundary", "Накопление в цикле и ветка нулевых итераций", "accumulate", """function accumulate(count: number, step: number) {
+    case("09-loop-boundary", "Loop accumulation and the zero-iteration branch", "accumulate", """function accumulate(count: number, step: number) {
   let remaining = count;
   let total = 0;
   const increment = step + 1;
@@ -146,9 +146,9 @@ CASES = [
   return total;
 }
 """, "const increment = step + 1;", "const increment = step + 2;",
-         "Для положительного конечного целого count нормальный числовой результат меняется; при count=0 результат 0. Циклы исключены из первого function-result subset: нужен явный Unknown/Unsupported, а не заявление об общей неизменности или завершении цикла для всех unrestricted-входов.",
+         "For positive finite integer count, the normal numerical result changes; count=0 returns 0. Loops are excluded from the initial function-result subset: the report must explicitly say Unknown/Unsupported rather than claim unchanged results or loop termination for all unrestricted inputs.",
          [([0, 3], 0, 0), ([1, 3], 4, 5), ([2, 3], 8, 10), ([3, 0], 3, 6)]),
-    case("10-unused-nested-function", "Изменение невызванной вложенной функции с захватом входов", "outer", """function outer(a: number, b: number, flag: boolean) {
+    case("10-unused-nested-function", "Change to an uncalled nested function that captures inputs", "outer", """function outer(a: number, b: number, flag: boolean) {
   function helper(value: number) {
     let candidate = value + a;
     if (flag) candidate = candidate + b;
@@ -162,7 +162,7 @@ CASES = [
   return current;
 }
 """, "let candidate = value + a;", "let candidate = value - a;",
-         "helper не вызывается; его возвраты и изменённое вычисление не должны попадать в результат outer. Data flow outer не меняется на всех входах с установленным нормальным возвратом; глобальная source alignment может остаться Partial из-за изменения файла.",
+         "helper is never called; its returns and changed computation must not enter the result of outer. Data flow of outer is unchanged for every input with an established normal return; global source alignment may remain Partial because the file changed.",
          [([5, 2, False], -3, -3), ([5, 2, True], 3, 3),
           ([2, 5, False], 3, 3), ([2, 5, True], -3, -3)]),
 ]
