@@ -1,7 +1,7 @@
 # Kickoff: IFDS implementation tasks
 
 Status: stages 0–3 complete; K017 and K018 complete in stage 4; remaining stage 4 and later
-tasks planned. These 41 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
+tasks planned. These 42 tasks cover the [specification](../../docs/ifds/SPEC.md), the complete
 [staged roadmap](../../docs/ifds/README.md), and the
 [benchmark contract](../../docs/ifds/BENCHMARKS.md).
 
@@ -24,7 +24,8 @@ separate target mode after the existing scalar/branch foundation. It reuses thes
 language stages and introduces its own result-comparison acceptance gates; it does
 not change completed binding-query contracts or renumber the kickoff tasks.
 K031 extends that function target to class and object methods after FR001 provides
-the base selector.
+the base selector. K042 extends function-result edit attribution through the
+matched calls already supported by K018.
 
 ## Unit-test convention and completion gate
 
@@ -100,9 +101,12 @@ language features or benchmark percentages to deliver the first milestone.
 | K039 | [Demand slicing, parallelism, and measurement](039-scale-and-measurement.md) | 11 |
 | K040 | [Coverage registry and release acceptance](040-release-gates.md) | 11 |
 | K041 | [Compact source and logic change report](041-compact-source-report.md) | 2 |
+| K042 | [Function-result edit attribution across matched calls](042-interprocedural-edit-attribution.md) | 4 |
 
 K041 is a report extension that can follow K014 directly; it does not depend on
 completion of the intervening task IDs.
+K042 can follow K018 and FR003 directly; it does not depend on K019–K040 or on
+the broader ambiguity refinement planned in K033.
 
 ## Design traceability
 
@@ -119,6 +123,7 @@ completion of the intervening task IDs.
 | Section 6 case 10: unchanged downstream consumer chain | K010, K012, K013, K020 |
 | Report evidence, per-direction coverage, grouping, history-ready metadata | K001, K009, K010, K012, K013 |
 | Compact source/guard/precedence explanation for humans and agents | K041 |
+| Function-result attribution to a unique contributing edit across matched calls | K018, K042, FR003 |
 | Additional TypeScript syntax and execution paths | K014–K037 |
 | Independent fixtures, 90% precision, recall/abstention reporting | K003, K004, K025, K040 |
 | Budgets, slicing equivalence, cache correctness, measured scale | K009, K038, K039 |

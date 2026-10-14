@@ -89,6 +89,10 @@ Add `--metadata` to follow supported direct calls in these single-file function
 snapshots using the Node/TypeScript provider. The
 [interprocedural example](examples/interprocedural_result/README.md) changes one
 helper and compares the resulting value of an unchanged outer function.
+For functions in separate files, pass snapshot directories with `--metadata` and
+`--function`; `--entry-file` selects the target's relative path (default `main.ts`).
+The [multi-file example](examples/interprocedural_files/README.md) follows imports
+through four modules and saves the comparison evidence.
 
 Function text is concise by default: simple replacements appear once, with key
 contributing-write positions. Conditional choice tables remain where they explain

@@ -28,6 +28,8 @@ Excludes recursion-specific completion tests and unmodeled captured/heap effects
   an explicit K019 boundary; included caller entries stay in K020.
 
 Implementation details: [matched calls](../../docs/ifds/INTERPROCEDURAL_CALLS.md).
+Follow-up [K042](042-interprocedural-edit-attribution.md) extends function-result
+edit attribution across these matched calls; it is a separate planned report task.
 
 ## Required unit tests
 

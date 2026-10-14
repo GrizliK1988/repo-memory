@@ -1,4 +1,4 @@
-//! Compare a selected binding or function in two local TypeScript snippets.
+//! Compare a selected binding or function in local TypeScript files or directories.
 
 use repo_memory::ifds::adapters::typescript::{index_bindings, index_functions};
 use repo_memory::ifds::{
@@ -23,7 +23,7 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--metadata] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]";
+    let usage = "usage: cargo run --example ifds_compare -- <before.ts> <after.ts> <binding> [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]\n   or: cargo run --example ifds_compare -- <before.ts> <after.ts> --function <name> [--after-function <name>] [--metadata] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]\n   or: cargo run --example ifds_compare -- <before-dir> <after-dir> --function <name> --metadata [--entry-file main.ts] [--after-function <name>] [--format text|compact-json|full-json] [--evidence-out <path>] [--verbose]";
     if arguments.len() < 3 {
         return Err(usage.into());
     }
@@ -35,6 +35,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut evidence_out = None;
     let mut verbose = false;
     let mut metadata = false;
+    let mut entry_file = None;
     let mut index = if binding_name.is_some() { 3 } else { 2 };
     while index < arguments.len() {
         match arguments[index].as_str() {
@@ -52,6 +53,10 @@ fn run() -> Result<(), Box<dyn Error>> {
             }
             "--after-function" if index + 1 < arguments.len() => {
                 after_function_name = Some(arguments[index + 1].as_str());
+                index += 2;
+            }
+            "--entry-file" if index + 1 < arguments.len() => {
+                entry_file = Some(arguments[index + 1].as_str());
                 index += 2;
             }
             "--format" if index + 1 < arguments.len() => {
@@ -77,22 +82,43 @@ fn run() -> Result<(), Box<dyn Error>> {
     if verbose && format != "text" {
         return Err("--verbose requires --format text".into());
     }
-    let before = std::fs::read(before_path)?;
-    let after = std::fs::read(after_path)?;
-    let before_text = std::str::from_utf8(&before)?;
-    let after_text = std::str::from_utf8(&after)?;
+    let directories = Path::new(before_path).is_dir() && Path::new(after_path).is_dir();
+    if directories && (!metadata || function_name.is_none()) {
+        return Err("directory inputs require --function and --metadata".into());
+    }
+    if !directories && entry_file.is_some() {
+        return Err("--entry-file requires directory inputs".into());
+    }
     let before_extension = Path::new(before_path)
         .extension()
         .and_then(|value| value.to_str());
     let after_extension = Path::new(after_path)
         .extension()
         .and_then(|value| value.to_str());
-    if before_extension != after_extension || !matches!(before_extension, Some("ts" | "tsx")) {
+    if !directories
+        && (before_extension != after_extension || !matches!(before_extension, Some("ts" | "tsx")))
+    {
         return Err("both inputs must have the same .ts or .tsx extension".into());
     }
-    let report_path = format!("snippet.{}", before_extension.expect("validated extension"));
-    let before_hash = digest(&before);
-    let after_hash = digest(&after);
+    let report_path = if directories {
+        entry_file.unwrap_or("main.ts").to_owned()
+    } else {
+        format!("snippet.{}", before_extension.expect("validated extension"))
+    };
+    let before_files = load_files(Path::new(before_path), &report_path)?;
+    let after_files = load_files(Path::new(after_path), &report_path)?;
+    let before = &before_files
+        .get(&report_path)
+        .ok_or_else(|| format!("entry file {report_path:?} not found in {before_path}"))?
+        .1;
+    let after = &after_files
+        .get(&report_path)
+        .ok_or_else(|| format!("entry file {report_path:?} not found in {after_path}"))?
+        .1;
+    let before_text = std::str::from_utf8(before)?;
+    let after_text = std::str::from_utf8(after)?;
+    let before_hash = snapshot_digest(&before_files)?;
+    let after_hash = snapshot_digest(&after_files)?;
     let before_id = SnapshotId {
         side: SnapshotSide::Before,
         revision: format!("local-before-{before_hash}"),
@@ -111,25 +137,36 @@ fn run() -> Result<(), Box<dyn Error>> {
         id: after_id.clone(),
         repository_id: "local-example".into(),
     };
-    let changes = if before == after {
-        BTreeSet::new()
-    } else {
-        BTreeSet::from([FileChange {
-            kind: FileChangeKind::Modified,
-            before_path: Some(report_path.clone()),
-            after_path: Some(report_path.clone()),
-            before_content_id: Some(before_hash.clone()),
-            after_content_id: Some(after_hash.clone()),
-        }])
-    };
+    let paths: BTreeSet<_> = before_files.keys().chain(after_files.keys()).collect();
+    let changes = paths
+        .into_iter()
+        .filter_map(|path| {
+            let before = before_files.get(path);
+            let after = after_files.get(path);
+            if before == after {
+                return None;
+            }
+            Some(FileChange {
+                kind: match (before, after) {
+                    (None, Some(_)) => FileChangeKind::Added,
+                    (Some(_), None) => FileChangeKind::Deleted,
+                    _ => FileChangeKind::Modified,
+                },
+                before_path: before.map(|_| path.clone()),
+                after_path: after.map(|_| path.clone()),
+                before_content_id: before.map(|(hash, _)| hash.clone()),
+                after_content_id: after.map(|(hash, _)| hash.clone()),
+            })
+        })
+        .collect();
     let provider = InMemorySnapshotProvider::new([
         InMemorySnapshot {
             handle: before_handle.clone(),
-            files: BTreeMap::from([(report_path.clone(), (before_hash.clone(), before.clone()))]),
+            files: before_files.clone(),
         },
         InMemorySnapshot {
             handle: after_handle.clone(),
-            files: BTreeMap::from([(report_path.clone(), (after_hash.clone(), after.clone()))]),
+            files: after_files.clone(),
         },
     ]);
     let capabilities = CapabilitySet {
@@ -176,7 +213,7 @@ fn run() -> Result<(), Box<dyn Error>> {
             limits,
         };
         let (report, mut compact) = if metadata {
-            let config = r#"{"compilerOptions":{"target":"es2022","module":"esnext","moduleResolution":"bundler"},"include":["snippet.ts","snippet.tsx"]}"#;
+            let config = r#"{"compilerOptions":{"target":"es2022","module":"esnext","moduleResolution":"bundler"},"include":["**/*.ts","**/*.tsx"]}"#;
             let options = ProjectOptions {
                 tsconfig: Some("tsconfig.json".into()),
                 supplied_files: BTreeMap::from([(
@@ -347,6 +384,57 @@ fn selector(
         expected_name: Some(name.into()),
         expected_enclosing_symbol: binding.enclosing_symbol.clone(),
     })
+}
+
+type SnapshotFiles = BTreeMap<String, (String, Vec<u8>)>;
+
+fn load_files(input: &Path, report_path: &str) -> Result<SnapshotFiles, Box<dyn Error>> {
+    if !input.is_dir() {
+        let bytes = std::fs::read(input)?;
+        return Ok(BTreeMap::from([(
+            report_path.into(),
+            (digest(&bytes), bytes),
+        )]));
+    }
+    let mut files = BTreeMap::new();
+    collect_files(input, input, &mut files)?;
+    Ok(files)
+}
+
+fn collect_files(
+    root: &Path,
+    directory: &Path,
+    files: &mut SnapshotFiles,
+) -> Result<(), Box<dyn Error>> {
+    for entry in std::fs::read_dir(directory)? {
+        let entry = entry?;
+        let path = entry.path();
+        let kind = entry.file_type()?;
+        if kind.is_dir() {
+            if !matches!(entry.file_name().to_str(), Some("node_modules" | ".git")) {
+                collect_files(root, &path, files)?;
+            }
+        } else if kind.is_file()
+            && matches!(
+                path.extension().and_then(|ext| ext.to_str()),
+                Some("ts" | "tsx")
+            )
+        {
+            let bytes = std::fs::read(&path)?;
+            let relative = path.strip_prefix(root)?.to_str().ok_or("non-UTF-8 path")?;
+            files.insert(relative.replace('\\', "/"), (digest(&bytes), bytes));
+        }
+    }
+    Ok(())
+}
+
+fn snapshot_digest(files: &SnapshotFiles) -> Result<String, Box<dyn Error>> {
+    // Preserve the identity of existing single-file examples.
+    if files.len() == 1 {
+        return Ok(files.values().next().expect("one file").0.clone());
+    }
+    let identities: BTreeMap<_, _> = files.iter().map(|(path, (hash, _))| (path, hash)).collect();
+    Ok(digest(&serde_json::to_vec(&identities)?))
 }
 
 fn digest(bytes: &[u8]) -> String {
